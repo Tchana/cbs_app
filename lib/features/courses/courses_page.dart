@@ -1,8 +1,9 @@
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
+import 'package:center_for_biblical_studies/shared/page_header.dart';
+import 'package:center_for_biblical_studies/shared/tab_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
-import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 
 class CoursesPage extends StatefulWidget {
@@ -25,12 +26,6 @@ class _CoursesPageState extends State<CoursesPage>
     });
   }
 
-  void _prevPage() {
-    setState(() {
-      _widgetIndex--;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,49 +37,18 @@ class _CoursesPageState extends State<CoursesPage>
             Column(
               children: [
                 gapH16,
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.school_outlined,
-                          color: CbsColors.primaryBlue,
-                        ),
-                        gapW4,
-                        Text(
-                          "Cours",
-                          style: normalStyle20.copyWith(
-                              color: CbsColors.primaryBlue,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {},
-                          child: const Icon(
-                            Icons.notifications_none_outlined,
-                            color: CbsColors.primaryBlue,
-                          ),
-                        ),
-                        gapW4,
-                        GestureDetector(
-                          onTap: () {},
-                          child: const Icon(
-                            Icons.bookmark_add_outlined,
-                            color: CbsColors.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                PageHeader(
+                  title: 'Cours',
+                  titleIcon: const Icon(
+                    Icons.school_outlined,
+                    color: CbsColors.primaryBlue,
+                  ),
                 ),
                 gapH32,
                 Theme(
                   data: ThemeData(),
                   child: TabBar(
+                    dividerHeight: 0,
                     controller: _tabController,
                     indicator: BoxDecoration(
                       color: CbsColors.primaryBlue,
@@ -94,40 +58,13 @@ class _CoursesPageState extends State<CoursesPage>
                     labelColor: CbsColors.white,
                     tabs: [
                       Tab(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: CbsColors.primaryBlue, width: 1.5),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Center(
-                            child: Text("Tout"),
-                          ),
-                        ),
+                        child: TabButton(label: "Tout"),
                       ),
                       Tab(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: CbsColors.primaryBlue, width: 1.5),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Center(
-                            child: Text("En cours"),
-                          ),
-                        ),
+                        child: TabButton(label: "En cours"),
                       ),
                       Tab(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: CbsColors.primaryBlue, width: 1.5),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          child: const Center(
-                            child: Text("Terminé"),
-                          ),
-                        ),
+                        child: TabButton(label: "Terminé"),
                       ),
                     ],
                   ),

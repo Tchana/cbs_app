@@ -1,6 +1,7 @@
 import 'package:center_for_biblical_studies/data/teacher_data/teacher_data.dart';
 import 'package:center_for_biblical_studies/shared/cbs_button.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
+import 'package:center_for_biblical_studies/shared/section_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -124,20 +125,7 @@ class DashboardPage extends StatelessWidget {
                 ),
               ),
               gapH32,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Enseignants",
-                    style: smallStyle18.copyWith(
-                        fontWeight: FontWeight.bold, color: CbsColors.darkBlue),
-                  ),
-                  Text(
-                    "Voir tout",
-                    style: smallStyle18.copyWith(color: CbsColors.primaryBrown),
-                  ),
-                ],
-              ),
+              SectionHeader(title: "Enseignants", moreText: "Voir tout"),
               gapH32,
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -148,20 +136,7 @@ class DashboardPage extends StatelessWidget {
                 ],
               ),
               gapH32,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "Cours",
-                    style: smallStyle18.copyWith(
-                        fontWeight: FontWeight.bold, color: CbsColors.darkBlue),
-                  ),
-                  Text(
-                    "Voir tout",
-                    style: smallStyle18.copyWith(color: CbsColors.primaryBrown),
-                  ),
-                ],
-              ),
+              SectionHeader(title: "Cours", moreText: "Voir tout"),
               CourseCard(),
               gapH32,
             ],
