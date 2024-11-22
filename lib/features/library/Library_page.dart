@@ -76,106 +76,116 @@ class _LibraryPageState extends State<LibraryPage>
                 ),
               ),
               gapH20,
-              SectionHeader(
-                title: "Bibles",
-                moreText: "",
-              ),
-              gapH8,
-              Divider(
-                color: CbsColors.primaryDark,
-              ),
-              gapH8,
-              TabBarView(
-                controller: _tabController,
-                children: [
-                  Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white70.withOpacity(0.3),
-                              spreadRadius: 5,
-                              blurRadius: 7,
-                              offset:
-                                  Offset(0, 3), // changes position of shadow
-                            ),
-                          ],
+              SizedBox(
+                height: 606,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    Column(
+                      children: [
+                        SectionHeader(
+                          title: "Bibles",
+                          moreText: "",
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("ENG"),
-                            gapH12,
-                            SizedBox(
-                              height: 175,
-                              width: double.infinity,
-                              child: ListView.builder(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  shrinkWrap: true,
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: 5,
-                                  physics: AlwaysScrollableScrollPhysics(),
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    return BookCard(
-                                      title: "English Standard version",
-                                      bookImage: "",
-                                    );
-                                  }),
-                            ),
-                          ],
+                        Divider(
+                          color: CbsColors.primaryDark,
+                          thickness: 3,
                         ),
-                      ),
-                      gapH12,
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("FR"),
-                          gapH12,
-                          SizedBox(
-                            height: 175,
-                            width: double.infinity,
-                            child: ListView.builder(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                shrinkWrap: true,
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 5,
-                                physics: AlwaysScrollableScrollPhysics(),
-                                itemBuilder: (BuildContext context, int index) {
-                                  return BookCard(
-                                    title: "Francais courant",
-                                    bookImage: "",
-                                  );
-                                }),
+                        gapH8,
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFEFF4F8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                spreadRadius: 5,
+                                blurRadius: 7,
+                                offset:
+                                    Offset(0, 3), // changes position of shadow
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  ListView.builder(
-                      itemCount: 5,
-                      itemBuilder: (BuildContext context, int index) {
-                        return CourseCard(
-                          onPressed: _nextPage,
-                        );
-                      }),
-                  ListView.builder(
-                      itemCount: 5,
-                      itemBuilder: (BuildContext context, int index) {
-                        return CourseCard(
-                          onPressed: _nextPage,
-                        );
-                      }),
-                  ListView.builder(
-                      itemCount: 5,
-                      itemBuilder: (BuildContext context, int index) {
-                        return CourseCard(
-                          onPressed: _nextPage,
-                        );
-                      }),
-                ],
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("ENG"),
+                                gapH12,
+                                SizedBox(
+                                  height: 175,
+                                  width: double.infinity,
+                                  child: ListView.builder(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      shrinkWrap: true,
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: 5,
+                                      physics: AlwaysScrollableScrollPhysics(),
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        return BookCard(
+                                          title: "English Standard version",
+                                          bookImage: "",
+                                        );
+                                      }),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        gapH12,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("FR"),
+                              gapH12,
+                              SizedBox(
+                                height: 175,
+                                width: double.infinity,
+                                child: ListView.builder(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    shrinkWrap: true,
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: 5,
+                                    physics: AlwaysScrollableScrollPhysics(),
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      return BookCard(
+                                        title: "English Standard version",
+                                        bookImage: "",
+                                      );
+                                    }),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    ListView.builder(
+                        itemCount: 5,
+                        itemBuilder: (BuildContext context, int index) {
+                          return CourseCard(
+                            onPressed: _nextPage,
+                          );
+                        }),
+                    ListView.builder(
+                        itemCount: 5,
+                        itemBuilder: (BuildContext context, int index) {
+                          return CourseCard(
+                            onPressed: _nextPage,
+                          );
+                        }),
+                    ListView.builder(
+                        itemCount: 5,
+                        itemBuilder: (BuildContext context, int index) {
+                          return CourseCard(
+                            onPressed: _nextPage,
+                          );
+                        }),
+                  ],
+                ),
               )
             ],
           ),
