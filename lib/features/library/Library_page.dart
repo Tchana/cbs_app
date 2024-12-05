@@ -91,15 +91,15 @@ class _LibraryPageState extends State<LibraryPage>
                           color: CbsColors.primaryDark,
                           thickness: 3,
                         ),
-                        gapH8,
+                        gapH16,
                         Container(
                           decoration: BoxDecoration(
                             color: Color(0xFFEFF4F8),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.5),
-                                spreadRadius: 5,
-                                blurRadius: 7,
+                                spreadRadius: 3,
+                                blurRadius: 5,
                                 offset:
                                     Offset(0, 3), // changes position of shadow
                               ),

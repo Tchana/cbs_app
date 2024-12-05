@@ -71,14 +71,13 @@ class _CoursesPageState extends State<CoursesPage>
                 ),
                 gapH10,
                 SizedBox(
-                  width: double.maxFinite,
-                  height: 606,
+                  height: MediaQuery.of(context).size.height / 1.5,
                   child: TabBarView(
                     controller: _tabController,
                     children: [
                       ListView.builder(
                           padding: const EdgeInsets.only(top: 20.0),
-                          shrinkWrap: true,
+                          shrinkWrap: false,
                           itemCount: 5,
                           itemBuilder: (BuildContext context, int index) {
                             return CourseCard(

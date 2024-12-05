@@ -19,47 +19,49 @@ class DashboardPage extends StatelessWidget {
           child: Column(
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 34,
-                    backgroundColor: CbsColors.primaryGrey,
+                  Expanded(
+                    flex: 1,
+                    child: const CircleAvatar(
+                      radius: 34,
+                      backgroundColor: CbsColors.primaryGrey,
+                    ),
                   ),
-                  gapW12,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                  Expanded(
+                    flex: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Inscrivez-vous",
                             style: mediumStyle24Medium.copyWith(
                                 color: CbsColors.darkBlue),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              gapW64,
-                              gapW12,
-                              GestureDetector(
-                                onTap: () {},
-                                child: const Icon(
-                                    Icons.notifications_none_outlined),
-                              ),
-                              GestureDetector(
-                                onTap: () {},
-                                child: const Icon(Icons.bookmark_add_outlined),
-                              ),
-                            ],
+                          const Text(
+                            "Vous avez déjà un compte ? Connectez-vous",
+                            style: verySmallStyle12,
                           ),
                         ],
                       ),
-                      const Text(
-                        "Vous avez déjà un compte ? Connectez-vous",
-                        style: verySmallStyle12,
-                      ),
-                    ],
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () {},
+                          child: const Icon(Icons.notifications_none_outlined),
+                        ),
+                        GestureDetector(
+                          onTap: () {},
+                          child: const Icon(Icons.bookmark_add_outlined),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -89,25 +91,28 @@ class DashboardPage extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(25.0),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: CbsColors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.play_circle_outline,
-                          size: 150,
-                          color: CbsColors.primaryGrey,
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: CbsColors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.play_circle_outline,
+                            size: 150,
+                            color: CbsColors.primaryGrey,
+                          ),
                         ),
                       ),
                       gapW12,
-                      SizedBox(
-                        width: 140,
+                      Expanded(
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              "Bienvenu dans CBS!",
+                              "Bienvenue dans CBS!",
                               style: smallStyle18.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: CbsColors.white),
