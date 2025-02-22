@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/shared/book_card.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
@@ -6,6 +7,7 @@ import 'package:center_for_biblical_studies/shared/tab_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class LibraryPage extends StatefulWidget {
   const LibraryPage({super.key});
@@ -16,6 +18,8 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
+  final DataController dataController = Get.find<DataController>();
+
   late final TabController _tabController =
       TabController(length: 4, vsync: this);
 
@@ -97,7 +101,7 @@ class _LibraryPageState extends State<LibraryPage>
                             color: Color(0xFFEFF4F8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withValues(alpha: 0.5),
                                 spreadRadius: 3,
                                 blurRadius: 5,
                                 offset:
@@ -163,27 +167,21 @@ class _LibraryPageState extends State<LibraryPage>
                         ),
                       ],
                     ),
-                    ListView.builder(
-                        itemCount: 5,
-                        itemBuilder: (BuildContext context, int index) {
-                          return CourseCard(
-                            onPressed: _nextPage,
-                          );
-                        }),
-                    ListView.builder(
-                        itemCount: 5,
-                        itemBuilder: (BuildContext context, int index) {
-                          return CourseCard(
-                            onPressed: _nextPage,
-                          );
-                        }),
-                    ListView.builder(
-                        itemCount: 5,
-                        itemBuilder: (BuildContext context, int index) {
-                          return CourseCard(
-                            onPressed: _nextPage,
-                          );
-                        }),
+                    ListView(
+                      children: dataController.courses.map((course) {
+                        return CourseCard(courseData: course);
+                      }).toList(),
+                    ),
+                    ListView(
+                      children: dataController.courses.map((course) {
+                        return CourseCard(courseData: course);
+                      }).toList(),
+                    ),
+                    ListView(
+                      children: dataController.courses.map((course) {
+                        return CourseCard(courseData: course);
+                      }).toList(),
+                    ),
                   ],
                 ),
               )

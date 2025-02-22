@@ -1,4 +1,4 @@
-import 'package:center_for_biblical_studies/shared/cbs_button.dart';
+import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';

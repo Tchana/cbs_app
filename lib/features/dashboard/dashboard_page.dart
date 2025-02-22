@@ -1,21 +1,39 @@
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/teacher_data/teacher_data.dart';
-import 'package:center_for_biblical_studies/shared/cbs_button.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
+import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final DataController dataController = Get.find<DataController>();
+
+  bool? loading = false;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
           child: Column(
             children: [
               Row(
@@ -28,39 +46,43 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                    flex: 3,
+                    flex: 4,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 15.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Inscrivez-vous",
-                            style: mediumStyle24Medium.copyWith(
-                                color: CbsColors.darkBlue),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Inscrivez-vous",
+                                style: mediumStyle24Medium.copyWith(
+                                    color: CbsColors.darkBlue),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {},
+                                    child: const Icon(
+                                        Icons.notifications_none_outlined),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {},
+                                    child:
+                                        const Icon(Icons.bookmark_add_outlined),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          const Text(
+                          Text(
                             "Vous avez déjà un compte ? Connectez-vous",
                             style: verySmallStyle12,
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        GestureDetector(
-                          onTap: () {},
-                          child: const Icon(Icons.notifications_none_outlined),
-                        ),
-                        GestureDetector(
-                          onTap: () {},
-                          child: const Icon(Icons.bookmark_add_outlined),
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -132,17 +154,38 @@ class DashboardPage extends StatelessWidget {
               gapH32,
               SectionHeader(title: "Enseignants", moreText: "Voir tout"),
               gapH32,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  teacherCard(),
-                  teacherCard(),
-                  teacherCard(),
-                ],
-              ),
+              Obx(() {
+                return loading!
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: dataController.teachers
+                            .map((teacher) {
+                              return teacherCard(teacher: teacher);
+                            })
+                            .take(3)
+                            .toList(),
+                      );
+              }),
               gapH32,
               SectionHeader(title: "Cours", moreText: "Voir tout"),
-              CourseCard(),
+              Obx(() {
+                return loading!
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: dataController.courses
+                            .map((course) {
+                              return CourseCard(courseData: course);
+                            })
+                            .take(3)
+                            .toList(),
+                      );
+              }),
               gapH32,
             ],
           ),

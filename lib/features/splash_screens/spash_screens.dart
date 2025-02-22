@@ -1,5 +1,5 @@
-import 'package:center_for_biblical_studies/page/main_page.dart';
-import 'package:center_for_biblical_studies/shared/cbs_button.dart';
+import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
+import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -98,20 +98,21 @@ class _SplashScreenTwoState extends State<SplashScreenTwo> {
                               decoration: BoxDecoration(
                                   color: index == indexDots
                                       ? CbsColors.primaryBrown
-                                      : CbsColors.primaryBrown.withOpacity(0.3),
+                                      : CbsColors.primaryBrown
+                                          .withValues(alpha: 0.3),
                                   borderRadius: BorderRadius.circular(8)),
                             ),
                           ),
                         ),
                         gapH12,
-                        CbsButton(
+                        CustomButton(
                           width: 317,
                           height: 58,
                           onPressed: () {
                             if (index == images.length - 1) {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                    builder: (context) => const MainPage()),
+                                    builder: (context) => const LoginPage()),
                               );
                             }
                           },

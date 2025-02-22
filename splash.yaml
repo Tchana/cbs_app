@@ -1,0 +1,17 @@
+flutter_native_splash:
+  color: "#0093ED"
+  color_dark: "#272727"
+  image: assets/images/cbs_logo.png
+  image_dark: assets/images/cbs_logo.png
+  branding: assets/logos/branding.png
+  branding_bottom_padding: 24
+
+  android_12:
+    color: "#0093ED"
+    color_dark: "#272727"
+    image: assets/images/cbs_logo.png
+    image_dark: assets/images/cbs_logo.png
+    branding: assets/logos/branding.png
+    branding_bottom_padding: 24
+
+  web: false

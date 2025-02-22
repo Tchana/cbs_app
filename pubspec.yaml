@@ -14,24 +14,26 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   flutter_dotenv: ^5.2.1
-  dio: ^5.7.0
+  dio: ^5.8.0+1
   dartx: ^1.2.0
   get_storage: ^2.1.1
   recase: ^4.1.0
   logger: ^2.5.0
   jwt_decoder: ^2.0.1
   google_fonts: ^6.2.1
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.5.2
   freezed_annotation: ^2.4.4
   json_annotation: ^4.9.0
+  flutter_svg: ^2.0.17
+  get: ^4.7.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.13
-  freezed: ^2.5.7
-  json_serializable: ^6.9.0 # Generate JSON parsers: flutter pub run build_runner build --delete-conflicting-outputs
+  build_runner: ^2.4.15
+  freezed: ^2.5.8
+  json_serializable: ^6.9.4 # Generate JSON parsers: flutter pub run build_runner build --delete-conflicting-outputs
 
 flutter:
 

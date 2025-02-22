@@ -9,7 +9,10 @@ class CourseData with _$CourseData {
 
   const factory CourseData({
     String? id,
-    String? name,
+    String? title,
+    String? teacher,
+    String? description,
+    String? level,
     List<LessonData>? lessons,
   }) = _CourseData;
 

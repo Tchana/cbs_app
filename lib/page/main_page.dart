@@ -37,7 +37,7 @@ class _MainPageState extends State<MainPage> {
         onTap: onTap,
         currentIndex: currentStep,
         selectedItemColor: CbsColors.primaryBrown,
-        unselectedItemColor: CbsColors.primaryBrown.withOpacity(0.5),
+        unselectedItemColor: CbsColors.primaryBrown.withValues(alpha: 0.5),
         showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(

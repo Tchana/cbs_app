@@ -6,8 +6,8 @@ part of 'teacher_data.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$_TeacherData _$$_TeacherDataFromJson(Map<String, dynamic> json) =>
-    _$_TeacherData(
+_$TeacherDataImpl _$$TeacherDataImplFromJson(Map<String, dynamic> json) =>
+    _$TeacherDataImpl(
       id: json['id'] as String?,
       name: json['name'] as String?,
       profileImage: json['profileImage'] == null
@@ -18,7 +18,7 @@ _$_TeacherData _$$_TeacherDataFromJson(Map<String, dynamic> json) =>
           .toList(),
     );
 
-Map<String, dynamic> _$$_TeacherDataToJson(_$_TeacherData instance) =>
+Map<String, dynamic> _$$TeacherDataImplToJson(_$TeacherDataImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
@@ -26,14 +26,14 @@ Map<String, dynamic> _$$_TeacherDataToJson(_$_TeacherData instance) =>
       'courses': instance.courses,
     };
 
-_$_ProfileImage _$$_ProfileImageFromJson(Map<String, dynamic> json) =>
-    _$_ProfileImage(
+_$ProfileImageImpl _$$ProfileImageImplFromJson(Map<String, dynamic> json) =>
+    _$ProfileImageImpl(
       id: json['id'] as String?,
       url: json['url'] as String?,
       text: json['text'] as String?,
     );
 
-Map<String, dynamic> _$$_ProfileImageToJson(_$_ProfileImage instance) =>
+Map<String, dynamic> _$$ProfileImageImplToJson(_$ProfileImageImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'url': instance.url,

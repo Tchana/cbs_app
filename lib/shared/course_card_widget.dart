@@ -1,21 +1,20 @@
-import 'package:center_for_biblical_studies/data/teacher_data/teacher_data.dart';
-import 'package:center_for_biblical_studies/shared/cbs_button.dart';
+import 'package:center_for_biblical_studies/data/courses/course_data.dart';
+import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
+import 'package:center_for_biblical_studies/utils/constants/colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 
 class CourseCard extends StatelessWidget {
-  final String? status;
-  final TeacherData? teacherData;
+  final CourseData courseData;
   final void Function()? onPressed;
-  final Widget? progress;
-  CourseCard(
-      {super.key,
-      this.status,
-      this.teacherData,
-      this.progress,
-      this.onPressed});
+
+  const CourseCard({
+    super.key,
+    required this.courseData,
+    this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +32,7 @@ class CourseCard extends StatelessWidget {
                   width: 108,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
-                    color: CbsColors.primaryBlue,
+                    color: CustomColors.primaryColor,
                   ),
                   child: const Align(
                     alignment: Alignment.topCenter,
@@ -64,22 +63,21 @@ class CourseCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Intitulé du cours",
+                  courseData.title!,
                   style: smallStyle18.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const Text(
-                  "Théophile Bilog",
+                Text(
+                  courseData.id!,
                   style: verySmallStyle15,
                 ),
                 gapH4,
-                const Text(
-                  "Description",
+                Text(
+                  courseData.description!,
                   style: verySmallStyle15,
                 ),
                 gapH4,
                 CbsButton(
-                  width: 200,
-                  height: 25,
+                  width: MediaQuery.of(context).size.width / 2,
                   bgColor: CbsColors.primaryBrown,
                   onPressed: () {},
                   child: Text(

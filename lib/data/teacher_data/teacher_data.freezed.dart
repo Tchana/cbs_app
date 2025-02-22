@@ -12,7 +12,7 @@ part of 'teacher_data.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 TeacherData _$TeacherDataFromJson(Map<String, dynamic> json) {
   return _TeacherData.fromJson(json);
@@ -25,8 +25,12 @@ mixin _$TeacherData {
   ProfileImage? get profileImage => throw _privateConstructorUsedError;
   List<CourseData>? get courses => throw _privateConstructorUsedError;
 
+  /// Serializes this TeacherData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $TeacherDataCopyWith<TeacherData> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -56,6 +60,8 @@ class _$TeacherDataCopyWithImpl<$Res, $Val extends TeacherData>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -84,6 +90,8 @@ class _$TeacherDataCopyWithImpl<$Res, $Val extends TeacherData>
     ) as $Val);
   }
 
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $ProfileImageCopyWith<$Res>? get profileImage {
@@ -98,11 +106,11 @@ class _$TeacherDataCopyWithImpl<$Res, $Val extends TeacherData>
 }
 
 /// @nodoc
-abstract class _$$_TeacherDataCopyWith<$Res>
+abstract class _$$TeacherDataImplCopyWith<$Res>
     implements $TeacherDataCopyWith<$Res> {
-  factory _$$_TeacherDataCopyWith(
-          _$_TeacherData value, $Res Function(_$_TeacherData) then) =
-      __$$_TeacherDataCopyWithImpl<$Res>;
+  factory _$$TeacherDataImplCopyWith(
+          _$TeacherDataImpl value, $Res Function(_$TeacherDataImpl) then) =
+      __$$TeacherDataImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call(
@@ -116,13 +124,15 @@ abstract class _$$_TeacherDataCopyWith<$Res>
 }
 
 /// @nodoc
-class __$$_TeacherDataCopyWithImpl<$Res>
-    extends _$TeacherDataCopyWithImpl<$Res, _$_TeacherData>
-    implements _$$_TeacherDataCopyWith<$Res> {
-  __$$_TeacherDataCopyWithImpl(
-      _$_TeacherData _value, $Res Function(_$_TeacherData) _then)
+class __$$TeacherDataImplCopyWithImpl<$Res>
+    extends _$TeacherDataCopyWithImpl<$Res, _$TeacherDataImpl>
+    implements _$$TeacherDataImplCopyWith<$Res> {
+  __$$TeacherDataImplCopyWithImpl(
+      _$TeacherDataImpl _value, $Res Function(_$TeacherDataImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -131,7 +141,7 @@ class __$$_TeacherDataCopyWithImpl<$Res>
     Object? profileImage = freezed,
     Object? courses = freezed,
   }) {
-    return _then(_$_TeacherData(
+    return _then(_$TeacherDataImpl(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -154,14 +164,14 @@ class __$$_TeacherDataCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_TeacherData extends _TeacherData {
-  const _$_TeacherData(
+class _$TeacherDataImpl extends _TeacherData {
+  const _$TeacherDataImpl(
       {this.id, this.name, this.profileImage, final List<CourseData>? courses})
       : _courses = courses,
         super._();
 
-  factory _$_TeacherData.fromJson(Map<String, dynamic> json) =>
-      _$$_TeacherDataFromJson(json);
+  factory _$TeacherDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$TeacherDataImplFromJson(json);
 
   @override
   final String? id;
@@ -185,10 +195,10 @@ class _$_TeacherData extends _TeacherData {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_TeacherData &&
+            other is _$TeacherDataImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.profileImage, profileImage) ||
@@ -196,20 +206,22 @@ class _$_TeacherData extends _TeacherData {
             const DeepCollectionEquality().equals(other._courses, _courses));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, profileImage,
       const DeepCollectionEquality().hash(_courses));
 
-  @JsonKey(ignore: true)
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_TeacherDataCopyWith<_$_TeacherData> get copyWith =>
-      __$$_TeacherDataCopyWithImpl<_$_TeacherData>(this, _$identity);
+  _$$TeacherDataImplCopyWith<_$TeacherDataImpl> get copyWith =>
+      __$$TeacherDataImplCopyWithImpl<_$TeacherDataImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_TeacherDataToJson(
+    return _$$TeacherDataImplToJson(
       this,
     );
   }
@@ -220,11 +232,11 @@ abstract class _TeacherData extends TeacherData {
       {final String? id,
       final String? name,
       final ProfileImage? profileImage,
-      final List<CourseData>? courses}) = _$_TeacherData;
+      final List<CourseData>? courses}) = _$TeacherDataImpl;
   const _TeacherData._() : super._();
 
   factory _TeacherData.fromJson(Map<String, dynamic> json) =
-      _$_TeacherData.fromJson;
+      _$TeacherDataImpl.fromJson;
 
   @override
   String? get id;
@@ -234,9 +246,12 @@ abstract class _TeacherData extends TeacherData {
   ProfileImage? get profileImage;
   @override
   List<CourseData>? get courses;
+
+  /// Create a copy of TeacherData
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_TeacherDataCopyWith<_$_TeacherData> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$TeacherDataImplCopyWith<_$TeacherDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -250,8 +265,12 @@ mixin _$ProfileImage {
   String? get url => throw _privateConstructorUsedError;
   String? get text => throw _privateConstructorUsedError;
 
+  /// Serializes this ProfileImage to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of ProfileImage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $ProfileImageCopyWith<ProfileImage> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -275,6 +294,8 @@ class _$ProfileImageCopyWithImpl<$Res, $Val extends ProfileImage>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of ProfileImage
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -300,24 +321,26 @@ class _$ProfileImageCopyWithImpl<$Res, $Val extends ProfileImage>
 }
 
 /// @nodoc
-abstract class _$$_ProfileImageCopyWith<$Res>
+abstract class _$$ProfileImageImplCopyWith<$Res>
     implements $ProfileImageCopyWith<$Res> {
-  factory _$$_ProfileImageCopyWith(
-          _$_ProfileImage value, $Res Function(_$_ProfileImage) then) =
-      __$$_ProfileImageCopyWithImpl<$Res>;
+  factory _$$ProfileImageImplCopyWith(
+          _$ProfileImageImpl value, $Res Function(_$ProfileImageImpl) then) =
+      __$$ProfileImageImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String? id, String? url, String? text});
 }
 
 /// @nodoc
-class __$$_ProfileImageCopyWithImpl<$Res>
-    extends _$ProfileImageCopyWithImpl<$Res, _$_ProfileImage>
-    implements _$$_ProfileImageCopyWith<$Res> {
-  __$$_ProfileImageCopyWithImpl(
-      _$_ProfileImage _value, $Res Function(_$_ProfileImage) _then)
+class __$$ProfileImageImplCopyWithImpl<$Res>
+    extends _$ProfileImageCopyWithImpl<$Res, _$ProfileImageImpl>
+    implements _$$ProfileImageImplCopyWith<$Res> {
+  __$$ProfileImageImplCopyWithImpl(
+      _$ProfileImageImpl _value, $Res Function(_$ProfileImageImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of ProfileImage
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -325,7 +348,7 @@ class __$$_ProfileImageCopyWithImpl<$Res>
     Object? url = freezed,
     Object? text = freezed,
   }) {
-    return _then(_$_ProfileImage(
+    return _then(_$ProfileImageImpl(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -344,11 +367,11 @@ class __$$_ProfileImageCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_ProfileImage extends _ProfileImage {
-  const _$_ProfileImage({this.id, this.url, this.text}) : super._();
+class _$ProfileImageImpl extends _ProfileImage {
+  const _$ProfileImageImpl({this.id, this.url, this.text}) : super._();
 
-  factory _$_ProfileImage.fromJson(Map<String, dynamic> json) =>
-      _$$_ProfileImageFromJson(json);
+  factory _$ProfileImageImpl.fromJson(Map<String, dynamic> json) =>
+      _$$ProfileImageImplFromJson(json);
 
   @override
   final String? id;
@@ -363,28 +386,30 @@ class _$_ProfileImage extends _ProfileImage {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_ProfileImage &&
+            other is _$ProfileImageImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.url, url) || other.url == url) &&
             (identical(other.text, text) || other.text == text));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, url, text);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of ProfileImage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_ProfileImageCopyWith<_$_ProfileImage> get copyWith =>
-      __$$_ProfileImageCopyWithImpl<_$_ProfileImage>(this, _$identity);
+  _$$ProfileImageImplCopyWith<_$ProfileImageImpl> get copyWith =>
+      __$$ProfileImageImplCopyWithImpl<_$ProfileImageImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_ProfileImageToJson(
+    return _$$ProfileImageImplToJson(
       this,
     );
   }
@@ -394,11 +419,11 @@ abstract class _ProfileImage extends ProfileImage {
   const factory _ProfileImage(
       {final String? id,
       final String? url,
-      final String? text}) = _$_ProfileImage;
+      final String? text}) = _$ProfileImageImpl;
   const _ProfileImage._() : super._();
 
   factory _ProfileImage.fromJson(Map<String, dynamic> json) =
-      _$_ProfileImage.fromJson;
+      _$ProfileImageImpl.fromJson;
 
   @override
   String? get id;
@@ -406,8 +431,11 @@ abstract class _ProfileImage extends ProfileImage {
   String? get url;
   @override
   String? get text;
+
+  /// Create a copy of ProfileImage
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_ProfileImageCopyWith<_$_ProfileImage> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$ProfileImageImplCopyWith<_$ProfileImageImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

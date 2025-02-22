@@ -12,7 +12,7 @@ part of 'course_data.dart';
 T _$identity<T>(T value) => value;
 
 final _privateConstructorUsedError = UnsupportedError(
-    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
+    'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models');
 
 CourseData _$CourseDataFromJson(Map<String, dynamic> json) {
   return _CourseData.fromJson(json);
@@ -21,11 +21,18 @@ CourseData _$CourseDataFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$CourseData {
   String? get id => throw _privateConstructorUsedError;
-  String? get name => throw _privateConstructorUsedError;
+  String? get title => throw _privateConstructorUsedError;
+  String? get teacher => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get level => throw _privateConstructorUsedError;
   List<LessonData>? get lessons => throw _privateConstructorUsedError;
 
+  /// Serializes this CourseData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of CourseData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $CourseDataCopyWith<CourseData> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -36,7 +43,13 @@ abstract class $CourseDataCopyWith<$Res> {
           CourseData value, $Res Function(CourseData) then) =
       _$CourseDataCopyWithImpl<$Res, CourseData>;
   @useResult
-  $Res call({String? id, String? name, List<LessonData>? lessons});
+  $Res call(
+      {String? id,
+      String? title,
+      String? teacher,
+      String? description,
+      String? level,
+      List<LessonData>? lessons});
 }
 
 /// @nodoc
@@ -49,11 +62,16 @@ class _$CourseDataCopyWithImpl<$Res, $Val extends CourseData>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of CourseData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = freezed,
-    Object? name = freezed,
+    Object? title = freezed,
+    Object? teacher = freezed,
+    Object? description = freezed,
+    Object? level = freezed,
     Object? lessons = freezed,
   }) {
     return _then(_value.copyWith(
@@ -61,9 +79,21 @@ class _$CourseDataCopyWithImpl<$Res, $Val extends CourseData>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String?,
-      name: freezed == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
+      title: freezed == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String?,
+      teacher: freezed == teacher
+          ? _value.teacher
+          : teacher // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      level: freezed == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
               as String?,
       lessons: freezed == lessons
           ? _value.lessons
@@ -74,39 +104,62 @@ class _$CourseDataCopyWithImpl<$Res, $Val extends CourseData>
 }
 
 /// @nodoc
-abstract class _$$_CourseDataCopyWith<$Res>
+abstract class _$$CourseDataImplCopyWith<$Res>
     implements $CourseDataCopyWith<$Res> {
-  factory _$$_CourseDataCopyWith(
-          _$_CourseData value, $Res Function(_$_CourseData) then) =
-      __$$_CourseDataCopyWithImpl<$Res>;
+  factory _$$CourseDataImplCopyWith(
+          _$CourseDataImpl value, $Res Function(_$CourseDataImpl) then) =
+      __$$CourseDataImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? id, String? name, List<LessonData>? lessons});
+  $Res call(
+      {String? id,
+      String? title,
+      String? teacher,
+      String? description,
+      String? level,
+      List<LessonData>? lessons});
 }
 
 /// @nodoc
-class __$$_CourseDataCopyWithImpl<$Res>
-    extends _$CourseDataCopyWithImpl<$Res, _$_CourseData>
-    implements _$$_CourseDataCopyWith<$Res> {
-  __$$_CourseDataCopyWithImpl(
-      _$_CourseData _value, $Res Function(_$_CourseData) _then)
+class __$$CourseDataImplCopyWithImpl<$Res>
+    extends _$CourseDataCopyWithImpl<$Res, _$CourseDataImpl>
+    implements _$$CourseDataImplCopyWith<$Res> {
+  __$$CourseDataImplCopyWithImpl(
+      _$CourseDataImpl _value, $Res Function(_$CourseDataImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of CourseData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = freezed,
-    Object? name = freezed,
+    Object? title = freezed,
+    Object? teacher = freezed,
+    Object? description = freezed,
+    Object? level = freezed,
     Object? lessons = freezed,
   }) {
-    return _then(_$_CourseData(
+    return _then(_$CourseDataImpl(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String?,
-      name: freezed == name
-          ? _value.name
-          : name // ignore: cast_nullable_to_non_nullable
+      title: freezed == title
+          ? _value.title
+          : title // ignore: cast_nullable_to_non_nullable
+              as String?,
+      teacher: freezed == teacher
+          ? _value.teacher
+          : teacher // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      level: freezed == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
               as String?,
       lessons: freezed == lessons
           ? _value._lessons
@@ -118,18 +171,30 @@ class __$$_CourseDataCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_CourseData extends _CourseData {
-  const _$_CourseData({this.id, this.name, final List<LessonData>? lessons})
+class _$CourseDataImpl extends _CourseData {
+  const _$CourseDataImpl(
+      {this.id,
+      this.title,
+      this.teacher,
+      this.description,
+      this.level,
+      final List<LessonData>? lessons})
       : _lessons = lessons,
         super._();
 
-  factory _$_CourseData.fromJson(Map<String, dynamic> json) =>
-      _$$_CourseDataFromJson(json);
+  factory _$CourseDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$CourseDataImplFromJson(json);
 
   @override
   final String? id;
   @override
-  final String? name;
+  final String? title;
+  @override
+  final String? teacher;
+  @override
+  final String? description;
+  @override
+  final String? level;
   final List<LessonData>? _lessons;
   @override
   List<LessonData>? get lessons {
@@ -142,33 +207,39 @@ class _$_CourseData extends _CourseData {
 
   @override
   String toString() {
-    return 'CourseData(id: $id, name: $name, lessons: $lessons)';
+    return 'CourseData(id: $id, title: $title, teacher: $teacher, description: $description, level: $level, lessons: $lessons)';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_CourseData &&
+            other is _$CourseDataImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.name, name) || other.name == name) &&
+            (identical(other.title, title) || other.title == title) &&
+            (identical(other.teacher, teacher) || other.teacher == teacher) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.level, level) || other.level == level) &&
             const DeepCollectionEquality().equals(other._lessons, _lessons));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, name, const DeepCollectionEquality().hash(_lessons));
+  int get hashCode => Object.hash(runtimeType, id, title, teacher, description,
+      level, const DeepCollectionEquality().hash(_lessons));
 
-  @JsonKey(ignore: true)
+  /// Create a copy of CourseData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_CourseDataCopyWith<_$_CourseData> get copyWith =>
-      __$$_CourseDataCopyWithImpl<_$_CourseData>(this, _$identity);
+  _$$CourseDataImplCopyWith<_$CourseDataImpl> get copyWith =>
+      __$$CourseDataImplCopyWithImpl<_$CourseDataImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_CourseDataToJson(
+    return _$$CourseDataImplToJson(
       this,
     );
   }
@@ -177,22 +248,34 @@ class _$_CourseData extends _CourseData {
 abstract class _CourseData extends CourseData {
   const factory _CourseData(
       {final String? id,
-      final String? name,
-      final List<LessonData>? lessons}) = _$_CourseData;
+      final String? title,
+      final String? teacher,
+      final String? description,
+      final String? level,
+      final List<LessonData>? lessons}) = _$CourseDataImpl;
   const _CourseData._() : super._();
 
   factory _CourseData.fromJson(Map<String, dynamic> json) =
-      _$_CourseData.fromJson;
+      _$CourseDataImpl.fromJson;
 
   @override
   String? get id;
   @override
-  String? get name;
+  String? get title;
+  @override
+  String? get teacher;
+  @override
+  String? get description;
+  @override
+  String? get level;
   @override
   List<LessonData>? get lessons;
+
+  /// Create a copy of CourseData
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_CourseDataCopyWith<_$_CourseData> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$CourseDataImplCopyWith<_$CourseDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 
@@ -206,8 +289,12 @@ mixin _$LessonData {
   String? get title => throw _privateConstructorUsedError;
   int? get duration => throw _privateConstructorUsedError;
 
+  /// Serializes this LessonData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of LessonData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $LessonDataCopyWith<LessonData> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -231,6 +318,8 @@ class _$LessonDataCopyWithImpl<$Res, $Val extends LessonData>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of LessonData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -256,24 +345,26 @@ class _$LessonDataCopyWithImpl<$Res, $Val extends LessonData>
 }
 
 /// @nodoc
-abstract class _$$_LessonDataCopyWith<$Res>
+abstract class _$$LessonDataImplCopyWith<$Res>
     implements $LessonDataCopyWith<$Res> {
-  factory _$$_LessonDataCopyWith(
-          _$_LessonData value, $Res Function(_$_LessonData) then) =
-      __$$_LessonDataCopyWithImpl<$Res>;
+  factory _$$LessonDataImplCopyWith(
+          _$LessonDataImpl value, $Res Function(_$LessonDataImpl) then) =
+      __$$LessonDataImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({String? id, String? title, int? duration});
 }
 
 /// @nodoc
-class __$$_LessonDataCopyWithImpl<$Res>
-    extends _$LessonDataCopyWithImpl<$Res, _$_LessonData>
-    implements _$$_LessonDataCopyWith<$Res> {
-  __$$_LessonDataCopyWithImpl(
-      _$_LessonData _value, $Res Function(_$_LessonData) _then)
+class __$$LessonDataImplCopyWithImpl<$Res>
+    extends _$LessonDataCopyWithImpl<$Res, _$LessonDataImpl>
+    implements _$$LessonDataImplCopyWith<$Res> {
+  __$$LessonDataImplCopyWithImpl(
+      _$LessonDataImpl _value, $Res Function(_$LessonDataImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of LessonData
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -281,7 +372,7 @@ class __$$_LessonDataCopyWithImpl<$Res>
     Object? title = freezed,
     Object? duration = freezed,
   }) {
-    return _then(_$_LessonData(
+    return _then(_$LessonDataImpl(
       id: freezed == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
@@ -300,11 +391,11 @@ class __$$_LessonDataCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$_LessonData extends _LessonData {
-  const _$_LessonData({this.id, this.title, this.duration}) : super._();
+class _$LessonDataImpl extends _LessonData {
+  const _$LessonDataImpl({this.id, this.title, this.duration}) : super._();
 
-  factory _$_LessonData.fromJson(Map<String, dynamic> json) =>
-      _$$_LessonDataFromJson(json);
+  factory _$LessonDataImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LessonDataImplFromJson(json);
 
   @override
   final String? id;
@@ -319,29 +410,31 @@ class _$_LessonData extends _LessonData {
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$_LessonData &&
+            other is _$LessonDataImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.duration, duration) ||
                 other.duration == duration));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, title, duration);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of LessonData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$_LessonDataCopyWith<_$_LessonData> get copyWith =>
-      __$$_LessonDataCopyWithImpl<_$_LessonData>(this, _$identity);
+  _$$LessonDataImplCopyWith<_$LessonDataImpl> get copyWith =>
+      __$$LessonDataImplCopyWithImpl<_$LessonDataImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$_LessonDataToJson(
+    return _$$LessonDataImplToJson(
       this,
     );
   }
@@ -351,11 +444,11 @@ abstract class _LessonData extends LessonData {
   const factory _LessonData(
       {final String? id,
       final String? title,
-      final int? duration}) = _$_LessonData;
+      final int? duration}) = _$LessonDataImpl;
   const _LessonData._() : super._();
 
   factory _LessonData.fromJson(Map<String, dynamic> json) =
-      _$_LessonData.fromJson;
+      _$LessonDataImpl.fromJson;
 
   @override
   String? get id;
@@ -363,8 +456,11 @@ abstract class _LessonData extends LessonData {
   String? get title;
   @override
   int? get duration;
+
+  /// Create a copy of LessonData
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
-  _$$_LessonDataCopyWith<_$_LessonData> get copyWith =>
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$LessonDataImplCopyWith<_$LessonDataImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
