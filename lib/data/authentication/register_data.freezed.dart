@@ -23,8 +23,8 @@ mixin _$RegisterData {
   String? get id => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
   String? get password => throw _privateConstructorUsedError;
-  String? get firstName => throw _privateConstructorUsedError;
-  String? get lastName => throw _privateConstructorUsedError;
+  String? get firstname => throw _privateConstructorUsedError;
+  String? get lastname => throw _privateConstructorUsedError;
   String? get p_image => throw _privateConstructorUsedError;
   String? get role => throw _privateConstructorUsedError;
 
@@ -48,8 +48,8 @@ abstract class $RegisterDataCopyWith<$Res> {
       {String? id,
       String? email,
       String? password,
-      String? firstName,
-      String? lastName,
+      String? firstname,
+      String? lastname,
       String? p_image,
       String? role});
 }
@@ -72,8 +72,8 @@ class _$RegisterDataCopyWithImpl<$Res, $Val extends RegisterData>
     Object? id = freezed,
     Object? email = freezed,
     Object? password = freezed,
-    Object? firstName = freezed,
-    Object? lastName = freezed,
+    Object? firstname = freezed,
+    Object? lastname = freezed,
     Object? p_image = freezed,
     Object? role = freezed,
   }) {
@@ -90,13 +90,13 @@ class _$RegisterDataCopyWithImpl<$Res, $Val extends RegisterData>
           ? _value.password
           : password // ignore: cast_nullable_to_non_nullable
               as String?,
-      firstName: freezed == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
+      firstname: freezed == firstname
+          ? _value.firstname
+          : firstname // ignore: cast_nullable_to_non_nullable
               as String?,
-      lastName: freezed == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
+      lastname: freezed == lastname
+          ? _value.lastname
+          : lastname // ignore: cast_nullable_to_non_nullable
               as String?,
       p_image: freezed == p_image
           ? _value.p_image
@@ -122,8 +122,8 @@ abstract class _$$RegisterDataImplCopyWith<$Res>
       {String? id,
       String? email,
       String? password,
-      String? firstName,
-      String? lastName,
+      String? firstname,
+      String? lastname,
       String? p_image,
       String? role});
 }
@@ -144,8 +144,8 @@ class __$$RegisterDataImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? email = freezed,
     Object? password = freezed,
-    Object? firstName = freezed,
-    Object? lastName = freezed,
+    Object? firstname = freezed,
+    Object? lastname = freezed,
     Object? p_image = freezed,
     Object? role = freezed,
   }) {
@@ -162,13 +162,13 @@ class __$$RegisterDataImplCopyWithImpl<$Res>
           ? _value.password
           : password // ignore: cast_nullable_to_non_nullable
               as String?,
-      firstName: freezed == firstName
-          ? _value.firstName
-          : firstName // ignore: cast_nullable_to_non_nullable
+      firstname: freezed == firstname
+          ? _value.firstname
+          : firstname // ignore: cast_nullable_to_non_nullable
               as String?,
-      lastName: freezed == lastName
-          ? _value.lastName
-          : lastName // ignore: cast_nullable_to_non_nullable
+      lastname: freezed == lastname
+          ? _value.lastname
+          : lastname // ignore: cast_nullable_to_non_nullable
               as String?,
       p_image: freezed == p_image
           ? _value.p_image
@@ -189,8 +189,8 @@ class _$RegisterDataImpl extends _RegisterData {
       {this.id,
       this.email,
       this.password,
-      this.firstName,
-      this.lastName,
+      this.firstname,
+      this.lastname,
       this.p_image,
       this.role})
       : super._();
@@ -205,9 +205,9 @@ class _$RegisterDataImpl extends _RegisterData {
   @override
   final String? password;
   @override
-  final String? firstName;
+  final String? firstname;
   @override
-  final String? lastName;
+  final String? lastname;
   @override
   final String? p_image;
   @override
@@ -215,7 +215,7 @@ class _$RegisterDataImpl extends _RegisterData {
 
   @override
   String toString() {
-    return 'RegisterData(id: $id, email: $email, password: $password, firstName: $firstName, lastName: $lastName, p_image: $p_image, role: $role)';
+    return 'RegisterData(id: $id, email: $email, password: $password, firstname: $firstname, lastname: $lastname, p_image: $p_image, role: $role)';
   }
 
   @override
@@ -227,10 +227,10 @@ class _$RegisterDataImpl extends _RegisterData {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.password, password) ||
                 other.password == password) &&
-            (identical(other.firstName, firstName) ||
-                other.firstName == firstName) &&
-            (identical(other.lastName, lastName) ||
-                other.lastName == lastName) &&
+            (identical(other.firstname, firstname) ||
+                other.firstname == firstname) &&
+            (identical(other.lastname, lastname) ||
+                other.lastname == lastname) &&
             (identical(other.p_image, p_image) || other.p_image == p_image) &&
             (identical(other.role, role) || other.role == role));
   }
@@ -238,7 +238,7 @@ class _$RegisterDataImpl extends _RegisterData {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
-      runtimeType, id, email, password, firstName, lastName, p_image, role);
+      runtimeType, id, email, password, firstname, lastname, p_image, role);
 
   /// Create a copy of RegisterData
   /// with the given fields replaced by the non-null parameter values.
@@ -261,8 +261,8 @@ abstract class _RegisterData extends RegisterData {
       {final String? id,
       final String? email,
       final String? password,
-      final String? firstName,
-      final String? lastName,
+      final String? firstname,
+      final String? lastname,
       final String? p_image,
       final String? role}) = _$RegisterDataImpl;
   const _RegisterData._() : super._();
@@ -277,9 +277,9 @@ abstract class _RegisterData extends RegisterData {
   @override
   String? get password;
   @override
-  String? get firstName;
+  String? get firstname;
   @override
-  String? get lastName;
+  String? get lastname;
   @override
   String? get p_image;
   @override

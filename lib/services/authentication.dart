@@ -1,7 +1,7 @@
 import 'package:center_for_biblical_studies/data/authentication/login_data.dart';
+import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
-import 'package:center_for_biblical_studies/data/teacher_data/teacher_data.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,7 +36,7 @@ class ApiService {
     }
   }
 
-  Future<List<TeacherData>> fetchTeachers() async {
+  Future<List<RegisterData>> fetchTeachers() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString("token");
@@ -46,17 +46,17 @@ class ApiService {
       }
 
       Response response = await _dio.get(
-        "/teachers",
+        "/user/teachers",
         options: Options(
           headers: {
-            "Authorization": "Bearer $token",
+            "Authorization": "Token $token",
           },
         ),
       );
 
       if (response.statusCode == 200) {
         List<dynamic> data = response.data;
-        return data.map((json) => TeacherData.fromJson(json)).toList();
+        return data.map((json) => RegisterData.fromJson(json)).toList();
       } else {
         throw Exception("Failed to load teachers");
       }
@@ -96,10 +96,10 @@ class ApiService {
       }
 
       Response response = await _dio.get(
-        "/courses",
+        "/course",
         options: Options(
           headers: {
-            "Authorization": "Bearer $token",
+            "Authorization": "Token $token",
           },
         ),
       );

@@ -11,8 +11,8 @@ class RegisterData with _$RegisterData {
     String? id,
     String? email,
     String? password,
-    String? firstName,
-    String? lastName,
+    String? firstname,
+    String? lastname,
     String? p_image,
     String? role,
   }) = _RegisterData;

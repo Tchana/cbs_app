@@ -1,5 +1,5 @@
+import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
-import 'package:center_for_biblical_studies/data/teacher_data/teacher_data.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
@@ -194,7 +194,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget teacherCard({TeacherData? teacher}) {
+  Widget teacherCard({RegisterData? teacher}) {
     return SizedBox(
       child: Column(
         children: [
@@ -204,20 +204,14 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           gapH10,
           Text(
-            "Theopile B.",
+            "${teacher!.firstname ?? " "} ${teacher.lastname ?? " "} ",
             style: verySmallStyle14.copyWith(
                 fontWeight: FontWeight.bold, color: CbsColors.primaryBlue),
           ),
           gapH8,
-          const Text(
-            "Théologie appliquée",
-            style: verySmallStyle8,
-          ),
-          gapH8,
           Text(
-            "22 Cours",
-            style: verySmallStyle14.copyWith(
-                fontWeight: FontWeight.w300, color: CbsColors.primaryBlue),
+            teacher.email ?? "",
+            style: verySmallStyle8,
           ),
           gapH8,
           CbsButton(
