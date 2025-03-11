@@ -6,6 +6,7 @@ part 'library_data.g.dart';
 enum BookType {
   bible,
   commentary,
+  dictionnaire,
   concordance,
   other,
 }
@@ -18,7 +19,11 @@ class LibraryData with _$LibraryData {
     String? id,
     String? title,
     String? author,
-    BookType? type,
+    String? book,
+    BookType? category,
+    String? bookCover,
+    String? description,
+    String? language,
   }) = _LibraryData;
 
   factory LibraryData.fromJson(Map<String, dynamic> json) =>

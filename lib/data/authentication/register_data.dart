@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'register_data.freezed.dart';
@@ -11,10 +12,11 @@ class RegisterData with _$RegisterData {
     String? id,
     String? email,
     String? password,
-    String? firstname,
-    String? lastname,
-    String? p_image,
+    String? firstName,
+    String? lastName,
+    String? pImage,
     String? role,
+    List<CourseData>? course,
   }) = _RegisterData;
 
   factory RegisterData.fromJson(Map<String, dynamic> json) =>

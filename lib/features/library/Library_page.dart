@@ -1,6 +1,8 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
+import 'package:center_for_biblical_studies/data/library/library_data.dart';
+import 'package:center_for_biblical_studies/services/authentication.dart';
 import 'package:center_for_biblical_studies/shared/book_card.dart';
-import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
+import 'package:center_for_biblical_studies/shared/book_item.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
 import 'package:center_for_biblical_studies/shared/tab_button.dart';
@@ -18,17 +20,29 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
+  final ApiService apiService = ApiService();
   final DataController dataController = Get.find<DataController>();
 
   late final TabController _tabController =
       TabController(length: 4, vsync: this);
 
-  int _widgetIndex = 0;
+  void fetchData() async {
+    final dataController = Get.find<DataController>();
 
-  void _nextPage() {
-    setState(() {
-      _widgetIndex++;
-    });
+    try {
+      final books = await apiService.fetchBooks();
+      dataController.setBooks(books);
+    } catch (e) {
+      // Handle errors if needed
+    }
+  }
+
+  @override
+  initState() {
+    if (dataController.books.isEmpty) {
+      fetchData();
+    }
+    super.initState();
   }
 
   @override
@@ -123,13 +137,12 @@ class _LibraryPageState extends State<LibraryPage>
                                       padding: const EdgeInsets.only(top: 8.0),
                                       shrinkWrap: true,
                                       scrollDirection: Axis.horizontal,
-                                      itemCount: 5,
+                                      itemCount: dataController.books.length,
                                       physics: AlwaysScrollableScrollPhysics(),
                                       itemBuilder:
                                           (BuildContext context, int index) {
                                         return BookCard(
-                                          title: "English Standard version",
-                                          bookImage: "",
+                                          book: dataController.books[index],
                                         );
                                       }),
                                 ),
@@ -152,13 +165,12 @@ class _LibraryPageState extends State<LibraryPage>
                                     padding: const EdgeInsets.only(top: 8.0),
                                     shrinkWrap: true,
                                     scrollDirection: Axis.horizontal,
-                                    itemCount: 5,
+                                    itemCount: dataController.books.length,
                                     physics: AlwaysScrollableScrollPhysics(),
                                     itemBuilder:
                                         (BuildContext context, int index) {
                                       return BookCard(
-                                        title: "English Standard version",
-                                        bookImage: "",
+                                        book: dataController.books[index],
                                       );
                                     }),
                               ),
@@ -168,19 +180,65 @@ class _LibraryPageState extends State<LibraryPage>
                       ],
                     ),
                     ListView(
-                      children: dataController.courses.map((course) {
-                        return CourseCard(courseData: course);
-                      }).toList(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 20,
+                      ),
+                      children: dataController.books
+                              .where((book) => book.category == BookType.bible)
+                              .map((book) {
+                                return BookItem(book: book);
+                              })
+                              .toList()
+                              .isEmpty
+                          ? [Center(child: Text('No items found'))]
+                          : dataController.books
+                              .where((book) => book.category == BookType.bible)
+                              .map((book) {
+                              return BookItem(book: book);
+                            }).toList(),
                     ),
                     ListView(
-                      children: dataController.courses.map((course) {
-                        return CourseCard(courseData: course);
-                      }).toList(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 20,
+                      ),
+                      children: dataController.books
+                              .where((book) =>
+                                  book.category == BookType.commentary)
+                              .map((book) {
+                                return BookItem(book: book);
+                              })
+                              .toList()
+                              .isEmpty
+                          ? [Center(child: Text('No items found'))]
+                          : dataController.books
+                              .where((book) =>
+                                  book.category == BookType.commentary)
+                              .map((book) {
+                              return BookItem(book: book);
+                            }).toList(),
                     ),
                     ListView(
-                      children: dataController.courses.map((course) {
-                        return CourseCard(courseData: course);
-                      }).toList(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 20,
+                      ),
+                      children: dataController.books
+                              .where((book) =>
+                                  book.category == BookType.dictionnaire)
+                              .map((book) {
+                                return BookItem(book: book);
+                              })
+                              .toList()
+                              .isEmpty
+                          ? [Center(child: Text('No items found'))]
+                          : dataController.books
+                              .where((book) =>
+                                  book.category == BookType.dictionnaire)
+                              .map((book) {
+                              return BookItem(book: book);
+                            }).toList(),
                     ),
                   ],
                 ),

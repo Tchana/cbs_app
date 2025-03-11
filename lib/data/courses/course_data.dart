@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'course_data.freezed.dart';
@@ -10,7 +11,7 @@ class CourseData with _$CourseData {
   const factory CourseData({
     String? id,
     String? title,
-    String? teacher,
+    RegisterData? teacher,
     String? description,
     String? level,
     List<LessonData>? lessons,
@@ -26,8 +27,10 @@ class LessonData with _$LessonData {
 
   const factory LessonData({
     String? id,
+    String? course,
     String? title,
-    int? duration,
+    String? description,
+    String? file,
   }) = _LessonData;
 
   factory LessonData.fromJson(Map<String, dynamic> json) =>

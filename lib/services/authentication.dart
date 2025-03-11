@@ -125,15 +125,15 @@ class ApiService {
       }
 
       Response response = await _dio.get(
-        "/books",
+        "/book/get",
         options: Options(
           headers: {
-            "Authorization": "Bearer $token",
+            "Authorization": "Token $token",
           },
         ),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         List<dynamic> data = response.data;
         return data.map((json) => LibraryData.fromJson(json)).toList();
       } else {

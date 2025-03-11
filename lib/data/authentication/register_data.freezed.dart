@@ -23,10 +23,11 @@ mixin _$RegisterData {
   String? get id => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
   String? get password => throw _privateConstructorUsedError;
-  String? get firstname => throw _privateConstructorUsedError;
-  String? get lastname => throw _privateConstructorUsedError;
-  String? get p_image => throw _privateConstructorUsedError;
+  String? get firstName => throw _privateConstructorUsedError;
+  String? get lastName => throw _privateConstructorUsedError;
+  String? get pImage => throw _privateConstructorUsedError;
   String? get role => throw _privateConstructorUsedError;
+  List<CourseData>? get course => throw _privateConstructorUsedError;
 
   /// Serializes this RegisterData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,10 +49,11 @@ abstract class $RegisterDataCopyWith<$Res> {
       {String? id,
       String? email,
       String? password,
-      String? firstname,
-      String? lastname,
-      String? p_image,
-      String? role});
+      String? firstName,
+      String? lastName,
+      String? pImage,
+      String? role,
+      List<CourseData>? course});
 }
 
 /// @nodoc
@@ -72,10 +74,11 @@ class _$RegisterDataCopyWithImpl<$Res, $Val extends RegisterData>
     Object? id = freezed,
     Object? email = freezed,
     Object? password = freezed,
-    Object? firstname = freezed,
-    Object? lastname = freezed,
-    Object? p_image = freezed,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
+    Object? pImage = freezed,
     Object? role = freezed,
+    Object? course = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -90,22 +93,26 @@ class _$RegisterDataCopyWithImpl<$Res, $Val extends RegisterData>
           ? _value.password
           : password // ignore: cast_nullable_to_non_nullable
               as String?,
-      firstname: freezed == firstname
-          ? _value.firstname
-          : firstname // ignore: cast_nullable_to_non_nullable
+      firstName: freezed == firstName
+          ? _value.firstName
+          : firstName // ignore: cast_nullable_to_non_nullable
               as String?,
-      lastname: freezed == lastname
-          ? _value.lastname
-          : lastname // ignore: cast_nullable_to_non_nullable
+      lastName: freezed == lastName
+          ? _value.lastName
+          : lastName // ignore: cast_nullable_to_non_nullable
               as String?,
-      p_image: freezed == p_image
-          ? _value.p_image
-          : p_image // ignore: cast_nullable_to_non_nullable
+      pImage: freezed == pImage
+          ? _value.pImage
+          : pImage // ignore: cast_nullable_to_non_nullable
               as String?,
       role: freezed == role
           ? _value.role
           : role // ignore: cast_nullable_to_non_nullable
               as String?,
+      course: freezed == course
+          ? _value.course
+          : course // ignore: cast_nullable_to_non_nullable
+              as List<CourseData>?,
     ) as $Val);
   }
 }
@@ -122,10 +129,11 @@ abstract class _$$RegisterDataImplCopyWith<$Res>
       {String? id,
       String? email,
       String? password,
-      String? firstname,
-      String? lastname,
-      String? p_image,
-      String? role});
+      String? firstName,
+      String? lastName,
+      String? pImage,
+      String? role,
+      List<CourseData>? course});
 }
 
 /// @nodoc
@@ -144,10 +152,11 @@ class __$$RegisterDataImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? email = freezed,
     Object? password = freezed,
-    Object? firstname = freezed,
-    Object? lastname = freezed,
-    Object? p_image = freezed,
+    Object? firstName = freezed,
+    Object? lastName = freezed,
+    Object? pImage = freezed,
     Object? role = freezed,
+    Object? course = freezed,
   }) {
     return _then(_$RegisterDataImpl(
       id: freezed == id
@@ -162,22 +171,26 @@ class __$$RegisterDataImplCopyWithImpl<$Res>
           ? _value.password
           : password // ignore: cast_nullable_to_non_nullable
               as String?,
-      firstname: freezed == firstname
-          ? _value.firstname
-          : firstname // ignore: cast_nullable_to_non_nullable
+      firstName: freezed == firstName
+          ? _value.firstName
+          : firstName // ignore: cast_nullable_to_non_nullable
               as String?,
-      lastname: freezed == lastname
-          ? _value.lastname
-          : lastname // ignore: cast_nullable_to_non_nullable
+      lastName: freezed == lastName
+          ? _value.lastName
+          : lastName // ignore: cast_nullable_to_non_nullable
               as String?,
-      p_image: freezed == p_image
-          ? _value.p_image
-          : p_image // ignore: cast_nullable_to_non_nullable
+      pImage: freezed == pImage
+          ? _value.pImage
+          : pImage // ignore: cast_nullable_to_non_nullable
               as String?,
       role: freezed == role
           ? _value.role
           : role // ignore: cast_nullable_to_non_nullable
               as String?,
+      course: freezed == course
+          ? _value._course
+          : course // ignore: cast_nullable_to_non_nullable
+              as List<CourseData>?,
     ));
   }
 }
@@ -189,11 +202,13 @@ class _$RegisterDataImpl extends _RegisterData {
       {this.id,
       this.email,
       this.password,
-      this.firstname,
-      this.lastname,
-      this.p_image,
-      this.role})
-      : super._();
+      this.firstName,
+      this.lastName,
+      this.pImage,
+      this.role,
+      final List<CourseData>? course})
+      : _course = course,
+        super._();
 
   factory _$RegisterDataImpl.fromJson(Map<String, dynamic> json) =>
       _$$RegisterDataImplFromJson(json);
@@ -205,17 +220,26 @@ class _$RegisterDataImpl extends _RegisterData {
   @override
   final String? password;
   @override
-  final String? firstname;
+  final String? firstName;
   @override
-  final String? lastname;
+  final String? lastName;
   @override
-  final String? p_image;
+  final String? pImage;
   @override
   final String? role;
+  final List<CourseData>? _course;
+  @override
+  List<CourseData>? get course {
+    final value = _course;
+    if (value == null) return null;
+    if (_course is EqualUnmodifiableListView) return _course;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
 
   @override
   String toString() {
-    return 'RegisterData(id: $id, email: $email, password: $password, firstname: $firstname, lastname: $lastname, p_image: $p_image, role: $role)';
+    return 'RegisterData(id: $id, email: $email, password: $password, firstName: $firstName, lastName: $lastName, pImage: $pImage, role: $role, course: $course)';
   }
 
   @override
@@ -227,18 +251,19 @@ class _$RegisterDataImpl extends _RegisterData {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.password, password) ||
                 other.password == password) &&
-            (identical(other.firstname, firstname) ||
-                other.firstname == firstname) &&
-            (identical(other.lastname, lastname) ||
-                other.lastname == lastname) &&
-            (identical(other.p_image, p_image) || other.p_image == p_image) &&
-            (identical(other.role, role) || other.role == role));
+            (identical(other.firstName, firstName) ||
+                other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName) &&
+            (identical(other.pImage, pImage) || other.pImage == pImage) &&
+            (identical(other.role, role) || other.role == role) &&
+            const DeepCollectionEquality().equals(other._course, _course));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, email, password, firstname, lastname, p_image, role);
+  int get hashCode => Object.hash(runtimeType, id, email, password, firstName,
+      lastName, pImage, role, const DeepCollectionEquality().hash(_course));
 
   /// Create a copy of RegisterData
   /// with the given fields replaced by the non-null parameter values.
@@ -261,10 +286,11 @@ abstract class _RegisterData extends RegisterData {
       {final String? id,
       final String? email,
       final String? password,
-      final String? firstname,
-      final String? lastname,
-      final String? p_image,
-      final String? role}) = _$RegisterDataImpl;
+      final String? firstName,
+      final String? lastName,
+      final String? pImage,
+      final String? role,
+      final List<CourseData>? course}) = _$RegisterDataImpl;
   const _RegisterData._() : super._();
 
   factory _RegisterData.fromJson(Map<String, dynamic> json) =
@@ -277,13 +303,15 @@ abstract class _RegisterData extends RegisterData {
   @override
   String? get password;
   @override
-  String? get firstname;
+  String? get firstName;
   @override
-  String? get lastname;
+  String? get lastName;
   @override
-  String? get p_image;
+  String? get pImage;
   @override
   String? get role;
+  @override
+  List<CourseData>? get course;
 
   /// Create a copy of RegisterData
   /// with the given fields replaced by the non-null parameter values.

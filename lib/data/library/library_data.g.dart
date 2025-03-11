@@ -11,7 +11,11 @@ _$LibraryDataImpl _$$LibraryDataImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String?,
       title: json['title'] as String?,
       author: json['author'] as String?,
-      type: $enumDecodeNullable(_$BookTypeEnumMap, json['type']),
+      book: json['book'] as String?,
+      category: $enumDecodeNullable(_$BookTypeEnumMap, json['category']),
+      bookCover: json['bookCover'] as String?,
+      description: json['description'] as String?,
+      language: json['language'] as String?,
     );
 
 Map<String, dynamic> _$$LibraryDataImplToJson(_$LibraryDataImpl instance) =>
@@ -19,7 +23,11 @@ Map<String, dynamic> _$$LibraryDataImplToJson(_$LibraryDataImpl instance) =>
       'id': instance.id,
       'title': instance.title,
       'author': instance.author,
-      'type': _$BookTypeEnumMap[instance.type],
+      'book': instance.book,
+      'category': _$BookTypeEnumMap[instance.category],
+      'bookCover': instance.bookCover,
+      'description': instance.description,
+      'language': instance.language,
     };
 
 const _$BookTypeEnumMap = {

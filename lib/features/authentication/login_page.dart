@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
       if (response["error"] == true) {
         errorMessage = response["message"];
       } else {
-        fetchCoursesAndTeachers();
+        fetchData();
         Get.to(() => MainPage());
       }
     });
@@ -81,18 +81,28 @@ class _LoginPageState extends State<LoginPage> {
     passwordController.clear();
   }
 
-  void fetchCoursesAndTeachers() async {
+  void fetchData() async {
     final dataController = Get.find<DataController>();
 
     try {
       final courses = await apiService.fetchCourses();
+      print("List of courses: $courses");
       dataController.setCourses(courses);
     } catch (e) {
       // Handle errors if needed
     }
 
     try {
+      final books = await apiService.fetchBooks();
+      print("List of books: $books");
+      dataController.setBooks(books);
+    } catch (e) {
+      // Handle errors if needed
+    }
+
+    try {
       final teachers = await apiService.fetchTeachers();
+      print("List of teachers: $teachers");
       dataController.setTeachers(teachers);
     } catch (e) {
       // Handle errors if needed

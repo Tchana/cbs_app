@@ -1,11 +1,14 @@
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
+import 'package:center_for_biblical_studies/services/authentication.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
+import 'package:center_for_biblical_studies/utils/constants/text_styles.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
+import 'package:center_for_biblical_studies/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -18,12 +21,46 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DataController dataController = Get.find<DataController>();
+  final ApiService apiService = ApiService();
+
+  void fetchData() async {
+    final dataController = Get.find<DataController>();
+
+    try {
+      final courses = await apiService.fetchCourses();
+      print("List of courses: $courses");
+      dataController.setCourses(courses);
+    } catch (e) {
+      // Handle errors if needed
+    }
+
+    try {
+      final books = await apiService.fetchBooks();
+      print("List of books: $books");
+      dataController.setBooks(books);
+    } catch (e) {
+      // Handle errors if needed
+    }
+
+    try {
+      final teachers = await apiService.fetchTeachers();
+      print("List of teachers: $teachers");
+      dataController.setTeachers(teachers);
+    } catch (e) {
+      // Handle errors if needed
+    }
+  }
 
   bool? loading = false;
 
   @override
   void initState() {
-    // TODO: implement initState
+    if (dataController.courses.isEmpty ||
+        dataController.books.isEmpty ||
+        dataController.teachers.isEmpty) {
+      fetchData();
+    }
+
     super.initState();
   }
 
@@ -176,7 +213,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     ? const Center(
                         child: CircularProgressIndicator(),
                       )
-                    : Row(
+                    : Column(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: dataController.courses
                             .map((course) {
@@ -196,29 +233,35 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget teacherCard({RegisterData? teacher}) {
     return SizedBox(
+      width: 120,
       child: Column(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 40,
             backgroundColor: CbsColors.primaryGrey,
-          ),
-          gapH10,
-          Text(
-            "${teacher!.firstname ?? " "} ${teacher.lastname ?? " "} ",
-            style: verySmallStyle14.copyWith(
-                fontWeight: FontWeight.bold, color: CbsColors.primaryBlue),
+            backgroundImage: NetworkImage(teacher!.pImage ?? ""),
           ),
           gapH8,
           Text(
+            "${teacher.firstName ?? " "} ${teacher.lastName ?? " "} ",
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: mediumBodyStyle.copyWith(
+                fontWeight: FontWeight.bold, color: CbsColors.primaryBlue),
+          ),
+          Text(
             teacher.email ?? "",
-            style: verySmallStyle8,
+            maxLines: 1,
+            style: smallBodyStyle,
           ),
           gapH8,
           CbsButton(
             width: 100,
             height: 30,
             bgColor: CbsColors.primaryBlue,
-            onPressed: () {},
+            onPressed: () {
+              checkWhatsAppAndCall("+237656388275");
+            },
             child: Text(
               "Contacter",
               style: verySmallStyle10.copyWith(

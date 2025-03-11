@@ -11,10 +11,13 @@ _$RegisterDataImpl _$$RegisterDataImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String?,
       email: json['email'] as String?,
       password: json['password'] as String?,
-      firstname: json['firstname'] as String?,
-      lastname: json['lastname'] as String?,
-      p_image: json['p_image'] as String?,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      pImage: json['pImage'] as String?,
       role: json['role'] as String?,
+      course: (json['course'] as List<dynamic>?)
+          ?.map((e) => CourseData.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$$RegisterDataImplToJson(_$RegisterDataImpl instance) =>
@@ -22,8 +25,9 @@ Map<String, dynamic> _$$RegisterDataImplToJson(_$RegisterDataImpl instance) =>
       'id': instance.id,
       'email': instance.email,
       'password': instance.password,
-      'firstname': instance.firstname,
-      'lastname': instance.lastname,
-      'p_image': instance.p_image,
+      'firstName': instance.firstName,
+      'lastName': instance.lastName,
+      'pImage': instance.pImage,
       'role': instance.role,
+      'course': instance.course,
     };

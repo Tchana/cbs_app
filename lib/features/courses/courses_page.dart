@@ -1,5 +1,7 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
+import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
+import 'package:center_for_biblical_studies/services/authentication.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/shared/tab_button.dart';
@@ -19,10 +21,13 @@ class _CoursesPageState extends State<CoursesPage>
     with TickerProviderStateMixin {
   final DataController dataController = Get.find<DataController>();
 
+  final ApiService apiService = ApiService();
   late final TabController _tabController =
       TabController(length: 3, vsync: this);
 
   int _widgetIndex = 0;
+
+  CourseData? selectedCourse;
 
   void _nextPage() {
     setState(() {
@@ -30,8 +35,29 @@ class _CoursesPageState extends State<CoursesPage>
     });
   }
 
+  void fetchData() async {
+    final dataController = Get.find<DataController>();
+
+    try {
+      final courses = await apiService.fetchCourses();
+      print("List of courses: $courses");
+      dataController.setCourses(courses);
+    } catch (e) {
+      // Handle errors if needed
+    }
+  }
+
+  @override
+  initState() {
+    if (dataController.courses.isEmpty) {
+      fetchData();
+    }
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
+    print(dataController.courses);
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
@@ -81,7 +107,15 @@ class _CoursesPageState extends State<CoursesPage>
                     children: [
                       ListView(
                         children: dataController.courses.map((course) {
-                          return CourseCard(courseData: course);
+                          return CourseCard(
+                            courseData: course,
+                            onPressed: () {
+                              setState(() {
+                                selectedCourse = course;
+                              });
+                              _nextPage();
+                            },
+                          );
                         }).toList(),
                       ),
                       ListView(
@@ -99,7 +133,9 @@ class _CoursesPageState extends State<CoursesPage>
                 )
               ],
             ),
-            LessonPage(),
+            LessonPage(
+              courseData: selectedCourse,
+            ),
           ],
         ),
       ),

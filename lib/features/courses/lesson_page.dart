@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -5,7 +6,8 @@ import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 
 class LessonPage extends StatelessWidget {
-  const LessonPage({super.key});
+  final CourseData? courseData;
+  const LessonPage({super.key, this.courseData});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,7 @@ class LessonPage extends StatelessWidget {
               ),
               gapH10,
               Text(
-                "'With fair-tressed Demeter, the sacred goddess, my song begins, With herself and her slim-ankled daughter, whom Aidoneus once Abducted...' Most people are familiar, at least by repute, with the two great epics of Homer, the Iliad and the Odyssey, but few are aware that other poems survive that were attributed to Homer in ancient times. The Homeric Hymns are now known to be the work of various poets working in the same tradition, probably during the seventh and sixth centuries BC. They honour the Greek gods, and recount some of the most attractive of the Greek myths. Four of them (Hymns 2-5) stand out by reason of their length and quality. The Hymn to Demeter tells what happened when Hades, lord of the dead, abducted Persephone, Demeter's daughter.",
+                courseData!.description ?? "",
                 style: verySmallStyle12.copyWith(color: CbsColors.primaryDark),
                 maxLines: 10,
                 overflow: TextOverflow.ellipsis,
@@ -40,7 +42,7 @@ class LessonPage extends StatelessWidget {
                             fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "Theopile B.",
+                        "${courseData!.teacher!.firstName ?? " "} ${courseData!.teacher!.lastName ?? " "}",
                         style: verySmallStyle12.copyWith(
                             color: CbsColors.primaryDark),
                       ),
@@ -50,7 +52,7 @@ class LessonPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "22 Leçons",
+                        "${courseData!.lessons!.length.toString()} lessons",
                         style: verySmallStyle15.copyWith(
                             color: CbsColors.primaryBlue,
                             fontWeight: FontWeight.bold),
@@ -76,6 +78,7 @@ class LessonPage extends StatelessWidget {
                         color: CbsColors.darkBlue, fontWeight: FontWeight.bold),
                   ),
                   CbsButton(
+                    height: 30,
                     onPressed: () {},
                     bgColor: CbsColors.primaryBrown,
                     child: Text(
@@ -89,9 +92,9 @@ class LessonPage extends StatelessWidget {
               ListView.builder(
                   padding: const EdgeInsets.only(top: 20.0),
                   shrinkWrap: true,
-                  itemCount: 22,
+                  itemCount: courseData!.lessons!.length,
                   itemBuilder: (BuildContext context, int index) {
-                    return lessonCard();
+                    return lessonCard(index, courseData!.lessons![index]);
                   })
             ],
           ),
@@ -100,7 +103,7 @@ class LessonPage extends StatelessWidget {
     );
   }
 
-  Widget lessonCard() {
+  Widget lessonCard(int index, LessonData lesson) {
     return GestureDetector(
       onTap: () {},
       child: Padding(
@@ -113,7 +116,7 @@ class LessonPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Leçon 1: Titre",
+                  "Leçon ${index + 1}: ${lesson.title}",
                   style: mediumStyle24Bold.copyWith(
                       color: CbsColors.primaryBrown,
                       fontWeight: FontWeight.bold),

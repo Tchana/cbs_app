@@ -67,7 +67,7 @@ class CourseCard extends StatelessWidget {
                   style: smallStyle18.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  courseData.id!,
+                  "${courseData.teacher!.firstName} ${courseData.teacher!.lastName}",
                   style: verySmallStyle15,
                 ),
                 gapH4,

@@ -23,7 +23,11 @@ mixin _$LibraryData {
   String? get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get author => throw _privateConstructorUsedError;
-  BookType? get type => throw _privateConstructorUsedError;
+  String? get book => throw _privateConstructorUsedError;
+  BookType? get category => throw _privateConstructorUsedError;
+  String? get bookCover => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get language => throw _privateConstructorUsedError;
 
   /// Serializes this LibraryData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -41,7 +45,15 @@ abstract class $LibraryDataCopyWith<$Res> {
           LibraryData value, $Res Function(LibraryData) then) =
       _$LibraryDataCopyWithImpl<$Res, LibraryData>;
   @useResult
-  $Res call({String? id, String? title, String? author, BookType? type});
+  $Res call(
+      {String? id,
+      String? title,
+      String? author,
+      String? book,
+      BookType? category,
+      String? bookCover,
+      String? description,
+      String? language});
 }
 
 /// @nodoc
@@ -62,7 +74,11 @@ class _$LibraryDataCopyWithImpl<$Res, $Val extends LibraryData>
     Object? id = freezed,
     Object? title = freezed,
     Object? author = freezed,
-    Object? type = freezed,
+    Object? book = freezed,
+    Object? category = freezed,
+    Object? bookCover = freezed,
+    Object? description = freezed,
+    Object? language = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -77,10 +93,26 @@ class _$LibraryDataCopyWithImpl<$Res, $Val extends LibraryData>
           ? _value.author
           : author // ignore: cast_nullable_to_non_nullable
               as String?,
-      type: freezed == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
+      book: freezed == book
+          ? _value.book
+          : book // ignore: cast_nullable_to_non_nullable
+              as String?,
+      category: freezed == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
               as BookType?,
+      bookCover: freezed == bookCover
+          ? _value.bookCover
+          : bookCover // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      language: freezed == language
+          ? _value.language
+          : language // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -93,7 +125,15 @@ abstract class _$$LibraryDataImplCopyWith<$Res>
       __$$LibraryDataImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? id, String? title, String? author, BookType? type});
+  $Res call(
+      {String? id,
+      String? title,
+      String? author,
+      String? book,
+      BookType? category,
+      String? bookCover,
+      String? description,
+      String? language});
 }
 
 /// @nodoc
@@ -112,7 +152,11 @@ class __$$LibraryDataImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? title = freezed,
     Object? author = freezed,
-    Object? type = freezed,
+    Object? book = freezed,
+    Object? category = freezed,
+    Object? bookCover = freezed,
+    Object? description = freezed,
+    Object? language = freezed,
   }) {
     return _then(_$LibraryDataImpl(
       id: freezed == id
@@ -127,10 +171,26 @@ class __$$LibraryDataImplCopyWithImpl<$Res>
           ? _value.author
           : author // ignore: cast_nullable_to_non_nullable
               as String?,
-      type: freezed == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
+      book: freezed == book
+          ? _value.book
+          : book // ignore: cast_nullable_to_non_nullable
+              as String?,
+      category: freezed == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
               as BookType?,
+      bookCover: freezed == bookCover
+          ? _value.bookCover
+          : bookCover // ignore: cast_nullable_to_non_nullable
+              as String?,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      language: freezed == language
+          ? _value.language
+          : language // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -138,7 +198,15 @@ class __$$LibraryDataImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$LibraryDataImpl extends _LibraryData {
-  const _$LibraryDataImpl({this.id, this.title, this.author, this.type})
+  const _$LibraryDataImpl(
+      {this.id,
+      this.title,
+      this.author,
+      this.book,
+      this.category,
+      this.bookCover,
+      this.description,
+      this.language})
       : super._();
 
   factory _$LibraryDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -151,11 +219,19 @@ class _$LibraryDataImpl extends _LibraryData {
   @override
   final String? author;
   @override
-  final BookType? type;
+  final String? book;
+  @override
+  final BookType? category;
+  @override
+  final String? bookCover;
+  @override
+  final String? description;
+  @override
+  final String? language;
 
   @override
   String toString() {
-    return 'LibraryData(id: $id, title: $title, author: $author, type: $type)';
+    return 'LibraryData(id: $id, title: $title, author: $author, book: $book, category: $category, bookCover: $bookCover, description: $description, language: $language)';
   }
 
   @override
@@ -166,12 +242,21 @@ class _$LibraryDataImpl extends _LibraryData {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.author, author) || other.author == author) &&
-            (identical(other.type, type) || other.type == type));
+            (identical(other.book, book) || other.book == book) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
+            (identical(other.bookCover, bookCover) ||
+                other.bookCover == bookCover) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
+            (identical(other.language, language) ||
+                other.language == language));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, title, author, type);
+  int get hashCode => Object.hash(runtimeType, id, title, author, book,
+      category, bookCover, description, language);
 
   /// Create a copy of LibraryData
   /// with the given fields replaced by the non-null parameter values.
@@ -194,7 +279,11 @@ abstract class _LibraryData extends LibraryData {
       {final String? id,
       final String? title,
       final String? author,
-      final BookType? type}) = _$LibraryDataImpl;
+      final String? book,
+      final BookType? category,
+      final String? bookCover,
+      final String? description,
+      final String? language}) = _$LibraryDataImpl;
   const _LibraryData._() : super._();
 
   factory _LibraryData.fromJson(Map<String, dynamic> json) =
@@ -207,7 +296,15 @@ abstract class _LibraryData extends LibraryData {
   @override
   String? get author;
   @override
-  BookType? get type;
+  String? get book;
+  @override
+  BookType? get category;
+  @override
+  String? get bookCover;
+  @override
+  String? get description;
+  @override
+  String? get language;
 
   /// Create a copy of LibraryData
   /// with the given fields replaced by the non-null parameter values.
