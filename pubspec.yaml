@@ -27,6 +27,7 @@ dependencies:
   json_annotation: ^4.9.0
   flutter_svg: ^2.0.17
   get: ^4.7.2
+  pdfx: ^2.8.0
 
 dev_dependencies:
   flutter_test:

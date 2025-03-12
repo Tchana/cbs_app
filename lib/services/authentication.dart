@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:center_for_biblical_studies/data/authentication/login_data.dart';
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
@@ -16,6 +18,18 @@ class ApiService {
       },
     ),
   );
+
+  Future<File> fetchPdfData(String url) async {
+    var dir = Directory.systemTemp; // Temporary directory
+    String filePath = '${dir.path}/downloaded.pdf';
+
+    try {
+      await Dio().download(url, filePath);
+      return File(filePath);
+    } catch (e) {
+      throw Exception('Error downloading PDF: $e');
+    }
+  }
 
   Future<Map<String, dynamic>> login(LoginData data) async {
     try {

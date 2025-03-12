@@ -1,9 +1,11 @@
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
+import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class LessonPage extends StatelessWidget {
   final CourseData? courseData;
@@ -105,7 +107,11 @@ class LessonPage extends StatelessWidget {
 
   Widget lessonCard(int index, LessonData lesson) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Get.to(
+          () => PdfViewerScreen(pdfUrl: lesson.file!),
+        );
+      },
       child: Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: Row(
