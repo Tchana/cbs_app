@@ -2,7 +2,7 @@ import 'package:center_for_biblical_studies/features/courses/courses_page.dart';
 import 'package:center_for_biblical_studies/features/dashboard/dashboard_page.dart';
 import 'package:center_for_biblical_studies/features/forum/forum_pages.dart';
 import 'package:center_for_biblical_studies/features/library/Library_page.dart';
-import 'package:center_for_biblical_studies/features/menu/menu.dart';
+import 'package:center_for_biblical_studies/features/settings/settings.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +19,7 @@ class _MainPageState extends State<MainPage> {
     LibraryPage(),
     CoursesPage(),
     ForumPage(),
-    Menu(),
+    Settings(),
   ];
 
   int currentStep = 0;
@@ -59,8 +59,8 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(Icons.message),
           ),
           BottomNavigationBarItem(
-            label: "Menu",
-            icon: Icon(Icons.menu),
+            label: "Settings",
+            icon: Icon(Icons.settings),
           ),
         ],
       ),

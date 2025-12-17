@@ -1,4 +1,6 @@
 import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
+import 'package:center_for_biblical_studies/page/main_page.dart';
+import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -16,15 +18,31 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToSplashScreens();
+    _checkAuthAndNavigate();
   }
 
-  _navigateToSplashScreens() async {
-    await Future.delayed(Duration(milliseconds: 1500), () {});
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => SplashScreenTwo()),
-    );
+  _checkAuthAndNavigate() async {
+    // Check if user is already logged in
+    bool isLoggedIn = await AuthService.isLoggedIn();
+
+    if (isLoggedIn) {
+      // User is signed in, skip splash screens and go directly to MainPage
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+        );
+      }
+    } else {
+      // User is not signed in, show splash screens
+      await Future.delayed(const Duration(milliseconds: 1500), () {});
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const SplashScreenTwo()),
+        );
+      }
+    }
   }
 
   @override
@@ -46,6 +64,9 @@ class SplashScreenTwo extends StatefulWidget {
 }
 
 class _SplashScreenTwoState extends State<SplashScreenTwo> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
   List images = [
     "img.png",
     "img.png",
@@ -54,15 +75,27 @@ class _SplashScreenTwoState extends State<SplashScreenTwo> {
 
   List text = [
     "De nombreux cours, livres et Bibles à votre disposition",
-    "Etudiez de n’importe où, à n’importe quelle heure, à votre convenance",
+    "Etudiez de n'importe où, à n'importe quelle heure, à votre convenance",
     "Acquérez la connaissance sur les différents courants doctrinaux",
   ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CbsColors.white,
       body: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentPage = index;
+          });
+        },
         scrollDirection: Axis.horizontal,
         itemCount: images.length,
         itemBuilder: (_, index) {
@@ -94,9 +127,9 @@ class _SplashScreenTwoState extends State<SplashScreenTwo> {
                             (indexDots) => Container(
                               margin: const EdgeInsets.only(right: 2),
                               height: 8,
-                              width: index == indexDots ? 25 : 8,
+                              width: _currentPage == indexDots ? 25 : 8,
                               decoration: BoxDecoration(
-                                  color: index == indexDots
+                                  color: _currentPage == indexDots
                                       ? CbsColors.primaryBrown
                                       : CbsColors.primaryBrown
                                           .withValues(alpha: 0.3),
@@ -110,9 +143,15 @@ class _SplashScreenTwoState extends State<SplashScreenTwo> {
                           height: 58,
                           onPressed: () {
                             if (index == images.length - 1) {
-                              Navigator.of(context).push(
+                              Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                     builder: (context) => const LoginPage()),
+                              );
+                            } else {
+                              // Navigate to next page
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
                               );
                             }
                           },

@@ -33,6 +33,7 @@ Map<String, dynamic> _$$LibraryDataImplToJson(_$LibraryDataImpl instance) =>
 const _$BookTypeEnumMap = {
   BookType.bible: 'bible',
   BookType.commentary: 'commentary',
+  BookType.dictionnaire: 'dictionnaire',
   BookType.concordance: 'concordance',
   BookType.other: 'other',
 };

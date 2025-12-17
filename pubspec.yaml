@@ -28,6 +28,9 @@ dependencies:
   flutter_svg: ^2.0.17
   get: ^4.7.2
   pdfx: ^2.8.0
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
