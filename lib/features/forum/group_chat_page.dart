@@ -1,5 +1,6 @@
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
+import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:center_for_biblical_studies/services/authentication.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -18,8 +19,11 @@ class GroupChatPage extends StatefulWidget {
 class _GroupChatPageState extends State<GroupChatPage> {
   final ApiService apiService = ApiService();
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _messageController = TextEditingController();
+  final FocusNode _messageFocusNode = FocusNode();
   List<MessageData> messages = [];
   bool isLoading = false;
+  bool isSending = false;
   String? errorMessage;
 
   @override
@@ -31,6 +35,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _messageController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -56,10 +62,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
       if (mounted) {
         setState(() {
           messages = fetchedMessages;
-          // Sort messages by created_at (oldest first)
+          // Sort messages by timestamp (oldest first)
           messages.sort((a, b) {
-            if (a.created_at == null || b.created_at == null) return 0;
-            return a.created_at!.compareTo(b.created_at!);
+            if (a.timestamp == null || b.timestamp == null) return 0;
+            return a.timestamp!.compareTo(b.timestamp!);
           });
         });
 
@@ -200,8 +206,173 @@ class _GroupChatPageState extends State<GroupChatPage> {
                         ),
                       ),
           ),
-          // TODO: Add message input field here when sending messages is implemented
+          // Message input field
+          _MessageInputField(
+            controller: _messageController,
+            focusNode: _messageFocusNode,
+            onSend: _sendMessage,
+            isSending: isSending,
+          ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _sendMessage() async {
+    final content = _messageController.text.trim();
+    if (content.isEmpty || widget.group.uuid == null) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      isSending = true;
+      errorMessage = null;
+    });
+
+    try {
+      final result = await apiService.sendMessage(
+        roomUuid: widget.group.uuid!,
+        content: content,
+      );
+
+      if (result["success"] == true) {
+        // Clear the input field
+        _messageController.clear();
+        
+        // Refresh messages to show the new one
+        await fetchMessages();
+        
+        if (mounted) {
+          // Scroll to bottom to show new message
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            errorMessage = result["message"] ?? "Erreur lors de l'envoi du message";
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result["message"] ?? "Erreur lors de l'envoi du message"),
+              backgroundColor: CbsColors.errorColor,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: CbsColors.errorColor,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSending = false;
+        });
+      }
+    }
+  }
+}
+
+class _MessageInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final VoidCallback onSend;
+  final bool isSending;
+
+  const _MessageInputField({
+    required this.controller,
+    required this.focusNode,
+    required this.onSend,
+    required this.isSending,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: CbsColors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  hintText: 'Tapez votre message...',
+                  hintStyle: smallStyle18.copyWith(color: CbsColors.hintColor),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: CbsColors.primaryBrown, width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  filled: true,
+                  fillColor: CbsColors.backgroundColor,
+                ),
+                maxLines: null,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => onSend(),
+                style: smallStyle18,
+              ),
+            ),
+            gapW8,
+            Container(
+              decoration: BoxDecoration(
+                color: CbsColors.primaryBrown,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: isSending
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(CbsColors.white),
+                        ),
+                      )
+                    : const Icon(Icons.send, color: CbsColors.white),
+                onPressed: isSending ? null : onSend,
+                tooltip: 'Envoyer',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -211,6 +382,14 @@ class _MessageBubble extends StatelessWidget {
   final MessageData message;
 
   const _MessageBubble({required this.message});
+
+  static String _getDisplayNameForUser(UserData? user) {
+    if (user == null) return 'Utilisateur inconnu';
+    final firstName = user.firstName?.trim() ?? '';
+    final lastName = user.lastName?.trim() ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    return fullName.isNotEmpty ? fullName : (user.email ?? 'Utilisateur inconnu');
+  }
 
   String _formatTime(String? dateString) {
     if (dateString == null) return '';
@@ -238,13 +417,13 @@ class _MessageBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (message.sender_name != null)
+          if (message.user != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 4, left: 8),
               child: Row(
                 children: [
                   Text(
-                    message.sender_name!,
+                    _getDisplayNameForUser(message.user),
                     style: smallStyle18.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -252,9 +431,9 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ),
                   gapW8,
-                  if (message.created_at != null)
+                  if (message.timestamp != null)
                     Text(
-                      _formatTime(message.created_at),
+                      _formatTime(message.timestamp),
                       style: smallStyle18.copyWith(
                         fontSize: 10,
                         color: CbsColors.hintColor,

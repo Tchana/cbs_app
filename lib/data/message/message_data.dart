@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'message_data.freezed.dart';
@@ -10,17 +11,14 @@ class MessageData with _$MessageData {
   const factory MessageData({
     String? uuid,
     String? room,
+    UserData? user,
     String? content,
-    String? created_at,
-    String? created_by,
-    String? sender_name,
-    String? sender_email,
+    String? timestamp,
+    String? message_type,
     bool? is_deleted,
     String? deleted_at,
-    String? deleted_by,
   }) = _MessageData;
 
   factory MessageData.fromJson(Map<String, dynamic> json) =>
       _$MessageDataFromJson(json);
 }
-

@@ -1,5 +1,6 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
+import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/features/forum/group_chat_page.dart';
 import 'package:center_for_biblical_studies/services/authentication.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
@@ -32,7 +33,7 @@ class _ForumPageState extends State<ForumPage> {
 
   Future<void> fetchGroups() async {
     if (!mounted) return;
-    
+
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -63,118 +64,128 @@ class _ForumPageState extends State<ForumPage> {
     final descriptionController = TextEditingController();
     bool isPrivate = false;
 
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(
-                'Créer un groupe',
-                style: largeStyle32Bold.copyWith(color: CbsColors.primaryBrown),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nom du groupe',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: CbsColors.primaryBrown,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    gapH16,
-                    TextField(
-                      controller: descriptionController,
-                      decoration: InputDecoration(
-                        labelText: 'Description',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: CbsColors.primaryBrown,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      maxLines: 3,
-                    ),
-                    gapH16,
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: isPrivate,
-                          onChanged: (value) {
-                            setDialogState(() {
-                              isPrivate = value ?? false;
-                            });
-                          },
-                          activeColor: CbsColors.primaryBrown,
-                        ),
-                        Text(
-                          'Groupe privé',
-                          style: smallStyle18,
-                        ),
-                      ],
-                    ),
-                  ],
+    try {
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: Text(
+                  'Créer un groupe',
+                  style:
+                      largeStyle32Bold.copyWith(color: CbsColors.primaryBrown),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Annuler',
-                    style: smallStyle18.copyWith(color: CbsColors.primaryBrown),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Nom du groupe',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: CbsColors.primaryBrown,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                      gapH16,
+                      TextField(
+                        controller: descriptionController,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: CbsColors.primaryBrown,
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        maxLines: 3,
+                      ),
+                      gapH16,
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: isPrivate,
+                            onChanged: (value) {
+                              setDialogState(() {
+                                isPrivate = value ?? false;
+                              });
+                            },
+                            activeColor: CbsColors.primaryBrown,
+                          ),
+                          Text(
+                            'Groupe privé',
+                            style: smallStyle18,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Veuillez entrer un nom pour le groupe'),
-                        ),
-                      );
-                      return;
-                    }
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Annuler',
+                      style:
+                          smallStyle18.copyWith(color: CbsColors.primaryBrown),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (nameController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text('Veuillez entrer un nom pour le groupe'),
+                          ),
+                        );
+                        return;
+                      }
 
-                    Navigator.of(context).pop();
-                    await _createGroup(
-                      nameController.text.trim(),
-                      descriptionController.text.trim(),
-                      isPrivate,
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: CbsColors.primaryBrown,
-                    foregroundColor: CbsColors.white,
+                      Navigator.of(context).pop();
+                      await _createGroup(
+                        nameController.text.trim(),
+                        descriptionController.text.trim(),
+                        isPrivate,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: CbsColors.primaryBrown,
+                      foregroundColor: CbsColors.white,
+                    ),
+                    child: const Text('Créer'),
                   ),
-                  child: const Text('Créer'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      // Always dispose controllers to prevent memory leaks
+      nameController.dispose();
+      descriptionController.dispose();
+    }
   }
 
-  Future<void> _createGroup(String name, String description, bool isPrivate) async {
+  Future<void> _createGroup(
+      String name, String description, bool isPrivate) async {
     if (!mounted) return;
-    
+
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -201,7 +212,8 @@ class _ForumPageState extends State<ForumPage> {
       } else {
         if (mounted) {
           setState(() {
-            errorMessage = result["message"] ?? "Erreur lors de la création du groupe";
+            errorMessage =
+                result["message"] ?? "Erreur lors de la création du groupe";
           });
         }
       }
@@ -258,7 +270,8 @@ class _ForumPageState extends State<ForumPage> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: CbsColors.errorColor),
+                          Icon(Icons.error_outline,
+                              color: CbsColors.errorColor),
                           gapW8,
                           Expanded(
                             child: Text(
@@ -306,11 +319,18 @@ class _ForumPageState extends State<ForumPage> {
                     ),
                   )
                 else
-                  Obx(() => ListView.builder(
+                  Obx(() => ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: dataController.groups.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+                          indent: 20,
+                          endIndent: 20,
+                        ),
                         itemBuilder: (context, index) {
                           final group = dataController.groups[index];
                           // Skip deleted groups
@@ -339,164 +359,183 @@ class _ForumPageState extends State<ForumPage> {
   }
 }
 
-class _GroupCard extends StatelessWidget {
+class _GroupCard extends StatefulWidget {
   final GroupData group;
 
   const _GroupCard({required this.group});
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => GroupChatPage(group: group),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                group.name ?? 'Sans nom',
-                                style: largeStyle32Bold.copyWith(
-                                  fontSize: 20,
-                                  color: CbsColors.primaryBrown,
-                                ),
-                              ),
-                            ),
-                            if (group.is_private == true)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.lock,
-                                      size: 14,
-                                      color: CbsColors.primaryBrown,
-                                    ),
-                                    gapW4,
-                                    Text(
-                                      'Privé',
-                                      style: smallStyle18.copyWith(
-                                        fontSize: 12,
-                                        color: CbsColors.primaryBrown,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                        if (group.description != null && group.description!.isNotEmpty) ...[
-                          gapH8,
-                          Text(
-                            group.description!,
-                            style: smallStyle18.copyWith(
-                              color: CbsColors.hintColor,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              gapH12,
-              Row(
-                children: [
-                  Icon(
-                    Icons.people,
-                    size: 16,
-                    color: CbsColors.primaryBrown,
-                  ),
-                  gapW4,
-                  Text(
-                    '${group.participants_count ?? 0} participants',
-                    style: smallStyle18.copyWith(
-                      fontSize: 14,
-                      color: CbsColors.primaryBrown,
-                    ),
-                  ),
-                  gapW16,
-                  if (group.online_count != null && group.online_count! > 0) ...[
-                    Icon(
-                      Icons.circle,
-                      size: 8,
-                      color: CbsColors.successColor,
-                    ),
-                    gapW4,
-                    Text(
-                      '${group.online_count} en ligne',
-                      style: smallStyle18.copyWith(
-                        fontSize: 14,
-                        color: CbsColors.successColor,
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  if (group.created_at != null)
-                    Text(
-                      _formatDate(group.created_at!),
-                      style: smallStyle18.copyWith(
-                        fontSize: 12,
-                        color: CbsColors.hintColor,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  State<_GroupCard> createState() => _GroupCardState();
+}
+
+class _GroupCardState extends State<_GroupCard> {
+  final ApiService _apiService = ApiService();
+  MessageData? _lastMessage;
+  bool _isLoadingLastMessage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLastMessage();
   }
 
-  String _formatDate(String dateString) {
+  Future<void> _fetchLastMessage() async {
+    if (widget.group.uuid == null) return;
+
+    setState(() {
+      _isLoadingLastMessage = true;
+    });
+
+    try {
+      final messages = await _apiService.fetchMessages(widget.group.uuid!);
+      if (messages.isNotEmpty && mounted) {
+        // Get the last message (most recent)
+        final sortedMessages = List<MessageData>.from(messages);
+        sortedMessages.sort((a, b) {
+          if (a.timestamp == null || b.timestamp == null) return 0;
+          return b.timestamp!.compareTo(a.timestamp!); // Sort descending
+        });
+
+        final lastMsg = sortedMessages.firstWhere(
+          (msg) => msg.is_deleted != true,
+          orElse: () => sortedMessages.first,
+        );
+
+        if (mounted) {
+          setState(() {
+            _lastMessage = lastMsg;
+            _isLoadingLastMessage = false;
+          });
+        }
+      } else if (mounted) {
+        setState(() {
+          _isLoadingLastMessage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingLastMessage = false;
+        });
+      }
+    }
+  }
+
+  String _formatTime(String? dateString) {
+    if (dateString == null) return '';
     try {
       final date = DateTime.parse(dateString);
       final now = DateTime.now();
       final difference = now.difference(date);
 
       if (difference.inDays == 0) {
-        return "Aujourd'hui";
+        return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
       } else if (difference.inDays == 1) {
         return "Hier";
       } else if (difference.inDays < 7) {
-        return "Il y a ${difference.inDays} jours";
+        return "Il y a ${difference.inDays}j";
       } else {
-        return "${date.day}/${date.month}/${date.year}";
+        return "${date.day}/${date.month}";
       }
     } catch (e) {
-      return dateString;
+      return '';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      leading: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.group,
+          color: CbsColors.primaryBrown,
+          size: 28,
+        ),
+      ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.group.name ?? 'Sans nom',
+              style: largeStyle32Bold.copyWith(
+                fontSize: 18,
+                color: CbsColors.primaryBrown,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (widget.group.is_private == true)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 2,
+              ),
+              decoration: BoxDecoration(
+                color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock,
+                    size: 12,
+                    color: CbsColors.primaryBrown,
+                  ),
+                  gapW4,
+                  Text(
+                    'Privé',
+                    style: smallStyle18.copyWith(
+                      fontSize: 10,
+                      color: CbsColors.primaryBrown,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+      subtitle: _isLoadingLastMessage
+          ? Text(
+              'Chargement...',
+              style: smallStyle18.copyWith(
+                fontSize: 14,
+                color: CbsColors.hintColor,
+              ),
+            )
+          : Text(
+              _lastMessage?.content ?? 'Aucun message',
+              style: smallStyle18.copyWith(
+                fontSize: 14,
+                color: CbsColors.hintColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+      trailing: _lastMessage?.timestamp != null
+          ? Text(
+              _formatTime(_lastMessage!.timestamp),
+              style: smallStyle18.copyWith(
+                fontSize: 12,
+                color: CbsColors.hintColor,
+              ),
+            )
+          : null,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => GroupChatPage(group: widget.group),
+          ),
+        );
+      },
+    );
   }
 }

@@ -304,4 +304,42 @@ class ApiService {
       (json) => MessageData.fromJson(json),
     );
   }
+
+  Future<Map<String, dynamic>> sendMessage({
+    required String roomUuid,
+    required String content,
+  }) async {
+    final url = '${_dio.options.baseUrl}/chat/api/rooms/$roomUuid/messages/';
+    final requestData = {
+      "content": content,
+    };
+
+    try {
+      _logger.i('API Request: POST $url');
+      _logger.d('Request Data: $requestData');
+
+      final options = await _getAuthenticatedOptions();
+      final response = await _dio.post(
+        "/chat/api/rooms/$roomUuid/messages/",
+        data: requestData,
+        options: options,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _logger.i(
+          'API Response: POST $url\nStatus: ${response.statusCode}\nMessage sent successfully\nResponse: ${response.data}',
+        );
+
+        return {
+          "success": true,
+          "data": MessageData.fromJson(response.data),
+        };
+      } else {
+        _logger.w('API Response: POST $url - Status: ${response.statusCode}');
+        throw Exception("Failed to send message");
+      }
+    } on DioException catch (e) {
+      return _handleDioError(e, url);
+    }
+  }
 }

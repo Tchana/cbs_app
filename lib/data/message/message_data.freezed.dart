@@ -22,14 +22,12 @@ MessageData _$MessageDataFromJson(Map<String, dynamic> json) {
 mixin _$MessageData {
   String? get uuid => throw _privateConstructorUsedError;
   String? get room => throw _privateConstructorUsedError;
+  UserData? get user => throw _privateConstructorUsedError;
   String? get content => throw _privateConstructorUsedError;
-  String? get created_at => throw _privateConstructorUsedError;
-  String? get created_by => throw _privateConstructorUsedError;
-  String? get sender_name => throw _privateConstructorUsedError;
-  String? get sender_email => throw _privateConstructorUsedError;
+  String? get timestamp => throw _privateConstructorUsedError;
+  String? get message_type => throw _privateConstructorUsedError;
   bool? get is_deleted => throw _privateConstructorUsedError;
   String? get deleted_at => throw _privateConstructorUsedError;
-  String? get deleted_by => throw _privateConstructorUsedError;
 
   /// Serializes this MessageData to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,14 +48,14 @@ abstract class $MessageDataCopyWith<$Res> {
   $Res call(
       {String? uuid,
       String? room,
+      UserData? user,
       String? content,
-      String? created_at,
-      String? created_by,
-      String? sender_name,
-      String? sender_email,
+      String? timestamp,
+      String? message_type,
       bool? is_deleted,
-      String? deleted_at,
-      String? deleted_by});
+      String? deleted_at});
+
+  $UserDataCopyWith<$Res>? get user;
 }
 
 /// @nodoc
@@ -77,14 +75,12 @@ class _$MessageDataCopyWithImpl<$Res, $Val extends MessageData>
   $Res call({
     Object? uuid = freezed,
     Object? room = freezed,
+    Object? user = freezed,
     Object? content = freezed,
-    Object? created_at = freezed,
-    Object? created_by = freezed,
-    Object? sender_name = freezed,
-    Object? sender_email = freezed,
+    Object? timestamp = freezed,
+    Object? message_type = freezed,
     Object? is_deleted = freezed,
     Object? deleted_at = freezed,
-    Object? deleted_by = freezed,
   }) {
     return _then(_value.copyWith(
       uuid: freezed == uuid
@@ -95,25 +91,21 @@ class _$MessageDataCopyWithImpl<$Res, $Val extends MessageData>
           ? _value.room
           : room // ignore: cast_nullable_to_non_nullable
               as String?,
+      user: freezed == user
+          ? _value.user
+          : user // ignore: cast_nullable_to_non_nullable
+              as UserData?,
       content: freezed == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
               as String?,
-      created_at: freezed == created_at
-          ? _value.created_at
-          : created_at // ignore: cast_nullable_to_non_nullable
+      timestamp: freezed == timestamp
+          ? _value.timestamp
+          : timestamp // ignore: cast_nullable_to_non_nullable
               as String?,
-      created_by: freezed == created_by
-          ? _value.created_by
-          : created_by // ignore: cast_nullable_to_non_nullable
-              as String?,
-      sender_name: freezed == sender_name
-          ? _value.sender_name
-          : sender_name // ignore: cast_nullable_to_non_nullable
-              as String?,
-      sender_email: freezed == sender_email
-          ? _value.sender_email
-          : sender_email // ignore: cast_nullable_to_non_nullable
+      message_type: freezed == message_type
+          ? _value.message_type
+          : message_type // ignore: cast_nullable_to_non_nullable
               as String?,
       is_deleted: freezed == is_deleted
           ? _value.is_deleted
@@ -123,11 +115,21 @@ class _$MessageDataCopyWithImpl<$Res, $Val extends MessageData>
           ? _value.deleted_at
           : deleted_at // ignore: cast_nullable_to_non_nullable
               as String?,
-      deleted_by: freezed == deleted_by
-          ? _value.deleted_by
-          : deleted_by // ignore: cast_nullable_to_non_nullable
-              as String?,
     ) as $Val);
+  }
+
+  /// Create a copy of MessageData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $UserDataCopyWith<$Res>? get user {
+    if (_value.user == null) {
+      return null;
+    }
+
+    return $UserDataCopyWith<$Res>(_value.user!, (value) {
+      return _then(_value.copyWith(user: value) as $Val);
+    });
   }
 }
 
@@ -142,14 +144,15 @@ abstract class _$$MessageDataImplCopyWith<$Res>
   $Res call(
       {String? uuid,
       String? room,
+      UserData? user,
       String? content,
-      String? created_at,
-      String? created_by,
-      String? sender_name,
-      String? sender_email,
+      String? timestamp,
+      String? message_type,
       bool? is_deleted,
-      String? deleted_at,
-      String? deleted_by});
+      String? deleted_at});
+
+  @override
+  $UserDataCopyWith<$Res>? get user;
 }
 
 /// @nodoc
@@ -167,14 +170,12 @@ class __$$MessageDataImplCopyWithImpl<$Res>
   $Res call({
     Object? uuid = freezed,
     Object? room = freezed,
+    Object? user = freezed,
     Object? content = freezed,
-    Object? created_at = freezed,
-    Object? created_by = freezed,
-    Object? sender_name = freezed,
-    Object? sender_email = freezed,
+    Object? timestamp = freezed,
+    Object? message_type = freezed,
     Object? is_deleted = freezed,
     Object? deleted_at = freezed,
-    Object? deleted_by = freezed,
   }) {
     return _then(_$MessageDataImpl(
       uuid: freezed == uuid
@@ -185,25 +186,21 @@ class __$$MessageDataImplCopyWithImpl<$Res>
           ? _value.room
           : room // ignore: cast_nullable_to_non_nullable
               as String?,
+      user: freezed == user
+          ? _value.user
+          : user // ignore: cast_nullable_to_non_nullable
+              as UserData?,
       content: freezed == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
               as String?,
-      created_at: freezed == created_at
-          ? _value.created_at
-          : created_at // ignore: cast_nullable_to_non_nullable
+      timestamp: freezed == timestamp
+          ? _value.timestamp
+          : timestamp // ignore: cast_nullable_to_non_nullable
               as String?,
-      created_by: freezed == created_by
-          ? _value.created_by
-          : created_by // ignore: cast_nullable_to_non_nullable
-              as String?,
-      sender_name: freezed == sender_name
-          ? _value.sender_name
-          : sender_name // ignore: cast_nullable_to_non_nullable
-              as String?,
-      sender_email: freezed == sender_email
-          ? _value.sender_email
-          : sender_email // ignore: cast_nullable_to_non_nullable
+      message_type: freezed == message_type
+          ? _value.message_type
+          : message_type // ignore: cast_nullable_to_non_nullable
               as String?,
       is_deleted: freezed == is_deleted
           ? _value.is_deleted
@@ -212,10 +209,6 @@ class __$$MessageDataImplCopyWithImpl<$Res>
       deleted_at: freezed == deleted_at
           ? _value.deleted_at
           : deleted_at // ignore: cast_nullable_to_non_nullable
-              as String?,
-      deleted_by: freezed == deleted_by
-          ? _value.deleted_by
-          : deleted_by // ignore: cast_nullable_to_non_nullable
               as String?,
     ));
   }
@@ -227,14 +220,12 @@ class _$MessageDataImpl extends _MessageData {
   const _$MessageDataImpl(
       {this.uuid,
       this.room,
+      this.user,
       this.content,
-      this.created_at,
-      this.created_by,
-      this.sender_name,
-      this.sender_email,
+      this.timestamp,
+      this.message_type,
       this.is_deleted,
-      this.deleted_at,
-      this.deleted_by})
+      this.deleted_at})
       : super._();
 
   factory _$MessageDataImpl.fromJson(Map<String, dynamic> json) =>
@@ -245,25 +236,21 @@ class _$MessageDataImpl extends _MessageData {
   @override
   final String? room;
   @override
+  final UserData? user;
+  @override
   final String? content;
   @override
-  final String? created_at;
+  final String? timestamp;
   @override
-  final String? created_by;
-  @override
-  final String? sender_name;
-  @override
-  final String? sender_email;
+  final String? message_type;
   @override
   final bool? is_deleted;
   @override
   final String? deleted_at;
-  @override
-  final String? deleted_by;
 
   @override
   String toString() {
-    return 'MessageData(uuid: $uuid, room: $room, content: $content, created_at: $created_at, created_by: $created_by, sender_name: $sender_name, sender_email: $sender_email, is_deleted: $is_deleted, deleted_at: $deleted_at, deleted_by: $deleted_by)';
+    return 'MessageData(uuid: $uuid, room: $room, user: $user, content: $content, timestamp: $timestamp, message_type: $message_type, is_deleted: $is_deleted, deleted_at: $deleted_at)';
   }
 
   @override
@@ -273,37 +260,22 @@ class _$MessageDataImpl extends _MessageData {
             other is _$MessageDataImpl &&
             (identical(other.uuid, uuid) || other.uuid == uuid) &&
             (identical(other.room, room) || other.room == room) &&
+            (identical(other.user, user) || other.user == user) &&
             (identical(other.content, content) || other.content == content) &&
-            (identical(other.created_at, created_at) ||
-                other.created_at == created_at) &&
-            (identical(other.created_by, created_by) ||
-                other.created_by == created_by) &&
-            (identical(other.sender_name, sender_name) ||
-                other.sender_name == sender_name) &&
-            (identical(other.sender_email, sender_email) ||
-                other.sender_email == sender_email) &&
+            (identical(other.timestamp, timestamp) ||
+                other.timestamp == timestamp) &&
+            (identical(other.message_type, message_type) ||
+                other.message_type == message_type) &&
             (identical(other.is_deleted, is_deleted) ||
                 other.is_deleted == is_deleted) &&
             (identical(other.deleted_at, deleted_at) ||
-                other.deleted_at == deleted_at) &&
-            (identical(other.deleted_by, deleted_by) ||
-                other.deleted_by == deleted_by));
+                other.deleted_at == deleted_at));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      uuid,
-      room,
-      content,
-      created_at,
-      created_by,
-      sender_name,
-      sender_email,
-      is_deleted,
-      deleted_at,
-      deleted_by);
+  int get hashCode => Object.hash(runtimeType, uuid, room, user, content,
+      timestamp, message_type, is_deleted, deleted_at);
 
   /// Create a copy of MessageData
   /// with the given fields replaced by the non-null parameter values.
@@ -325,14 +297,12 @@ abstract class _MessageData extends MessageData {
   const factory _MessageData(
       {final String? uuid,
       final String? room,
+      final UserData? user,
       final String? content,
-      final String? created_at,
-      final String? created_by,
-      final String? sender_name,
-      final String? sender_email,
+      final String? timestamp,
+      final String? message_type,
       final bool? is_deleted,
-      final String? deleted_at,
-      final String? deleted_by}) = _$MessageDataImpl;
+      final String? deleted_at}) = _$MessageDataImpl;
   const _MessageData._() : super._();
 
   factory _MessageData.fromJson(Map<String, dynamic> json) =
@@ -343,21 +313,17 @@ abstract class _MessageData extends MessageData {
   @override
   String? get room;
   @override
+  UserData? get user;
+  @override
   String? get content;
   @override
-  String? get created_at;
+  String? get timestamp;
   @override
-  String? get created_by;
-  @override
-  String? get sender_name;
-  @override
-  String? get sender_email;
+  String? get message_type;
   @override
   bool? get is_deleted;
   @override
   String? get deleted_at;
-  @override
-  String? get deleted_by;
 
   /// Create a copy of MessageData
   /// with the given fields replaced by the non-null parameter values.
