@@ -68,35 +68,49 @@ class _LibraryPageState extends State<LibraryPage>
               ),
             ),
             gapH20,
-            // Tabs - pill style
+            // Tabs - compact, less circular
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   color: CbsColors.primaryBrown.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                    width: 1,
+                  ),
                 ),
                 child: TabBar(
                   tabAlignment: TabAlignment.fill,
                   dividerHeight: 0,
                   controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
                     color: CbsColors.primaryBrown,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: CbsColors.primaryBrown,
-                  labelStyle: const TextStyle(
+                  labelColor: CbsColors.white,
+                  unselectedLabelColor: CbsColors.primaryBrown.withValues(alpha: 0.85),
+                  labelStyle: smallStyle18.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
+                  unselectedLabelStyle: smallStyle18.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    color: CbsColors.primaryBrown.withValues(alpha: 0.85),
+                  ),
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  padding: EdgeInsets.zero,
                   tabs: [
                     Tab(text: l10n.tabAll),
                     Tab(text: l10n.tabBibles),

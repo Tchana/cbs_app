@@ -135,6 +135,7 @@ class _CoursesPageState extends State<CoursesPage>
             ),
             LessonPage(
               courseData: selectedCourse,
+              onBack: () => setState(() => _widgetIndex = 0),
             ),
           ],
         ),
