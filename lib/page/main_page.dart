@@ -3,6 +3,7 @@ import 'package:center_for_biblical_studies/features/dashboard/dashboard_page.da
 import 'package:center_for_biblical_studies/features/forum/forum_pages.dart';
 import 'package:center_for_biblical_studies/features/library/Library_page.dart';
 import 'package:center_for_biblical_studies/features/settings/settings.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -31,6 +32,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
       body: pages[currentStep],
       bottomNavigationBar: BottomNavigationBar(
@@ -39,28 +41,26 @@ class _MainPageState extends State<MainPage> {
         selectedItemColor: CbsColors.primaryBrown,
         unselectedItemColor: CbsColors.primaryBrown.withValues(alpha: 0.5),
         showUnselectedLabels: true,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            label: "Acceuil",
-            icon: Icon(
-              Icons.home,
-            ),
+            label: l10n.navHome,
+            icon: const Icon(Icons.home),
           ),
           BottomNavigationBarItem(
-            label: "Bibliotheque",
-            icon: Icon(Icons.my_library_books_rounded),
+            label: l10n.navLibrary,
+            icon: const Icon(Icons.my_library_books_rounded),
           ),
           BottomNavigationBarItem(
-            label: "Cours",
-            icon: Icon(Icons.school),
+            label: l10n.navCourses,
+            icon: const Icon(Icons.school),
           ),
           BottomNavigationBarItem(
-            label: "Forum",
-            icon: Icon(Icons.message),
+            label: l10n.navForum,
+            icon: const Icon(Icons.message),
           ),
           BottomNavigationBarItem(
-            label: "Settings",
-            icon: Icon(Icons.settings),
+            label: l10n.settings,
+            icon: const Icon(Icons.settings),
           ),
         ],
       ),

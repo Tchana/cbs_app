@@ -1,8 +1,7 @@
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
-import 'package:center_for_biblical_studies/shared/custom_button.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
-import 'package:center_for_biblical_studies/utils/constants/colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 
@@ -16,79 +15,135 @@ class CourseCard extends StatelessWidget {
     this.onPressed,
   });
 
+  String get _teacherName {
+    final t = courseData.teacher;
+    if (t == null) return '';
+    final name = '${t.firstName ?? ''} ${t.lastName ?? ''}'.trim();
+    return name;
+  }
+
+  String get _levelLabel {
+    final level = courseData.level?.toLowerCase();
+    if (level == null || level.isEmpty) return '';
+    return level[0].toUpperCase() + level.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              children: [
-                Container(
-                  height: 96,
-                  width: 108,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: CustomColors.primaryColor,
-                  ),
-                  child: const Align(
-                    alignment: Alignment.topCenter,
-                    child: Icon(
-                      Icons.lock_outline,
-                      color: CbsColors.primaryBrown,
-                    ),
-                  ),
+    final registerLabel = AppLocalizations.of(context)?.register ?? 'Register';
+    final hasLevel = _levelLabel.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+          decoration: BoxDecoration(
+            color: CbsColors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Compact icon block
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.12),
                 ),
-                Positioned(
-                  top: 25,
-                  child: Container(
-                    height: 72,
-                    width: 108,
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(10.0),
-                        bottomRight: Radius.circular(10.0),
+                child: Icon(
+                  Icons.menu_book_rounded,
+                  size: 26,
+                  color: CbsColors.primaryBrown,
+                ),
+              ),
+              gapW12,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      courseData.title ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: smallStyle18.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: CbsColors.primaryDark[800],
+                        fontSize: 15,
                       ),
-                      color: CbsColors.primaryGrey,
                     ),
-                  ),
+                    if (_teacherName.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        _teacherName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: verySmallStyle12.copyWith(
+                          color: CbsColors.hintColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (hasLevel)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              _levelLabel,
+                              style: verySmallStyle10.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: CbsColors.primaryBrown,
+                              ),
+                            ),
+                          ),
+                        if (hasLevel) const SizedBox(width: 8),
+                        Text(
+                          registerLabel,
+                          style: verySmallStyle12.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CbsColors.primaryBrown,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            gapW12,
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  courseData.title!,
-                  style: smallStyle18.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "${courseData.teacher!.firstName} ${courseData.teacher!.lastName}",
-                  style: verySmallStyle15,
-                ),
-                gapH4,
-                Text(
-                  courseData.description!,
-                  style: verySmallStyle15,
-                ),
-                gapH4,
-                CbsButton(
-                  width: MediaQuery.of(context).size.width / 2,
-                  bgColor: CbsColors.primaryBrown,
-                  onPressed: () {},
-                  child: Text(
-                    "S’inscrire",
-                    style: verySmallStyle10.copyWith(
-                        fontWeight: FontWeight.bold, color: CbsColors.white),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: CbsColors.hintColor,
+              ),
+            ],
+          ),
+        ),
         ),
       ),
     );

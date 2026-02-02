@@ -2,7 +2,8 @@ import 'package:center_for_biblical_studies/data/controllers/data_controller.dar
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/features/forum/group_chat_page.dart';
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -18,7 +19,7 @@ class ForumPage extends StatefulWidget {
 }
 
 class _ForumPageState extends State<ForumPage> {
-  final ApiService apiService = ApiService();
+  final SupabaseService apiService = SupabaseService();
   final DataController dataController = Get.find<DataController>();
   bool isLoading = false;
   String? errorMessage;
@@ -67,12 +68,14 @@ class _ForumPageState extends State<ForumPage> {
     try {
       await showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
+          final l10n = AppLocalizations.of(dialogContext) ??
+              AppLocalizations(const Locale('fr'));
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
                 title: Text(
-                  'Créer un groupe',
+                  l10n.createGroup,
                   style:
                       largeStyle32Bold.copyWith(color: CbsColors.primaryBrown),
                 ),
@@ -83,7 +86,7 @@ class _ForumPageState extends State<ForumPage> {
                       TextField(
                         controller: nameController,
                         decoration: InputDecoration(
-                          labelText: 'Nom du groupe',
+                          labelText: l10n.groupName,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -100,7 +103,7 @@ class _ForumPageState extends State<ForumPage> {
                       TextField(
                         controller: descriptionController,
                         decoration: InputDecoration(
-                          labelText: 'Description',
+                          labelText: l10n.description,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -127,7 +130,7 @@ class _ForumPageState extends State<ForumPage> {
                             activeColor: CbsColors.primaryBrown,
                           ),
                           Text(
-                            'Groupe privé',
+                            l10n.privateGroup,
                             style: smallStyle18,
                           ),
                         ],
@@ -139,7 +142,7 @@ class _ForumPageState extends State<ForumPage> {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
-                      'Annuler',
+                      l10n.cancel,
                       style:
                           smallStyle18.copyWith(color: CbsColors.primaryBrown),
                     ),
@@ -148,9 +151,8 @@ class _ForumPageState extends State<ForumPage> {
                     onPressed: () async {
                       if (nameController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content:
-                                Text('Veuillez entrer un nom pour le groupe'),
+                          SnackBar(
+                            content: Text(l10n.groupNameRequired),
                           ),
                         );
                         return;
@@ -202,9 +204,11 @@ class _ForumPageState extends State<ForumPage> {
         // Refresh groups list
         await fetchGroups();
         if (mounted) {
+          final l10n = AppLocalizations.of(context) ??
+              AppLocalizations(const Locale('fr'));
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Groupe créé avec succès'),
+            SnackBar(
+              content: Text(l10n.groupCreatedSuccess),
               backgroundColor: CbsColors.successColor,
             ),
           );
@@ -212,8 +216,10 @@ class _ForumPageState extends State<ForumPage> {
       } else {
         if (mounted) {
           setState(() {
-            errorMessage =
-                result["message"] ?? "Erreur lors de la création du groupe";
+            errorMessage = result["message"] ??
+                (AppLocalizations.of(context) ??
+                        AppLocalizations(const Locale('fr')))
+                    .groupCreateError;
           });
         }
       }
@@ -240,6 +246,8 @@ class _ForumPageState extends State<ForumPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: fetchGroups,
@@ -251,7 +259,7 @@ class _ForumPageState extends State<ForumPage> {
               children: [
                 gapH16,
                 PageHeader(
-                  title: 'Forum',
+                  title: l10n.forum,
                   titleIcon: const Icon(
                     Icons.message,
                     color: CbsColors.primaryBlue,
@@ -302,14 +310,14 @@ class _ForumPageState extends State<ForumPage> {
                         ),
                         gapH16,
                         Text(
-                          'Aucun groupe disponible',
+                          l10n.noGroups,
                           style: smallStyle18.copyWith(
                             color: CbsColors.primaryBrown,
                           ),
                         ),
                         gapH8,
                         Text(
-                          'Créez votre premier groupe pour commencer',
+                          l10n.createFirst,
                           style: smallStyle18.copyWith(
                             color: CbsColors.hintColor,
                           ),
@@ -351,7 +359,7 @@ class _ForumPageState extends State<ForumPage> {
         backgroundColor: CbsColors.primaryBrown,
         icon: const Icon(Icons.add, color: CbsColors.white),
         label: Text(
-          'Créer un groupe',
+          l10n.createGroup,
           style: smallStyle18.copyWith(color: CbsColors.white),
         ),
       ),
@@ -369,7 +377,7 @@ class _GroupCard extends StatefulWidget {
 }
 
 class _GroupCardState extends State<_GroupCard> {
-  final ApiService _apiService = ApiService();
+  final SupabaseService _apiService = SupabaseService();
   MessageData? _lastMessage;
   bool _isLoadingLastMessage = false;
 
@@ -444,6 +452,8 @@ class _GroupCardState extends State<_GroupCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
@@ -463,7 +473,7 @@ class _GroupCardState extends State<_GroupCard> {
         children: [
           Expanded(
             child: Text(
-              widget.group.name ?? 'Sans nom',
+              widget.group.name ?? l10n.unnamedGroup,
               style: largeStyle32Bold.copyWith(
                 fontSize: 18,
                 color: CbsColors.primaryBrown,
@@ -492,7 +502,7 @@ class _GroupCardState extends State<_GroupCard> {
                   ),
                   gapW4,
                   Text(
-                    'Privé',
+                    l10n.private,
                     style: smallStyle18.copyWith(
                       fontSize: 10,
                       color: CbsColors.primaryBrown,
@@ -505,14 +515,14 @@ class _GroupCardState extends State<_GroupCard> {
       ),
       subtitle: _isLoadingLastMessage
           ? Text(
-              'Chargement...',
+              l10n.loading,
               style: smallStyle18.copyWith(
                 fontSize: 14,
                 color: CbsColors.hintColor,
               ),
             )
           : Text(
-              _lastMessage?.content ?? 'Aucun message',
+              _lastMessage?.content ?? l10n.noMessage,
               style: smallStyle18.copyWith(
                 fontSize: 14,
                 color: CbsColors.hintColor,

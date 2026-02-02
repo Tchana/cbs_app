@@ -203,20 +203,26 @@ class ApiService {
       } else {
         _logger.w('⚠️ LOGIN RESPONSE - Non-200 Status');
         _logger.w('📥 Status Code: ${response.statusCode}');
-        _logger.w('📥 Response: ${response.data}');
+        _logger.w('📥 Response Headers: ${response.headers.map}');
+        _logger.w('📥 Response Data: ${response.data}');
         _logger
             .i('═══════════════════════════════════════════════════════════');
-        throw Exception("Login failed");
+        final data = response.data;
+        final msg = (data is Map && data['message'] != null)
+            ? data['message'].toString()
+            : 'Login failed';
+        return {"error": true, "message": msg, "status": response.statusCode};
       }
     } on DioException catch (e) {
       _logger.e('❌ LOGIN ERROR');
       _logger.e('📥 Error Type: ${e.type}');
       _logger.e('📥 Error Message: ${e.message}');
       _logger.e('📥 Request URL: ${e.requestOptions.uri}');
-      _logger.e('📥 Request Data: ${e.requestOptions.data}');
       _logger.e('📥 Request Headers: ${e.requestOptions.headers}');
+      _logger.e('📥 Request Data: ${e.requestOptions.data}');
       if (e.response != null) {
         _logger.e('📥 Response Status: ${e.response?.statusCode}');
+        _logger.e('📥 Response Headers: ${e.response?.headers.map}');
         _logger.e('📥 Response Data: ${e.response?.data}');
       }
       _logger.i('═══════════════════════════════════════════════════════════');

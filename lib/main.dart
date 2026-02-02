@@ -1,14 +1,20 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
-import 'package:center_for_biblical_studies/features/splash_screens/spash_screens.dart';
+import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
+import 'package:center_for_biblical_studies/supabase/supabase_config.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+  );
   runApp(const MyApp());
 }
 
@@ -32,14 +38,14 @@ class _MyAppState extends State<MyApp> {
   Future<void> _loadSettings() async {
     final languageCode = await SettingsService.getLanguage();
     final theme = await SettingsService.getTheme();
-    
+
     if (mounted) {
       setState(() {
         _locale = Locale(languageCode);
-        _themeMode = theme == 'dark' 
-            ? ThemeMode.dark 
-            : theme == 'system' 
-                ? ThemeMode.system 
+        _themeMode = theme == 'dark'
+            ? ThemeMode.dark
+            : theme == 'system'
+                ? ThemeMode.system
                 : ThemeMode.light;
       });
     }
@@ -79,7 +85,7 @@ class _MyAppState extends State<MyApp> {
         Locale('en', ''),
         Locale('fr', ''),
       ],
-      home: const SplashScreen(),
+      home: const LoginPage(),
     );
   }
 }

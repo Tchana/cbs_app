@@ -1,7 +1,7 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/shared/tab_button.dart';
@@ -21,7 +21,7 @@ class _CoursesPageState extends State<CoursesPage>
     with TickerProviderStateMixin {
   final DataController dataController = Get.find<DataController>();
 
-  final ApiService apiService = ApiService();
+  final SupabaseService apiService = SupabaseService();
   late final TabController _tabController =
       TabController(length: 3, vsync: this);
 

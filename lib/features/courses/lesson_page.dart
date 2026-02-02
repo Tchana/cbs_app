@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
@@ -10,6 +11,12 @@ import 'package:get/get.dart';
 class LessonPage extends StatelessWidget {
   final CourseData? courseData;
   const LessonPage({super.key, this.courseData});
+
+  static String _teacherDisplayName(RegisterData? teacher) {
+    if (teacher == null) return '—';
+    final name = '${teacher.firstName ?? ''} ${teacher.lastName ?? ''}'.trim();
+    return name.isEmpty ? '—' : name;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +32,8 @@ class LessonPage extends StatelessWidget {
               ),
               gapH10,
               Text(
-                courseData!.description ?? "",
-                style: verySmallStyle12.copyWith(color: CbsColors.primaryDark),
+                courseData?.description ?? "",
+                style: verySmallStyle12.copyWith(color: CbsColors.primaryDark[500]),
                 maxLines: 10,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -44,9 +51,9 @@ class LessonPage extends StatelessWidget {
                             fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "${courseData!.teacher!.firstName ?? " "} ${courseData!.teacher!.lastName ?? " "}",
+                        _teacherDisplayName(courseData?.teacher),
                         style: verySmallStyle12.copyWith(
-                            color: CbsColors.primaryDark),
+                            color: CbsColors.primaryDark[500]),
                       ),
                     ],
                   ),
@@ -54,7 +61,7 @@ class LessonPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "${courseData!.lessons!.length.toString()} lessons",
+                        "${(courseData?.lessons?.length ?? 0)} lessons",
                         style: verySmallStyle15.copyWith(
                             color: CbsColors.primaryBlue,
                             fontWeight: FontWeight.bold),
@@ -62,7 +69,7 @@ class LessonPage extends StatelessWidget {
                       Text(
                         "30 heures",
                         style: verySmallStyle12.copyWith(
-                            color: CbsColors.primaryDark),
+                            color: CbsColors.primaryDark[500]),
                       ),
                     ],
                   ),
@@ -94,9 +101,12 @@ class LessonPage extends StatelessWidget {
               ListView.builder(
                   padding: const EdgeInsets.only(top: 20.0),
                   shrinkWrap: true,
-                  itemCount: courseData!.lessons!.length,
+                  itemCount: courseData?.lessons?.length ?? 0,
                   itemBuilder: (BuildContext context, int index) {
-                    return lessonCard(index, courseData!.lessons![index]);
+                    final lesson = courseData?.lessons?[index];
+                    return lesson != null
+                        ? lessonCard(index, lesson)
+                        : const SizedBox.shrink();
                   })
             ],
           ),
@@ -106,12 +116,13 @@ class LessonPage extends StatelessWidget {
   }
 
   Widget lessonCard(int index, LessonData lesson) {
+    final pdfUrl = lesson.file;
     return GestureDetector(
-      onTap: () {
-        Get.to(
-          () => PdfViewerScreen(pdfUrl: lesson.file!),
-        );
-      },
+      onTap: pdfUrl != null && pdfUrl.isNotEmpty
+          ? () {
+              Get.to(() => PdfViewerScreen(pdfUrl: pdfUrl));
+            }
+          : null,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 16.0),
         child: Row(
@@ -130,7 +141,7 @@ class LessonPage extends StatelessWidget {
                 Text(
                   "Durée: 1 heure",
                   style:
-                      verySmallStyle12.copyWith(color: CbsColors.primaryDark),
+                      verySmallStyle12.copyWith(color: CbsColors.primaryDark[500]),
                 ),
               ],
             ),

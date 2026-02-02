@@ -1,13 +1,13 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/book_card.dart';
 import 'package:center_for_biblical_studies/shared/book_item.dart';
 import 'package:center_for_biblical_studies/shared/page_header.dart';
-import 'package:center_for_biblical_studies/shared/section_header.dart';
-import 'package:center_for_biblical_studies/shared/tab_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
+import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,7 +20,7 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
-  final ApiService apiService = ApiService();
+  final SupabaseService apiService = SupabaseService();
   final DataController dataController = Get.find<DataController>();
 
   late final TabController _tabController =
@@ -28,7 +28,6 @@ class _LibraryPageState extends State<LibraryPage>
 
   void fetchData() async {
     final dataController = Get.find<DataController>();
-
     try {
       final books = await apiService.fetchBooks();
       dataController.setBooks(books);
@@ -38,7 +37,7 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   @override
-  initState() {
+  void initState() {
     if (dataController.books.isEmpty) {
       fetchData();
     }
@@ -46,207 +45,216 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.only(
-            top: 60,
-          ),
-          child: Column(
-            children: [
-              gapH16,
-              PageHeader(
-                title: 'Bibliotheque',
-                titleIcon: const Icon(
-                  Icons.library_books,
-                  color: CbsColors.primaryBlue,
-                ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            gapH16,
+            PageHeader(
+              title: l10n.library,
+              titleIcon: const Icon(
+                Icons.library_books_rounded,
+                color: CbsColors.primaryBrown,
               ),
-              gapH32,
-              Theme(
-                data: ThemeData(),
+            ),
+            gapH20,
+            // Tabs - pill style
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(24),
+                ),
                 child: TabBar(
-                  tabAlignment: TabAlignment.start,
+                  tabAlignment: TabAlignment.fill,
                   dividerHeight: 0,
-                  isScrollable: true,
                   controller: _tabController,
                   indicator: BoxDecoration(
-                    color: CbsColors.primaryBlue,
-                    borderRadius: BorderRadius.circular(50),
+                    color: CbsColors.primaryBrown,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  unselectedLabelColor: CbsColors.primaryBlue,
-                  labelColor: CbsColors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: CbsColors.primaryBrown,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
                   tabs: [
-                    Tab(
-                      child: TabButton(label: "Tout"),
+                    Tab(text: l10n.tabAll),
+                    Tab(text: l10n.tabBibles),
+                    Tab(text: l10n.tabBooks),
+                    Tab(text: l10n.tabDictionaries),
+                  ],
+                ),
+              ),
+            ),
+            gapH16,
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAllTab(l10n),
+                  _buildCategoryTab(BookType.bible, l10n),
+                  _buildCategoryTab(BookType.commentary, l10n),
+                  _buildCategoryTab(BookType.dictionnaire, l10n),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAllTab(AppLocalizations l10n) {
+    final bibles = dataController.books
+        .where((b) => b.category == BookType.bible)
+        .toList();
+    final engBibles =
+        bibles.where((b) => (b.language ?? '').toUpperCase() == 'ENG').toList();
+    final frBibles =
+        bibles.where((b) => (b.language ?? '').toUpperCase() != 'ENG').toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (engBibles.isNotEmpty) ...[
+            _sectionTitle(l10n.sectionBibles, 'ENG'),
+            gapH12,
+            SizedBox(
+              height: 168,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: engBibles.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, index) => BookCard(book: engBibles[index]),
+              ),
+            ),
+            gapH24,
+          ],
+          if (frBibles.isNotEmpty) ...[
+            _sectionTitle(l10n.sectionBibles, 'FR'),
+            gapH12,
+            SizedBox(
+              height: 168,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: frBibles.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (_, index) => BookCard(book: frBibles[index]),
+              ),
+            ),
+            gapH24,
+          ],
+          if (bibles.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.menu_book_rounded,
+                      size: 48,
+                      color: CbsColors.hintColor,
                     ),
-                    Tab(
-                      child: TabButton(label: "Bibles"),
-                    ),
-                    Tab(
-                      child: TabButton(label: "Livres"),
-                    ),
-                    Tab(
-                      child: TabButton(label: "Dictionnaires"),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.noItemsFound,
+                      textAlign: TextAlign.center,
+                      style: smallStyle18.copyWith(
+                        color: CbsColors.hintColor,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
               ),
-              gapH20,
-              SizedBox(
-                height: 606,
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    Column(
-                      children: [
-                        SectionHeader(
-                          title: "Bibles",
-                          moreText: "",
-                        ),
-                        Divider(
-                          color: CbsColors.primaryDark,
-                          thickness: 3,
-                        ),
-                        gapH16,
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Color(0xFFEFF4F8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                spreadRadius: 3,
-                                blurRadius: 5,
-                                offset:
-                                    Offset(0, 3), // changes position of shadow
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text("ENG"),
-                                gapH12,
-                                SizedBox(
-                                  height: 175,
-                                  width: double.infinity,
-                                  child: ListView.builder(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      shrinkWrap: true,
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: dataController.books.length,
-                                      physics: AlwaysScrollableScrollPhysics(),
-                                      itemBuilder:
-                                          (BuildContext context, int index) {
-                                        return BookCard(
-                                          book: dataController.books[index],
-                                        );
-                                      }),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        gapH12,
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("FR"),
-                              gapH12,
-                              SizedBox(
-                                height: 175,
-                                width: double.infinity,
-                                child: ListView.builder(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    shrinkWrap: true,
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: dataController.books.length,
-                                    physics: AlwaysScrollableScrollPhysics(),
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      return BookCard(
-                                        book: dataController.books[index],
-                                      );
-                                    }),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    ListView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 20,
-                      ),
-                      children: dataController.books
-                              .where((book) => book.category == BookType.bible)
-                              .map((book) {
-                                return BookItem(book: book);
-                              })
-                              .toList()
-                              .isEmpty
-                          ? [Center(child: Text('No items found'))]
-                          : dataController.books
-                              .where((book) => book.category == BookType.bible)
-                              .map((book) {
-                              return BookItem(book: book);
-                            }).toList(),
-                    ),
-                    ListView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 20,
-                      ),
-                      children: dataController.books
-                              .where((book) =>
-                                  book.category == BookType.commentary)
-                              .map((book) {
-                                return BookItem(book: book);
-                              })
-                              .toList()
-                              .isEmpty
-                          ? [Center(child: Text('No items found'))]
-                          : dataController.books
-                              .where((book) =>
-                                  book.category == BookType.commentary)
-                              .map((book) {
-                              return BookItem(book: book);
-                            }).toList(),
-                    ),
-                    ListView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 20,
-                      ),
-                      children: dataController.books
-                              .where((book) =>
-                                  book.category == BookType.dictionnaire)
-                              .map((book) {
-                                return BookItem(book: book);
-                              })
-                              .toList()
-                              .isEmpty
-                          ? [Center(child: Text('No items found'))]
-                          : dataController.books
-                              .where((book) =>
-                                  book.category == BookType.dictionnaire)
-                              .map((book) {
-                              return BookItem(book: book);
-                            }).toList(),
-                    ),
-                  ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String sectionName, String lang) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '$sectionName · $lang',
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: CbsColors.primaryBrown,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryTab(BookType category, AppLocalizations l10n) {
+    final items = dataController.books
+        .where((book) => book.category == category)
+        .toList();
+
+    if (items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.menu_book_rounded,
+                size: 48,
+                color: CbsColors.hintColor,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.noItemsFound,
+                textAlign: TextAlign.center,
+                style: smallStyle18.copyWith(
+                  color: CbsColors.hintColor,
+                  fontSize: 16,
                 ),
-              )
+              ),
             ],
           ),
         ),
-      ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: items.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (_, index) => BookItem(book: items[index]),
     );
   }
 }

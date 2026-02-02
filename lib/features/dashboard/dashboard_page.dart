@@ -1,6 +1,8 @@
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/auth_service.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
@@ -21,254 +23,389 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DataController dataController = Get.find<DataController>();
-  final ApiService apiService = ApiService();
+  final SupabaseService apiService = SupabaseService();
+  bool _loading = false;
 
-  void fetchData() async {
-    final dataController = Get.find<DataController>();
-
+  Future<void> fetchData() async {
+    setState(() => _loading = true);
     try {
       final courses = await apiService.fetchCourses();
-      print("List of courses: $courses");
       dataController.setCourses(courses);
-    } catch (e) {
-      // Handle errors if needed
-    }
-
+    } catch (_) {}
     try {
       final books = await apiService.fetchBooks();
-      print("List of books: $books");
       dataController.setBooks(books);
-    } catch (e) {
-      // Handle errors if needed
-    }
-
+    } catch (_) {}
     try {
       final teachers = await apiService.fetchTeachers();
-      print("List of teachers: $teachers");
       dataController.setTeachers(teachers);
-    } catch (e) {
-      // Handle errors if needed
-    }
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
   }
-
-  bool? loading = false;
 
   @override
   void initState() {
-    if (dataController.courses.isEmpty ||
-        dataController.books.isEmpty ||
+    super.initState();
+    if (dataController.courses.isEmpty &&
+        dataController.books.isEmpty &&
         dataController.teachers.isEmpty) {
       fetchData();
     }
-
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final user = AuthService.currentUser;
+    final meta = user?.userMetadata ?? {};
+    final firstName = meta['first_name']?.toString().trim();
+    final lastName = meta['last_name']?.toString().trim();
+    final nameFromMeta = meta['name']?.toString().trim();
+    final displayName = (firstName != null && lastName != null)
+        ? '$firstName $lastName'.trim()
+        : (firstName ??
+            lastName ??
+            nameFromMeta ??
+            user?.email?.split('@').first ??
+            '—');
+    final displayEmail = user?.email ?? '';
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.only(top: 60, left: 20, right: 20),
-          child: Column(
-            children: [
-              Row(
+      backgroundColor: CbsColors.backgroundColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: fetchData,
+          color: CbsColors.primaryBrown,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 1,
-                    child: const CircleAvatar(
-                      radius: 34,
-                      backgroundColor: CbsColors.primaryGrey,
-                    ),
-                  ),
-                  Expanded(
-                    flex: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Inscrivez-vous",
-                                style: mediumStyle24Medium.copyWith(
-                                    color: CbsColors.darkBlue),
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {},
-                                    child: const Icon(
-                                        Icons.notifications_none_outlined),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {},
-                                    child:
-                                        const Icon(Icons.bookmark_add_outlined),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Text(
-                            "Vous avez déjà un compte ? Connectez-vous",
-                            style: verySmallStyle12,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              gapH12,
-              TextField(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(50.0),
-                  ),
-                  hintText: "Rechercher",
-                  contentPadding: const EdgeInsets.all(16),
-                  suffixIcon: const Icon(
-                    Icons.search,
-                    color: CbsColors.primaryBrown,
-                    size: 17,
-                  ),
-                ),
-              ),
-              gapH32,
-              Container(
-                width: double.maxFinite,
-                height: 200,
-                decoration: BoxDecoration(
-                  color: CbsColors.primaryBlue,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(25.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  // Header: avatar + greeting + actions
+                  Row(
                     children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: CbsColors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.play_circle_outline,
-                            size: 150,
-                            color: CbsColors.primaryGrey,
-                          ),
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor:
+                            CbsColors.primaryBrown.withValues(alpha: 0.15),
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 32,
+                          color: CbsColors.primaryBrown,
                         ),
                       ),
-                      gapW12,
+                      gapW16,
                       Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Bienvenue dans CBS!",
-                              style: smallStyle18.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: CbsColors.white),
+                              displayName,
+                              style: mediumStyle24Medium.copyWith(
+                                color: CbsColors.primaryDark[800],
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                            gapH4,
                             Text(
-                              "Vidéo introductive et descriptive de CBS",
-                              style: verySmallStyle15.copyWith(
-                                  color: CbsColors.white),
+                              displayEmail,
+                              style: verySmallStyle12.copyWith(
+                                color: CbsColors.hintColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.notifications_outlined,
+                          color: CbsColors.primaryDark[500],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.bookmark_border_rounded,
+                          color: CbsColors.primaryDark[500],
+                        ),
+                      ),
                     ],
                   ),
-                ),
+                  gapH20,
+
+                  // Search
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: l10n.searchHint,
+                      hintStyle: smallStyle18.copyWith(
+                        color: CbsColors.hintColor,
+                      ),
+                      filled: true,
+                      fillColor: CbsColors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: CbsColors.primaryBrown,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      suffixIcon: Icon(
+                        Icons.search_rounded,
+                        color: CbsColors.primaryBrown,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  gapH24,
+
+                  // Welcome card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: CbsColors.primaryBrown,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CbsColors.primaryBrown.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color:
+                                CbsColors.primaryYellow.withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.play_circle_filled_rounded,
+                            size: 44,
+                            color: CbsColors.primaryYellow,
+                          ),
+                        ),
+                        gapW16,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.dashboardWelcome,
+                                style: smallStyle18.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: CbsColors.white,
+                                ),
+                              ),
+                              gapH8,
+                              Text(
+                                l10n.dashboardWelcomeSubtitle,
+                                style: verySmallStyle12.copyWith(
+                                  color: CbsColors.primaryYellow,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  gapH28,
+
+                  // Teachers section
+                  SectionHeader(
+                    title: l10n.teachersSection,
+                    moreText: l10n.seeAll,
+                  ),
+                  gapH12,
+                  _loading
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: CbsColors.primaryBrown,
+                            ),
+                          ),
+                        )
+                      : SizedBox(
+                          height: 200,
+                          child: Obx(() {
+                            final teachers = dataController.teachers;
+                            if (teachers.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  l10n.loading,
+                                  style: smallStyle18.copyWith(
+                                    color: CbsColors.hintColor,
+                                  ),
+                                ),
+                              );
+                            }
+                            return ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: teachers.take(5).length,
+                              separatorBuilder: (_, __) => gapW16,
+                              itemBuilder: (_, i) => _TeacherCard(
+                                teacher: teachers[i],
+                                onContact: () =>
+                                    checkWhatsAppAndCall('+237656388275'),
+                                contactLabel: l10n.contact,
+                              ),
+                            );
+                          }),
+                        ),
+                  gapH28,
+
+                  // Courses section
+                  SectionHeader(
+                    title: l10n.coursesSection,
+                    moreText: l10n.seeAll,
+                  ),
+                  gapH12,
+                  _loading
+                      ? const SizedBox.shrink()
+                      : Obx(() {
+                          final courses = dataController.courses;
+                          if (courses.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: Text(
+                                  l10n.loading,
+                                  style: smallStyle18.copyWith(
+                                    color: CbsColors.hintColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: courses
+                                .take(5)
+                                .map((course) => CourseCard(courseData: course))
+                                .toList(),
+                          );
+                        }),
+                  gapH16,
+                ],
               ),
-              gapH32,
-              SectionHeader(title: "Enseignants", moreText: "Voir tout"),
-              gapH32,
-              Obx(() {
-                return loading!
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: dataController.teachers
-                            .map((teacher) {
-                              return teacherCard(teacher: teacher);
-                            })
-                            .take(3)
-                            .toList(),
-                      );
-              }),
-              gapH32,
-              SectionHeader(title: "Cours", moreText: "Voir tout"),
-              Obx(() {
-                return loading!
-                    ? const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: dataController.courses
-                            .map((course) {
-                              return CourseCard(courseData: course);
-                            })
-                            .take(3)
-                            .toList(),
-                      );
-              }),
-              gapH32,
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget teacherCard({RegisterData? teacher}) {
+class _TeacherCard extends StatelessWidget {
+  const _TeacherCard({
+    required this.teacher,
+    required this.onContact,
+    required this.contactLabel,
+  });
+
+  final RegisterData teacher;
+  final VoidCallback onContact;
+  final String contactLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = '${teacher.firstName ?? ''} ${teacher.lastName ?? ''}'.trim();
+    final hasImage =
+        teacher.pImage != null && teacher.pImage!.trim().isNotEmpty;
+
     return SizedBox(
-      width: 120,
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: CbsColors.primaryGrey,
-            backgroundImage: NetworkImage(teacher!.pImage ?? ""),
+      width: 140,
+      child: Material(
+        color: CbsColors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: 0,
+        shadowColor: CbsColors.primaryDark[800]?.withValues(alpha: 0.08),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.1),
+                backgroundImage:
+                    hasImage ? NetworkImage(teacher.pImage!) : null,
+                child: hasImage
+                    ? null
+                    : Icon(
+                        Icons.person_rounded,
+                        size: 36,
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.6),
+                      ),
+              ),
+              gapH10,
+              Text(
+                name.isEmpty ? '—' : name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: mediumBodyStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: CbsColors.primaryDark[800],
+                ),
+              ),
+              gapH4,
+              Text(
+                teacher.email ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: smallBodyStyle.copyWith(
+                  color: CbsColors.hintColor,
+                  fontSize: 12,
+                ),
+              ),
+              gapH10,
+              CbsButton(
+                width: double.infinity,
+                height: 32,
+                bgColor: CbsColors.primaryBrown,
+                onPressed: onContact,
+                child: Text(
+                  contactLabel,
+                  style: verySmallStyle10.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: CbsColors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
-          gapH8,
-          Text(
-            "${teacher.firstName ?? " "} ${teacher.lastName ?? " "} ",
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            style: mediumBodyStyle.copyWith(
-                fontWeight: FontWeight.bold, color: CbsColors.primaryBlue),
-          ),
-          Text(
-            teacher.email ?? "",
-            maxLines: 1,
-            style: smallBodyStyle,
-          ),
-          gapH8,
-          CbsButton(
-            width: 100,
-            height: 30,
-            bgColor: CbsColors.primaryBlue,
-            onPressed: () {
-              checkWhatsAppAndCall("+237656388275");
-            },
-            child: Text(
-              "Contacter",
-              style: verySmallStyle10.copyWith(
-                  fontWeight: FontWeight.bold, color: CbsColors.white),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

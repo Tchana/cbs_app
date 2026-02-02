@@ -1,7 +1,4 @@
-import 'dart:async';
-import 'dart:typed_data';
-
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
@@ -15,8 +12,8 @@ class PdfViewerScreen extends StatefulWidget {
 }
 
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
-  late PdfController? _pdfController;
-  final ApiService apiService = ApiService();
+  PdfController? _pdfController;
+  final SupabaseService _supabase = SupabaseService();
 
   @override
   void initState() {
@@ -25,11 +22,13 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Future<void> _loadPdf() async {
-    // Load PDF from URL
-    _pdfController = PdfController(
-      document: PdfDocument.openData((await apiService
-          .fetchPdfData(widget.pdfUrl)) as FutureOr<Uint8List>),
-    );
+    final file = await _supabase.fetchPdfData(widget.pdfUrl);
+    final bytes = await file.readAsBytes();
+    if (mounted) {
+      setState(() {
+        _pdfController = PdfController(document: PdfDocument.openData(bytes));
+      });
+    }
   }
 
   @override
@@ -46,7 +45,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   @override
   void dispose() {
-    _pdfController!.dispose();
+    _pdfController?.dispose();
     super.dispose();
   }
 }

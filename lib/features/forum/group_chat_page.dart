@@ -1,7 +1,7 @@
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
-import 'package:center_for_biblical_studies/services/authentication.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -17,7 +17,7 @@ class GroupChatPage extends StatefulWidget {
 }
 
 class _GroupChatPageState extends State<GroupChatPage> {
-  final ApiService apiService = ApiService();
+  final SupabaseService apiService = SupabaseService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageFocusNode = FocusNode();
@@ -51,14 +51,15 @@ class _GroupChatPageState extends State<GroupChatPage> {
     }
 
     if (!mounted) return;
-    
+
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
     try {
-      final fetchedMessages = await apiService.fetchMessages(widget.group.uuid!);
+      final fetchedMessages =
+          await apiService.fetchMessages(widget.group.uuid!);
       if (mounted) {
         setState(() {
           messages = fetchedMessages;
@@ -111,7 +112,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (widget.group.online_count != null && widget.group.online_count! > 0)
+            if (widget.group.online_count != null &&
+                widget.group.online_count! > 0)
               Text(
                 '${widget.group.online_count} en ligne',
                 style: smallStyle18.copyWith(
@@ -170,7 +172,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             Icon(
                               Icons.chat_bubble_outline,
                               size: 64,
-                              color: CbsColors.primaryBrown.withValues(alpha: 0.5),
+                              color:
+                                  CbsColors.primaryBrown.withValues(alpha: 0.5),
                             ),
                             gapH16,
                             Text(
@@ -240,10 +243,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
       if (result["success"] == true) {
         // Clear the input field
         _messageController.clear();
-        
+
         // Refresh messages to show the new one
         await fetchMessages();
-        
+
         if (mounted) {
           // Scroll to bottom to show new message
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -259,11 +262,13 @@ class _GroupChatPageState extends State<GroupChatPage> {
       } else {
         if (mounted) {
           setState(() {
-            errorMessage = result["message"] ?? "Erreur lors de l'envoi du message";
+            errorMessage =
+                result["message"] ?? "Erreur lors de l'envoi du message";
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result["message"] ?? "Erreur lors de l'envoi du message"),
+              content: Text(
+                  result["message"] ?? "Erreur lors de l'envoi du message"),
               backgroundColor: CbsColors.errorColor,
             ),
           );
@@ -330,17 +335,21 @@ class _MessageInputField extends StatelessWidget {
                   hintStyle: smallStyle18.copyWith(color: CbsColors.hintColor),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
+                    borderSide: BorderSide(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: CbsColors.primaryBrown, width: 2),
+                    borderSide:
+                        BorderSide(color: CbsColors.primaryBrown, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   filled: true,
                   fillColor: CbsColors.backgroundColor,
                 ),
@@ -363,7 +372,8 @@ class _MessageInputField extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(CbsColors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(CbsColors.white),
                         ),
                       )
                     : const Icon(Icons.send, color: CbsColors.white),
@@ -388,7 +398,9 @@ class _MessageBubble extends StatelessWidget {
     final firstName = user.firstName?.trim() ?? '';
     final lastName = user.lastName?.trim() ?? '';
     final fullName = '$firstName $lastName'.trim();
-    return fullName.isNotEmpty ? fullName : (user.email ?? 'Utilisateur inconnu');
+    return fullName.isNotEmpty
+        ? fullName
+        : (user.email ?? 'Utilisateur inconnu');
   }
 
   String _formatTime(String? dateString) {
@@ -470,4 +482,3 @@ class _MessageBubble extends StatelessWidget {
     );
   }
 }
-

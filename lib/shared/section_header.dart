@@ -17,7 +17,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title!,
             style: smallStyle18.copyWith(
-                fontWeight: FontWeight.bold, color: CbsColors.darkBlue),
+                fontWeight: FontWeight.bold, color: CbsColors.primaryDark[800]),
           ),
           TextButton(
             onPressed: onTap,

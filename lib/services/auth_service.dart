@@ -1,18 +1,22 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Auth state: uses Supabase session (no manual token storage).
 class AuthService {
+  static Session? get currentSession =>
+      Supabase.instance.client.auth.currentSession;
+
   static Future<String?> getToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
+    return Supabase.instance.client.auth.currentSession?.accessToken;
   }
 
   static Future<void> logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove("token");
+    await Supabase.instance.client.auth.signOut();
   }
 
   static Future<bool> isLoggedIn() async {
-    String? token = await getToken();
-    return token != null;
+    final session = Supabase.instance.client.auth.currentSession;
+    return session != null;
   }
+
+  static User? get currentUser => Supabase.instance.client.auth.currentUser;
 }
