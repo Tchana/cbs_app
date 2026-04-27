@@ -21,7 +21,16 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({
+    super.key,
+    SupabaseService? apiService,
+    this.enableProfileLoad = true,
+    this.enableVerseLoad = true,
+  }) : apiService = apiService ?? const SupabaseService.testable();
+
+  final SupabaseService apiService;
+  final bool enableProfileLoad;
+  final bool enableVerseLoad;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -29,7 +38,6 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DataController dataController = Get.find<DataController>();
-  final SupabaseService apiService = SupabaseService();
   bool _loading = false;
   _DailyVerse? _dailyVerse;
   bool _loadingVerse = false;
@@ -37,6 +45,8 @@ class _DashboardPageState extends State<DashboardPage> {
   static const _verseCacheTextKey = 'daily_verse_cache_text';
   static const _verseCacheRefKey = 'daily_verse_cache_ref';
   String? _profileLastName;
+
+  SupabaseService get apiService => widget.apiService;
 
   Future<void> _contactTeacher(RegisterData teacher) async {
     await _openTeacherWhatsAppContact(
@@ -146,8 +156,12 @@ class _DashboardPageState extends State<DashboardPage> {
         dataController.teachers.isEmpty) {
       fetchData();
     }
-    _loadProfileLastName();
-    _fetchDailyVerseFromApi();
+    if (widget.enableProfileLoad) {
+      _loadProfileLastName();
+    }
+    if (widget.enableVerseLoad) {
+      _fetchDailyVerseFromApi();
+    }
   }
 
   void _openSearch(AppLocalizations l10n) {
@@ -171,16 +185,13 @@ class _DashboardPageState extends State<DashboardPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final languageCode = l10n.locale.languageCode;
-    final user = AuthService.currentUser;
+    final user = _currentUserOrNull();
     final meta = user?.userMetadata ?? {};
     final firstName = meta['first_name']?.toString().trim();
     final lastName = meta['last_name']?.toString().trim();
     final nameFromMeta = meta['name']?.toString().trim();
-    final username = _profileLastName ??
-        lastName ??
-        firstName ??
-        nameFromMeta ??
-        '';
+    final username =
+        _profileLastName ?? lastName ?? firstName ?? nameFromMeta ?? '';
     final today = DateFormat.yMMMMEEEEd(languageCode).format(DateTime.now());
     final verse = _dailyVerse;
     final greeting = _greeting(l10n);
@@ -424,6 +435,14 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  dynamic _currentUserOrNull() {
+    try {
+      return AuthService.currentUser;
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -967,14 +986,29 @@ class _CourseDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final title = (course.title ?? '').trim();
     return Scaffold(
-      backgroundColor: CbsColors.backgroundColor,
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          title.isNotEmpty ? title : l10n.courseDefault,
+          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
           child: LessonPage(
             courseData: course,
-            onBack: () => Navigator.of(context).pop(),
           ),
         ),
       ),

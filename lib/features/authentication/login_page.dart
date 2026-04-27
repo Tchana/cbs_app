@@ -115,7 +115,9 @@ class _LoginPageState extends State<LoginPage> {
     print('│ LOGIN ERROR');
     // ignore: avoid_print
     print('├─────────────────────────────────────────────────────────────');
+    // ignore: avoid_print
     if (status != null) print('│ Status: $status');
+    // ignore: avoid_print
     if (message != null) print('│ Message: $message');
     if (responseData != null && responseData.isNotEmpty) {
       // ignore: avoid_print

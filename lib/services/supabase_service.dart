@@ -12,10 +12,14 @@ import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Replaces the previous REST API. Uses Supabase Auth + Database.
 class SupabaseService {
+  const SupabaseService();
+  const SupabaseService.testable();
+
   static SupabaseClient get _client => Supabase.instance.client;
   static const bool _pdfDebugLogs = true;
 
@@ -351,6 +355,13 @@ class SupabaseService {
         return BookType.other;
     }
   }
+
+  @visibleForTesting
+  BookType mapBookTypeFromRawForTest(String? raw) => _bookTypeFromRaw(raw);
+
+  @visibleForTesting
+  LibraryData mapBookFromRowForTest(Map<String, dynamic> row) =>
+      _bookFromRow(row);
 
   // ---------------------------------------------------------------------------
   // Teachers (profiles with role teacher)

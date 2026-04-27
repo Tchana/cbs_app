@@ -59,7 +59,9 @@ class _SignupPageState extends State<SignupPage> {
     if (name.isEmpty &&
         email.isEmpty &&
         password.isEmpty &&
-        confirmPassword.isEmpty) return;
+        confirmPassword.isEmpty) {
+      return;
+    }
     fieldValidNotifier.value = AppRegex.emailRegex.hasMatch(email) &&
         AppRegex.passwordRegex.hasMatch(password) &&
         AppRegex.passwordRegex.hasMatch(confirmPassword) &&

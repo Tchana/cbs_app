@@ -11,7 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class LibraryPage extends StatefulWidget {
-  const LibraryPage({super.key});
+  const LibraryPage({
+    super.key,
+    SupabaseService? apiService,
+  }) : apiService = apiService ?? const SupabaseService.testable();
+
+  final SupabaseService apiService;
 
   @override
   State<LibraryPage> createState() => _LibraryPageState();
@@ -19,7 +24,6 @@ class LibraryPage extends StatefulWidget {
 
 class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
-  final SupabaseService apiService = SupabaseService();
   final DataController dataController = Get.find<DataController>();
   TabController? _tabController;
   List<BookType> _categories = const [
@@ -452,4 +456,6 @@ class _LibraryPageState extends State<LibraryPage>
   String _categoryLabel(BookType category, AppLocalizations l10n) {
     return category.name;
   }
+
+  SupabaseService get apiService => widget.apiService;
 }

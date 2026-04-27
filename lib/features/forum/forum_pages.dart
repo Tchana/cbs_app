@@ -11,14 +11,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ForumPage extends StatefulWidget {
-  const ForumPage({super.key});
+  const ForumPage({
+    super.key,
+    SupabaseService? apiService,
+  }) : apiService = apiService ?? const SupabaseService.testable();
+
+  final SupabaseService apiService;
 
   @override
   State<ForumPage> createState() => _ForumPageState();
 }
 
 class _ForumPageState extends State<ForumPage> {
-  final SupabaseService apiService = SupabaseService();
   final DataController dataController = Get.find<DataController>();
   bool isLoading = false;
   String? errorMessage;
@@ -40,7 +44,7 @@ class _ForumPageState extends State<ForumPage> {
     });
 
     try {
-      final groups = await apiService.fetchGroups();
+      final groups = await widget.apiService.fetchGroups();
       if (mounted) {
         dataController.setGroups(groups);
       }
@@ -183,7 +187,10 @@ class _ForumPageState extends State<ForumPage> {
                               if (group.is_deleted == true) {
                                 return const SizedBox.shrink();
                               }
-                              return _GroupCard(group: group);
+                              return _GroupCard(
+                                group: group,
+                                apiService: widget.apiService,
+                              );
                             },
                           ),
                         ),
@@ -206,14 +213,20 @@ class _ForumPageState extends State<ForumPage> {
 
 class _GroupCard extends StatefulWidget {
   final GroupData group;
+  final SupabaseService? apiService;
 
-  const _GroupCard({required this.group});
+  const _GroupCard({
+    required this.group,
+    this.apiService,
+  });
 
   @override
   State<_GroupCard> createState() => _GroupCardState();
 }
+
 class _GroupCardState extends State<_GroupCard> {
-  final SupabaseService _apiService = SupabaseService();
+  late final SupabaseService _apiService =
+      widget.apiService ?? const SupabaseService.testable();
   MessageData? _lastMessage;
   bool _isLoadingLastMessage = false;
   bool _hasVisibleMessages = false;
@@ -404,7 +417,6 @@ class _GroupCardState extends State<_GroupCard> {
     );
   }
 }
-
 
 class _CreateRoomPage extends StatefulWidget {
   const _CreateRoomPage();
