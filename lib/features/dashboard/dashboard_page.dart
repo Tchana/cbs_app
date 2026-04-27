@@ -36,6 +36,7 @@ class _DashboardPageState extends State<DashboardPage> {
   static const _verseCacheDateKey = 'daily_verse_cache_date';
   static const _verseCacheTextKey = 'daily_verse_cache_text';
   static const _verseCacheRefKey = 'daily_verse_cache_ref';
+  String? _profileLastName;
 
   Future<void> _contactTeacher(RegisterData teacher) async {
     await _openTeacherWhatsAppContact(
@@ -60,6 +61,16 @@ class _DashboardPageState extends State<DashboardPage> {
       dataController.setTeachers(teachers);
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _loadProfileLastName() async {
+    final email = AuthService.currentUser?.email?.trim();
+    if (email == null || email.isEmpty) return;
+    final lastName = await apiService.fetchProfileLastNameByEmail(email);
+    if (!mounted) return;
+    setState(() {
+      _profileLastName = lastName;
+    });
   }
 
   Future<void> _fetchDailyVerseFromApi() async {
@@ -135,6 +146,7 @@ class _DashboardPageState extends State<DashboardPage> {
         dataController.teachers.isEmpty) {
       fetchData();
     }
+    _loadProfileLastName();
     _fetchDailyVerseFromApi();
   }
 
@@ -164,14 +176,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final firstName = meta['first_name']?.toString().trim();
     final lastName = meta['last_name']?.toString().trim();
     final nameFromMeta = meta['name']?.toString().trim();
-    final username = firstName ??
-        nameFromMeta ??
-        user?.email?.split('@').first ??
+    final username = _profileLastName ??
         lastName ??
-        '—';
+        firstName ??
+        nameFromMeta ??
+        '';
     final today = DateFormat.yMMMMEEEEd(languageCode).format(DateTime.now());
     final verse = _dailyVerse;
     final greeting = _greeting(l10n);
+    final greetingText = username.isEmpty ? greeting : '$greeting, $username';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -205,7 +218,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$greeting, $username',
+                    greetingText,
                     style: mediumStyle24Medium.copyWith(
                       color: isDark
                           ? CbsColors.darkText

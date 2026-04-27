@@ -363,6 +363,23 @@ class SupabaseService {
         .toList();
   }
 
+  Future<String?> fetchProfileLastNameByEmail(String email) async {
+    final normalized = email.trim();
+    if (normalized.isEmpty) return null;
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('last_name')
+          .eq('email', normalized)
+          .maybeSingle();
+      if (row is! Map<String, dynamic>) return null;
+      final value = (row['last_name'] ?? '').toString().trim();
+      return value.isEmpty ? null : value;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<RegisterData>> searchTeachers(String query) async {
     final q = query.trim();
     final request = _client.from('profiles').select().eq('role', 'teacher');

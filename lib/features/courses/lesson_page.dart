@@ -28,7 +28,6 @@ class LessonPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    final courseTitle = courseData?.title ?? '';
     final description = (courseData?.description ?? '').trim();
     final lessonCount = courseData?.lessons?.length ?? 0;
 
@@ -37,35 +36,7 @@ class LessonPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header with back button
-          if (onBack != null) ...[
-            Row(
-              children: [
-                IconButton(
-                  onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  color: CbsColors.primaryDark[800],
-                  style: IconButton.styleFrom(
-                    backgroundColor:
-                        CbsColors.primaryBrown.withValues(alpha: 0.08),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    courseTitle.isNotEmpty ? courseTitle : l10n.courseDefault,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: mediumStyle24Bold.copyWith(
-                      color: CbsColors.primaryDark[800],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            gapH20,
-          ],
-
+          const SizedBox(height: 20),
           // Course info card
           Container(
             padding: const EdgeInsets.all(16),

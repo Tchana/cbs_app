@@ -64,19 +64,31 @@ class _CoursesPageState extends State<CoursesPage>
           isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.navCourses,
+          _widgetIndex == 0
+              ? l10n.navCourses
+              : (selectedCourse?.title?.trim().isNotEmpty == true
+                  ? selectedCourse!.title!
+                  : l10n.courseDefault),
           style: smallStyle18.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: fetchData,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: l10n.refresh,
-          ),
-        ],
+        leading: _widgetIndex == 0
+            ? null
+            : IconButton(
+                onPressed: () => setState(() => _widgetIndex = 0),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+        actions: _widgetIndex == 0
+            ? [
+                IconButton(
+                  onPressed: fetchData,
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: l10n.refresh,
+                ),
+              ]
+            : const [],
       ),
       body: SafeArea(
         child: Padding(
