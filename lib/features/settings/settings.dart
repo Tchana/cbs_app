@@ -136,7 +136,7 @@ class _SettingsState extends State<Settings> {
     final localizations =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? CbsColors.darkCard : CbsColors.white;
+    final surface = isDark ? CbsColors.darkSurface : CbsColors.white;
     final muted = isDark ? CbsColors.darkHint : CbsColors.hintColor;
 
     return Scaffold(

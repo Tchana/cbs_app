@@ -70,8 +70,8 @@ class _MyAppState extends State<MyApp> {
       seedColor: CbsColors.brandDeepBlue,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: CbsColors.brandBlue,
-      secondary: CbsColors.brandDeepBlue,
+      primary: const Color(0xFF1F7A8C),
+      secondary: const Color(0xFFBFDBF7),
       surface: CbsColors.darkSurface,
       onSurface: CbsColors.darkText,
       error: CbsColors.errorColor,
@@ -106,23 +106,23 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData(
         colorScheme: darkScheme,
         useMaterial3: true,
-        primaryColor: CbsColors.brandBlue,
+        primaryColor: const Color(0xFF1F7A8C),
         scaffoldBackgroundColor: CbsColors.darkSurface,
         appBarTheme: const AppBarTheme(
-          backgroundColor: CbsColors.darkCard,
-          foregroundColor: CbsColors.darkText,
+          backgroundColor: Color(0xFF1F7A8C),
+          foregroundColor: Color(0xFFFFFFFF),
         ),
         cardColor: CbsColors.darkCard,
-        dividerColor: CbsColors.darkHint.withValues(alpha: 0.5),
+        dividerColor: CbsColors.darkText.withValues(alpha: 0.28),
         textTheme: ThemeData.dark().textTheme.apply(
               bodyColor: CbsColors.darkText,
               displayColor: CbsColors.darkText,
             ),
-        iconTheme: const IconThemeData(color: CbsColors.darkText),
+        iconTheme: const IconThemeData(color: Color(0xFF3F2C23)),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: CbsColors.brandDeepBlue,
-            foregroundColor: CbsColors.brandWhite,
+            backgroundColor: Color(0xFF3F2C23),
+            foregroundColor: Color(0xFFFFFFFF),
           ),
         ),
       ),

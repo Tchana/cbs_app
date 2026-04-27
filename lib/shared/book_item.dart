@@ -18,6 +18,10 @@ class BookItem extends StatelessWidget {
     final title = (book.title ?? '').trim();
     final author = (book.author ?? '').trim();
     final hasCover = (book.bookCover ?? '').trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
+    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
 
     return Material(
       color: Colors.transparent,
@@ -27,7 +31,7 @@ class BookItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: CbsColors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: CbsColors.primaryBrown.withValues(alpha: 0.14),
@@ -63,7 +67,7 @@ class BookItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: smallStyle18.copyWith(
-                  color: CbsColors.primaryDark[800],
+                  color: titleColor,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
@@ -74,7 +78,7 @@ class BookItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: smallStyle18.copyWith(
-                  color: CbsColors.hintColor,
+                  color: subtitleColor,
                   fontSize: 12,
                 ),
               ),

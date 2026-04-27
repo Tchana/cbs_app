@@ -8,11 +8,11 @@ class CbsColors {
   static const Color brandBlue = Color(0xFF1D84B5);
   static const Color brandDeepBlue = Color(0xFF176087);
 
-  // Dark mode neutrals for full-app support
-  static const Color darkSurface = Color(0xFF161312);
-  static const Color darkCard = Color(0xFF221C1A);
-  static const Color darkText = Color(0xFFF2F4F3);
-  static const Color darkHint = Color(0xFFB9AEA4);
+  // Dark mode palette (requested theme)
+  static const Color darkSurface = Color(0xFFE1E5F2);
+  static const Color darkCard = Color(0xFFBFDBF7);
+  static const Color darkText = Color(0xFF3F2C23);
+  static const Color darkHint = Color(0xFF1F7A8C);
 
   static const white = MaterialColor(0xFFF2F4F3, {
     50: Color(0xFFFDFEFE),

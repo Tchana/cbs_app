@@ -212,6 +212,199 @@ class _GroupCard extends StatefulWidget {
   @override
   State<_GroupCard> createState() => _GroupCardState();
 }
+class _GroupCardState extends State<_GroupCard> {
+  final SupabaseService _apiService = SupabaseService();
+  MessageData? _lastMessage;
+  bool _isLoadingLastMessage = false;
+  bool _hasVisibleMessages = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLastMessage();
+  }
+
+  Future<void> _fetchLastMessage() async {
+    if (widget.group.uuid == null) return;
+
+    setState(() {
+      _isLoadingLastMessage = true;
+    });
+
+    try {
+      final messages = await _apiService.fetchMessages(widget.group.uuid!);
+      if (mounted) {
+        final visibleMessages = messages
+            .where(
+              (m) =>
+                  m.is_deleted != true && (m.content ?? '').trim().isNotEmpty,
+            )
+            .toList();
+        visibleMessages.sort((a, b) {
+          if (a.timestamp == null || b.timestamp == null) return 0;
+          return b.timestamp!.compareTo(a.timestamp!); // newest first
+        });
+        setState(() {
+          _hasVisibleMessages = visibleMessages.isNotEmpty;
+          _lastMessage =
+              visibleMessages.isNotEmpty ? visibleMessages.first : null;
+          _isLoadingLastMessage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingLastMessage = false;
+        });
+      }
+    }
+  }
+
+  String _formatTime(String? dateString) {
+    if (dateString == null) return '';
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays == 0) {
+        return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+      } else if (difference.inDays == 1) {
+        return "Hier";
+      } else if (difference.inDays < 7) {
+        return "Il y a ${difference.inDays}j";
+      } else {
+        return "${date.day}/${date.month}";
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryBrown;
+    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    return Material(
+      color: cardColor,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => GroupChatPage(group: widget.group),
+            ),
+          );
+          if (mounted) {
+            await _fetchLastMessage();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.group,
+                  color: CbsColors.primaryBrown,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.group.name ?? l10n.unnamedGroup,
+                            style: largeStyle32Bold.copyWith(
+                              fontSize: 17,
+                              color: titleColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (widget.group.is_private == true)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  CbsColors.primaryBrown.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lock,
+                                  size: 12,
+                                  color: CbsColors.primaryBrown,
+                                ),
+                                gapW4,
+                                Text(
+                                  l10n.private,
+                                  style: smallStyle18.copyWith(
+                                    fontSize: 10,
+                                    color: CbsColors.primaryBrown,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isLoadingLastMessage
+                          ? l10n.loading
+                          : (_hasVisibleMessages
+                              ? (_lastMessage?.content ?? l10n.noMessage)
+                              : l10n.noMessage),
+                      style: smallStyle18.copyWith(
+                        fontSize: 13,
+                        color: subtitleColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_lastMessage?.timestamp != null)
+                Text(
+                  _formatTime(_lastMessage!.timestamp),
+                  style: smallStyle18.copyWith(
+                    fontSize: 11,
+                    color: subtitleColor,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _CreateRoomPage extends StatefulWidget {
   const _CreateRoomPage();
@@ -387,195 +580,6 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GroupCardState extends State<_GroupCard> {
-  final SupabaseService _apiService = SupabaseService();
-  MessageData? _lastMessage;
-  bool _isLoadingLastMessage = false;
-  bool _hasVisibleMessages = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLastMessage();
-  }
-
-  Future<void> _fetchLastMessage() async {
-    if (widget.group.uuid == null) return;
-
-    setState(() {
-      _isLoadingLastMessage = true;
-    });
-
-    try {
-      final messages = await _apiService.fetchMessages(widget.group.uuid!);
-      if (mounted) {
-        final visibleMessages = messages
-            .where(
-              (m) =>
-                  m.is_deleted != true &&
-                  (m.content ?? '').trim().isNotEmpty,
-            )
-            .toList();
-        visibleMessages.sort((a, b) {
-          if (a.timestamp == null || b.timestamp == null) return 0;
-          return b.timestamp!.compareTo(a.timestamp!); // newest first
-        });
-        setState(() {
-          _hasVisibleMessages = visibleMessages.isNotEmpty;
-          _lastMessage = visibleMessages.isNotEmpty ? visibleMessages.first : null;
-          _isLoadingLastMessage = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingLastMessage = false;
-        });
-      }
-    }
-  }
-
-  String _formatTime(String? dateString) {
-    if (dateString == null) return '';
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
-
-      if (difference.inDays == 0) {
-        return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
-      } else if (difference.inDays == 1) {
-        return "Hier";
-      } else if (difference.inDays < 7) {
-        return "Il y a ${difference.inDays}j";
-      } else {
-        return "${date.day}/${date.month}";
-      }
-    } catch (e) {
-      return '';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n =
-        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    return Material(
-      color: CbsColors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => GroupChatPage(group: widget.group),
-            ),
-          );
-          if (mounted) {
-            await _fetchLastMessage();
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.group,
-                  color: CbsColors.primaryBrown,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            widget.group.name ?? l10n.unnamedGroup,
-                            style: largeStyle32Bold.copyWith(
-                              fontSize: 17,
-                              color: CbsColors.primaryBrown,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (widget.group.is_private == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  CbsColors.primaryBrown.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.lock,
-                                  size: 12,
-                                  color: CbsColors.primaryBrown,
-                                ),
-                                gapW4,
-                                Text(
-                                  l10n.private,
-                                  style: smallStyle18.copyWith(
-                                    fontSize: 10,
-                                    color: CbsColors.primaryBrown,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _isLoadingLastMessage
-                          ? l10n.loading
-                          : (_hasVisibleMessages
-                              ? (_lastMessage?.content ?? l10n.noMessage)
-                              : l10n.noMessage),
-                      style: smallStyle18.copyWith(
-                        fontSize: 13,
-                        color: CbsColors.hintColor,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (_lastMessage?.timestamp != null)
-                Text(
-                  _formatTime(_lastMessage!.timestamp),
-                  style: smallStyle18.copyWith(
-                    fontSize: 11,
-                    color: CbsColors.hintColor,
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );

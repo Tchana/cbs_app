@@ -322,10 +322,16 @@ class _MessageInputField extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final composerBg = isDark ? CbsColors.darkCard : CbsColors.white;
+    final inputFill =
+        isDark ? CbsColors.darkSurface : CbsColors.backgroundColor;
+    final inputText = isDark ? CbsColors.darkText : CbsColors.primaryDark[700];
+    final inputHint = isDark ? CbsColors.darkHint : CbsColors.hintColor;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: CbsColors.white,
+        color: composerBg,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -343,7 +349,7 @@ class _MessageInputField extends StatelessWidget {
                 focusNode: focusNode,
                 decoration: InputDecoration(
                   hintText: l10n.chatMessageHint,
-                  hintStyle: smallStyle18.copyWith(color: CbsColors.hintColor),
+                  hintStyle: smallStyle18.copyWith(color: inputHint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide(
@@ -362,12 +368,12 @@ class _MessageInputField extends StatelessWidget {
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   filled: true,
-                  fillColor: CbsColors.backgroundColor,
+                  fillColor: inputFill,
                 ),
                 maxLines: null,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
-                style: smallStyle18,
+                style: smallStyle18.copyWith(color: inputText),
               ),
             ),
             gapW8,

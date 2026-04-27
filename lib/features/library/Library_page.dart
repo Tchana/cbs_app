@@ -266,6 +266,10 @@ class _LibraryPageState extends State<LibraryPage>
     final author = (book.author ?? '').trim();
     final progress = 0.38;
     final hasCover = (book.bookCover ?? '').trim().isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
+    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -276,7 +280,7 @@ class _LibraryPageState extends State<LibraryPage>
             'Continue reading',
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
-              color: CbsColors.primaryDark[800],
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -287,7 +291,7 @@ class _LibraryPageState extends State<LibraryPage>
               onTap: () => _openBook(book, l10n),
               child: Ink(
                 decoration: BoxDecoration(
-                  color: CbsColors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: CbsColors.primaryBrown.withValues(alpha: 0.14),
@@ -327,7 +331,7 @@ class _LibraryPageState extends State<LibraryPage>
                               overflow: TextOverflow.ellipsis,
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: CbsColors.primaryDark[800],
+                                color: titleColor,
                                 fontSize: 14,
                               ),
                             ),
@@ -337,7 +341,7 @@ class _LibraryPageState extends State<LibraryPage>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: smallStyle18.copyWith(
-                                color: CbsColors.hintColor,
+                                color: subtitleColor,
                                 fontSize: 12,
                               ),
                             ),

@@ -30,6 +30,10 @@ class LessonPage extends StatelessWidget {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final description = (courseData?.description ?? '').trim();
     final lessonCount = courseData?.lessons?.length ?? 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? CbsColors.darkCard : CbsColors.white;
+    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
+    final bodyColor = isDark ? CbsColors.darkHint : CbsColors.primaryDark[500];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -41,7 +45,7 @@ class LessonPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: CbsColors.white,
+              color: cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: CbsColors.primaryBrown.withValues(alpha: 0.2),
@@ -63,14 +67,14 @@ class LessonPage extends StatelessWidget {
                     l10n.descriptionLabel,
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: CbsColors.primaryDark[800],
+                      color: titleColor,
                     ),
                   ),
                   gapH8,
                   Text(
                     description,
                     style: verySmallStyle12.copyWith(
-                      color: CbsColors.primaryDark[500],
+                      color: bodyColor,
                       height: 1.4,
                     ),
                   ),
@@ -101,7 +105,7 @@ class LessonPage extends StatelessWidget {
             l10n.lessonsLabel,
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
-              color: CbsColors.primaryDark[800],
+              color: titleColor,
             ),
           ),
           gapH12,
