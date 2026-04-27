@@ -169,7 +169,7 @@ class _ForumPageState extends State<ForumPage> {
                       backgroundColor: CbsColors.primaryBrown,
                       foregroundColor: CbsColors.white,
                     ),
-                    child: const Text('Créer'),
+                    child: Text(l10n.create),
                   ),
                 ],
               );
@@ -225,12 +225,14 @@ class _ForumPageState extends State<ForumPage> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context) ??
+            AppLocalizations(const Locale('fr'));
         setState(() {
           errorMessage = e.toString();
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.errorPrefix}: ${e.toString()}'),
             backgroundColor: CbsColors.errorColor,
           ),
         );

@@ -6,6 +6,7 @@ class SettingsService {
   static const String _notificationsKey = 'notifications_enabled';
   static const String _soundKey = 'sound_enabled';
   static const String _vibrationKey = 'vibration_enabled';
+  static const String _onboardingSeenKey = 'onboarding_seen';
 
   // Language settings
   static Future<String> getLanguage() async {
@@ -21,7 +22,7 @@ class SettingsService {
   // Theme settings
   static Future<String> getTheme() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_themeKey) ?? 'light'; // Default to light
+    return prefs.getString(_themeKey) ?? 'system'; // Default to system
   }
 
   static Future<void> setTheme(String theme) async {
@@ -61,5 +62,14 @@ class SettingsService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_vibrationKey, enabled);
   }
-}
 
+  static Future<bool> hasSeenOnboarding() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_onboardingSeenKey) ?? false;
+  }
+
+  static Future<void> setOnboardingSeen(bool seen) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingSeenKey, seen);
+  }
+}

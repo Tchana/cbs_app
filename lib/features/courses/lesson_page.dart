@@ -1,6 +1,7 @@
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -25,6 +26,8 @@ class LessonPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final courseTitle = courseData?.title ?? '';
     final description = (courseData?.description ?? '').trim();
     final lessonCount = courseData?.lessons?.length ?? 0;
@@ -43,13 +46,14 @@ class LessonPage extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back_rounded),
                   color: CbsColors.primaryDark[800],
                   style: IconButton.styleFrom(
-                    backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                    backgroundColor:
+                        CbsColors.primaryBrown.withValues(alpha: 0.08),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    courseTitle.isNotEmpty ? courseTitle : 'Cours',
+                    courseTitle.isNotEmpty ? courseTitle : l10n.courseDefault,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: mediumStyle24Bold.copyWith(
@@ -85,7 +89,7 @@ class LessonPage extends StatelessWidget {
               children: [
                 if (description.isNotEmpty) ...[
                   Text(
-                    'Description',
+                    l10n.descriptionLabel,
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
                       color: CbsColors.primaryDark[800],
@@ -105,13 +109,13 @@ class LessonPage extends StatelessWidget {
                   children: [
                     _InfoChip(
                       icon: Icons.person_outline_rounded,
-                      label: 'Professeur',
+                      label: l10n.teacherLabel,
                       value: _teacherDisplayName(courseData?.teacher),
                     ),
                     const SizedBox(width: 16),
                     _InfoChip(
                       icon: Icons.menu_book_rounded,
-                      label: 'Leçons',
+                      label: l10n.lessonsLabel,
                       value: '$lessonCount',
                     ),
                   ],
@@ -123,7 +127,7 @@ class LessonPage extends StatelessWidget {
 
           // Lessons section
           Text(
-            'Leçons',
+            l10n.lessonsLabel,
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
               color: CbsColors.primaryDark[800],
@@ -143,7 +147,7 @@ class LessonPage extends StatelessWidget {
                     ),
                     gapH12,
                     Text(
-                      'Aucune leçon pour le moment',
+                      l10n.noLessonsYet,
                       style: verySmallStyle14.copyWith(
                         color: CbsColors.hintColor,
                       ),
@@ -159,6 +163,7 @@ class LessonPage extends StatelessWidget {
                   ? _LessonCard(
                       index: index,
                       lesson: lesson,
+                      l10n: l10n,
                       onTap: () {
                         final url = lesson.file;
                         if (url != null && url.isNotEmpty) {
@@ -233,11 +238,13 @@ class _InfoChip extends StatelessWidget {
 class _LessonCard extends StatelessWidget {
   final int index;
   final LessonData lesson;
+  final AppLocalizations l10n;
   final VoidCallback? onTap;
 
   const _LessonCard({
     required this.index,
     required this.lesson,
+    required this.l10n,
     this.onTap,
   });
 
@@ -246,8 +253,8 @@ class _LessonCard extends StatelessWidget {
     final hasPdf = (lesson.file ?? '').trim().isNotEmpty;
     final rawTitle = (lesson.title ?? '').trim();
     final displayTitle = rawTitle.isEmpty
-        ? 'Leçon ${index + 1}'
-        : 'Leçon ${index + 1}: $rawTitle';
+        ? '${l10n.lessonLabel} ${index + 1}'
+        : '${l10n.lessonLabel} ${index + 1}: $rawTitle';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -313,9 +320,11 @@ class _LessonCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        hasPdf ? 'Ouvrir le PDF' : 'Non disponible',
+                        hasPdf ? l10n.openPdf : l10n.notAvailable,
                         style: verySmallStyle12.copyWith(
-                          color: hasPdf ? CbsColors.primaryBrown : CbsColors.hintColor,
+                          color: hasPdf
+                              ? CbsColors.primaryBrown
+                              : CbsColors.hintColor,
                         ),
                       ),
                     ],

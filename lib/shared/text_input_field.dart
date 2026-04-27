@@ -1,4 +1,5 @@
 import 'package:center_for_biblical_studies/utils/constants/text_styles.dart';
+import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class TextInputField extends StatefulWidget {
@@ -57,7 +58,11 @@ class _TextInputFieldState extends State<TextInputField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.label != null) Text(widget.label!, style: smallBodyStyle),
+          if (widget.label != null)
+            Text(
+              widget.label!,
+              style: smallBodyStyle.copyWith(color: CbsColors.primaryDark[800]),
+            ),
           if (widget.label != null)
             const SizedBox(
               height: 10,
@@ -65,7 +70,7 @@ class _TextInputFieldState extends State<TextInputField> {
           SizedBox(
             height: widget.height ?? (widget.errorText == null ? 40 : 55),
             child: TextField(
-              style: smallBodyStyle,
+              style: smallBodyStyle.copyWith(color: CbsColors.primaryDark[800]),
               minLines: widget.minLines,
               maxLines: widget.maxLines,
               controller: widget.controller,

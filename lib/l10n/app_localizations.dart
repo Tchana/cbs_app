@@ -114,6 +114,37 @@ class AppLocalizations {
       'courses_section': 'Courses',
       'see_all': 'See all',
       'contact': 'Contact',
+      // Additional UI / Settings
+      'settings_subtitle': 'Manage language, theme, and preferences',
+      'language_description': 'Choose your preferred language',
+      'theme_description': 'Select how the app appears',
+      'app_preferences': 'App preferences',
+      'notifications_description': 'Receive updates and alerts',
+      'sound_description': 'Play sounds for app events',
+      'vibration_description': 'Vibrate for app interactions',
+      'account_actions': 'Account actions',
+      'logout_description': 'Sign out from this device',
+      'saved': 'Saved',
+      'tab_in_progress': 'In progress',
+      'tab_completed': 'Completed',
+      'pdf_viewer': 'PDF Viewer',
+      'error_prefix': 'Error',
+      'skip': 'Skip',
+      'send': 'Send',
+      'refresh': 'Refresh',
+      'chat_message_hint': 'Type your message...',
+      'be_first_message': 'Be the first to send a message',
+      'online': 'online',
+      'unknown_user': 'Unknown user',
+      'yesterday': 'Yesterday',
+      'course_default': 'Course',
+      'description_label': 'Description',
+      'teacher_label': 'Teacher',
+      'lessons_label': 'Lessons',
+      'no_lessons_yet': 'No lessons yet',
+      'lesson_label': 'Lesson',
+      'open_pdf': 'Open PDF',
+      'not_available': 'Not available',
     },
     'fr': {
       'settings': 'Paramètres',
@@ -216,6 +247,37 @@ class AppLocalizations {
       'courses_section': 'Cours',
       'see_all': 'Voir tout',
       'contact': 'Contacter',
+      // Additional UI / Settings
+      'settings_subtitle': 'Gérez la langue, le thème et les préférences',
+      'language_description': 'Choisissez votre langue préférée',
+      'theme_description': 'Sélectionnez l\'apparence de l\'application',
+      'app_preferences': 'Préférences de l\'application',
+      'notifications_description': 'Recevez les mises à jour et les alertes',
+      'sound_description': 'Jouer les sons des événements de l\'application',
+      'vibration_description': 'Vibrer lors des interactions',
+      'account_actions': 'Actions du compte',
+      'logout_description': 'Se déconnecter de cet appareil',
+      'saved': 'Enregistré',
+      'tab_in_progress': 'En cours',
+      'tab_completed': 'Terminé',
+      'pdf_viewer': 'Lecteur PDF',
+      'error_prefix': 'Erreur',
+      'skip': 'Passer',
+      'send': 'Envoyer',
+      'refresh': 'Actualiser',
+      'chat_message_hint': 'Tapez votre message...',
+      'be_first_message': 'Soyez le premier à envoyer un message',
+      'online': 'en ligne',
+      'unknown_user': 'Utilisateur inconnu',
+      'yesterday': 'Hier',
+      'course_default': 'Cours',
+      'description_label': 'Description',
+      'teacher_label': 'Professeur',
+      'lessons_label': 'Leçons',
+      'no_lessons_yet': 'Aucune leçon pour le moment',
+      'lesson_label': 'Leçon',
+      'open_pdf': 'Ouvrir le PDF',
+      'not_available': 'Non disponible',
     },
   };
 
@@ -324,6 +386,36 @@ class AppLocalizations {
   String get coursesSection => translate('courses_section');
   String get seeAll => translate('see_all');
   String get contact => translate('contact');
+  String get settingsSubtitle => translate('settings_subtitle');
+  String get languageDescription => translate('language_description');
+  String get themeDescription => translate('theme_description');
+  String get appPreferences => translate('app_preferences');
+  String get notificationsDescription => translate('notifications_description');
+  String get soundDescription => translate('sound_description');
+  String get vibrationDescription => translate('vibration_description');
+  String get accountActions => translate('account_actions');
+  String get logoutDescription => translate('logout_description');
+  String get saved => translate('saved');
+  String get tabInProgress => translate('tab_in_progress');
+  String get tabCompleted => translate('tab_completed');
+  String get pdfViewer => translate('pdf_viewer');
+  String get errorPrefix => translate('error_prefix');
+  String get skip => translate('skip');
+  String get send => translate('send');
+  String get refresh => translate('refresh');
+  String get chatMessageHint => translate('chat_message_hint');
+  String get beFirstMessage => translate('be_first_message');
+  String get online => translate('online');
+  String get unknownUser => translate('unknown_user');
+  String get yesterday => translate('yesterday');
+  String get courseDefault => translate('course_default');
+  String get descriptionLabel => translate('description_label');
+  String get teacherLabel => translate('teacher_label');
+  String get lessonsLabel => translate('lessons_label');
+  String get noLessonsYet => translate('no_lessons_yet');
+  String get lessonLabel => translate('lesson_label');
+  String get openPdf => translate('open_pdf');
+  String get notAvailable => translate('not_available');
 }
 
 class _AppLocalizationsDelegate

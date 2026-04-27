@@ -1,14 +1,15 @@
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 class PdfViewerScreen extends StatefulWidget {
   final String pdfUrl;
 
-  PdfViewerScreen({required this.pdfUrl});
+  const PdfViewerScreen({super.key, required this.pdfUrl});
 
   @override
-  _PdfViewerScreenState createState() => _PdfViewerScreenState();
+  State<PdfViewerScreen> createState() => _PdfViewerScreenState();
 }
 
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
@@ -33,13 +34,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
-      appBar: AppBar(title: Text('PDF Viewer')),
+      appBar: AppBar(title: Text(l10n.pdfViewer)),
       body: _pdfController != null
           ? PdfView(
               controller: _pdfController!,
             )
-          : Center(child: CircularProgressIndicator()),
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 

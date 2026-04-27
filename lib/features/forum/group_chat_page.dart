@@ -1,11 +1,13 @@
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class GroupChatPage extends StatefulWidget {
   final GroupData group;
@@ -98,6 +100,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
       appBar: AppBar(
         backgroundColor: CbsColors.primaryBrown,
@@ -106,7 +110,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.group.name ?? 'Groupe',
+              widget.group.name ?? l10n.unnamedGroup,
               style: smallStyle18.copyWith(
                 color: CbsColors.white,
                 fontWeight: FontWeight.bold,
@@ -115,7 +119,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
             if (widget.group.online_count != null &&
                 widget.group.online_count! > 0)
               Text(
-                '${widget.group.online_count} en ligne',
+                '${widget.group.online_count} ${l10n.online}',
                 style: smallStyle18.copyWith(
                   fontSize: 12,
                   color: CbsColors.white.withValues(alpha: 0.8),
@@ -127,7 +131,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: fetchMessages,
-            tooltip: 'Actualiser',
+            tooltip: l10n.refresh,
           ),
         ],
       ),
@@ -177,14 +181,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             ),
                             gapH16,
                             Text(
-                              'Aucun message',
+                              l10n.noMessage,
                               style: smallStyle18.copyWith(
                                 color: CbsColors.primaryBrown,
                               ),
                             ),
                             gapH8,
                             Text(
-                              'Soyez le premier à envoyer un message',
+                              l10n.beFirstMessage,
                               style: smallStyle18.copyWith(
                                 color: CbsColors.hintColor,
                               ),
@@ -204,7 +208,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             if (message.is_deleted == true) {
                               return const SizedBox.shrink();
                             }
-                            return _MessageBubble(message: message);
+                            return _MessageBubble(message: message, l10n: l10n);
                           },
                         ),
                       ),
@@ -222,6 +226,8 @@ class _GroupChatPageState extends State<GroupChatPage> {
   }
 
   Future<void> _sendMessage() async {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final content = _messageController.text.trim();
     if (content.isEmpty || widget.group.uuid == null) {
       return;
@@ -262,13 +268,12 @@ class _GroupChatPageState extends State<GroupChatPage> {
       } else {
         if (mounted) {
           setState(() {
-            errorMessage =
-                result["message"] ?? "Erreur lors de l'envoi du message";
+            errorMessage = result["message"] ?? l10n.errorPrefix;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                  result["message"] ?? "Erreur lors de l'envoi du message"),
+              content: Text(result["message"] ??
+                  "${l10n.errorPrefix}: ${l10n.noMessage}"),
               backgroundColor: CbsColors.errorColor,
             ),
           );
@@ -281,7 +286,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: Text('${l10n.errorPrefix}: ${e.toString()}'),
             backgroundColor: CbsColors.errorColor,
           ),
         );
@@ -311,6 +316,8 @@ class _MessageInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -331,7 +338,7 @@ class _MessageInputField extends StatelessWidget {
                 controller: controller,
                 focusNode: focusNode,
                 decoration: InputDecoration(
-                  hintText: 'Tapez votre message...',
+                  hintText: l10n.chatMessageHint,
                   hintStyle: smallStyle18.copyWith(color: CbsColors.hintColor),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -378,7 +385,7 @@ class _MessageInputField extends StatelessWidget {
                       )
                     : const Icon(Icons.send, color: CbsColors.white),
                 onPressed: isSending ? null : onSend,
-                tooltip: 'Envoyer',
+                tooltip: l10n.send,
               ),
             ),
           ],
@@ -390,17 +397,16 @@ class _MessageInputField extends StatelessWidget {
 
 class _MessageBubble extends StatelessWidget {
   final MessageData message;
+  final AppLocalizations l10n;
 
-  const _MessageBubble({required this.message});
+  const _MessageBubble({required this.message, required this.l10n});
 
-  static String _getDisplayNameForUser(UserData? user) {
-    if (user == null) return 'Utilisateur inconnu';
+  String _getDisplayNameForUser(UserData? user) {
+    if (user == null) return l10n.unknownUser;
     final firstName = user.firstName?.trim() ?? '';
     final lastName = user.lastName?.trim() ?? '';
     final fullName = '$firstName $lastName'.trim();
-    return fullName.isNotEmpty
-        ? fullName
-        : (user.email ?? 'Utilisateur inconnu');
+    return fullName.isNotEmpty ? fullName : (user.email ?? l10n.unknownUser);
   }
 
   String _formatTime(String? dateString) {
@@ -409,13 +415,15 @@ class _MessageBubble extends StatelessWidget {
       final date = DateTime.parse(dateString);
       final now = DateTime.now();
       final difference = now.difference(date);
+      final localeCode = l10n.locale.languageCode;
+      final hm = DateFormat.Hm(localeCode).format(date);
 
       if (difference.inDays == 0) {
-        return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+        return hm;
       } else if (difference.inDays == 1) {
-        return "Hier ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+        return "${l10n.yesterday} $hm";
       } else {
-        return "${date.day}/${date.month} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+        return DateFormat.MMMd(localeCode).add_Hm().format(date);
       }
     } catch (e) {
       return dateString;

@@ -1,5 +1,5 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
-import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
+import 'package:center_for_biblical_studies/features/splash_screens/splash_screens.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
 import 'package:center_for_biblical_studies/supabase/supabase_config.dart';
@@ -27,7 +27,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Locale _locale = const Locale('fr');
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeMode _themeMode = ThemeMode.system;
 
   @override
   void initState() {
@@ -55,22 +55,76 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     Get.put(DataController());
 
+    final lightScheme = ColorScheme.fromSeed(
+      seedColor: CbsColors.brandBrown,
+      brightness: Brightness.light,
+    ).copyWith(
+      primary: CbsColors.brandBrown,
+      secondary: CbsColors.brandBlue,
+      surface: CbsColors.brandWhite,
+      onSurface: CbsColors.brandBrown,
+      error: CbsColors.errorColor,
+    );
+
+    final darkScheme = ColorScheme.fromSeed(
+      seedColor: CbsColors.brandDeepBlue,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: CbsColors.brandBlue,
+      secondary: CbsColors.brandDeepBlue,
+      surface: CbsColors.darkSurface,
+      onSurface: CbsColors.darkText,
+      error: CbsColors.errorColor,
+    );
+
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Center for Biblical Studies',
+      onGenerateTitle: (context) =>
+          AppLocalizations.of(context)?.appName ??
+          'Center for Biblical Studies',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: CbsColors.primaryBrown,
-          brightness: Brightness.light,
-        ),
+        colorScheme: lightScheme,
         useMaterial3: true,
-        primaryColor: CbsColors.primaryBrown,
+        primaryColor: CbsColors.brandBrown,
+        scaffoldBackgroundColor: CbsColors.backgroundColor,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: CbsColors.brandBrown,
+          foregroundColor: CbsColors.brandWhite,
+        ),
+        textTheme: ThemeData.light().textTheme.apply(
+              bodyColor: CbsColors.brandBrown,
+              displayColor: CbsColors.brandBrown,
+            ),
+        iconTheme: const IconThemeData(color: CbsColors.brandBrown),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: CbsColors.brandBrown,
+            foregroundColor: CbsColors.brandWhite,
+          ),
+        ),
       ),
       darkTheme: ThemeData(
-        colorScheme: ColorScheme.dark(
-          primary: CbsColors.primaryBrown,
-        ),
+        colorScheme: darkScheme,
         useMaterial3: true,
+        primaryColor: CbsColors.brandBlue,
+        scaffoldBackgroundColor: CbsColors.darkSurface,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: CbsColors.darkCard,
+          foregroundColor: CbsColors.darkText,
+        ),
+        cardColor: CbsColors.darkCard,
+        dividerColor: CbsColors.darkHint.withValues(alpha: 0.5),
+        textTheme: ThemeData.dark().textTheme.apply(
+              bodyColor: CbsColors.darkText,
+              displayColor: CbsColors.darkText,
+            ),
+        iconTheme: const IconThemeData(color: CbsColors.darkText),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: CbsColors.brandDeepBlue,
+            foregroundColor: CbsColors.brandWhite,
+          ),
+        ),
       ),
       themeMode: _themeMode,
       locale: _locale,
@@ -85,7 +139,7 @@ class _MyAppState extends State<MyApp> {
         Locale('en', ''),
         Locale('fr', ''),
       ],
-      home: const LoginPage(),
+      home: const SplashScreen(),
     );
   }
 }
