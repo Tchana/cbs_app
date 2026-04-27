@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:center_for_biblical_studies/data/authentication/login_data.dart';
 import 'package:dio/dio.dart';
@@ -14,6 +17,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Replaces the previous REST API. Uses Supabase Auth + Database.
 class SupabaseService {
   static SupabaseClient get _client => Supabase.instance.client;
+  static const bool _pdfDebugLogs = true;
 
   // ---------------------------------------------------------------------------
   // Auth (session is managed by Supabase; no manual token storage)
@@ -76,8 +80,9 @@ class SupabaseService {
         lower.contains('confirm your email')) {
       return 'Please confirm your email before signing in.';
     }
-    if (lower.contains('too many'))
+    if (lower.contains('too many')) {
       return 'Too many attempts. Try again later.';
+    }
     return raw;
   }
 
@@ -166,6 +171,63 @@ class SupabaseService {
         .toList();
   }
 
+  Future<List<CourseData>> searchCourses(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) {
+      final res = await _client
+          .from('courses')
+          .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .order('created_at', ascending: false)
+          .limit(12);
+      return (res as List)
+          .map((row) => _courseFromRow(row as Map<String, dynamic>))
+          .toList();
+    }
+
+    final byTextRes = await _client
+        .from('courses')
+        .select('*, teacher:profiles(*), lessons:lessons(*)')
+        .or('title.ilike.%$q%,description.ilike.%$q%')
+        .order('created_at', ascending: false)
+        .limit(30);
+
+    final byText = (byTextRes as List)
+        .map((row) => _courseFromRow(row as Map<String, dynamic>))
+        .toList();
+
+    // Also include courses by matched teacher names.
+    final teacherRes = await _client
+        .from('profiles')
+        .select('id')
+        .eq('role', 'teacher')
+        .or('first_name.ilike.%$q%,last_name.ilike.%$q%')
+        .limit(30);
+    final teacherIds = (teacherRes as List)
+        .map((e) => (e as Map<String, dynamic>)['id']?.toString())
+        .whereType<String>()
+        .toList();
+
+    List<CourseData> byTeacher = [];
+    if (teacherIds.isNotEmpty) {
+      final byTeacherRes = await _client
+          .from('courses')
+          .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .inFilter('teacher_id', teacherIds)
+          .order('created_at', ascending: false)
+          .limit(30);
+      byTeacher = (byTeacherRes as List)
+          .map((row) => _courseFromRow(row as Map<String, dynamic>))
+          .toList();
+    }
+
+    final map = <String, CourseData>{};
+    for (final c in [...byText, ...byTeacher]) {
+      final id = c.id ?? '${c.title}-${c.description}';
+      map[id] = c;
+    }
+    return map.values.toList();
+  }
+
   CourseData _courseFromRow(Map<String, dynamic> row) {
     final teacher = row['teacher'];
     final lessonsList = row['lessons'] as List<dynamic>?;
@@ -218,25 +280,51 @@ class SupabaseService {
         .toList();
   }
 
-  LibraryData _bookFromRow(Map<String, dynamic> row) {
-    String? cat = row['category'] as String?;
-    BookType category = BookType.other;
-    if (cat != null) {
-      switch (cat) {
-        case 'bible':
-          category = BookType.bible;
-          break;
-        case 'commentary':
-          category = BookType.commentary;
-          break;
-        case 'dictionnaire':
-          category = BookType.dictionnaire;
-          break;
-        case 'concordance':
-          category = BookType.concordance;
-          break;
+  Future<List<BookType>> fetchBookCategories() async {
+    final res = await _client.rpc(
+      'get_enum_values',
+      params: {'enum_name': 'book_category'},
+    );
+
+    final categories = <BookType>[];
+    for (final item in (res as List)) {
+      if (item is Map<String, dynamic>) {
+        final value = (item['value'] ?? '').toString().trim();
+        if (value.isNotEmpty) {
+          categories.add(_bookTypeFromRaw(value));
+        }
+      } else {
+        final value = item.toString().trim();
+        if (value.isNotEmpty) {
+          categories.add(_bookTypeFromRaw(value));
+        }
       }
     }
+    final unique = categories.toSet().toList();
+    developer.log(
+      'book_category enum values: ${unique.map((e) => e.name).toList()}',
+      name: 'SupabaseService',
+    );
+    return unique;
+  }
+
+  Future<List<LibraryData>> searchBooks(String query) async {
+    final q = query.trim();
+    final request = _client.from('books').select();
+    final res = q.isEmpty
+        ? await request.order('created_at', ascending: false).limit(20)
+        : await request
+            .or('title.ilike.%$q%,author.ilike.%$q%,description.ilike.%$q%')
+            .order('created_at', ascending: false)
+            .limit(30);
+
+    return (res as List)
+        .map((row) => _bookFromRow(row as Map<String, dynamic>))
+        .toList();
+  }
+
+  LibraryData _bookFromRow(Map<String, dynamic> row) {
+    final category = _bookTypeFromRaw(row['category'] as String?);
     return LibraryData(
       id: row['id']?.toString(),
       title: row['title'] as String?,
@@ -249,6 +337,21 @@ class SupabaseService {
     );
   }
 
+  BookType _bookTypeFromRaw(String? raw) {
+    switch ((raw ?? '').trim()) {
+      case 'bible':
+        return BookType.bible;
+      case 'commentary':
+        return BookType.commentary;
+      case 'dictionnaire':
+        return BookType.dictionnaire;
+      case 'concordance':
+        return BookType.concordance;
+      default:
+        return BookType.other;
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Teachers (profiles with role teacher)
   // ---------------------------------------------------------------------------
@@ -258,6 +361,50 @@ class SupabaseService {
     return (res as List)
         .map((e) => _profileToRegisterData(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<List<RegisterData>> searchTeachers(String query) async {
+    final q = query.trim();
+    final request = _client.from('profiles').select().eq('role', 'teacher');
+    final res = q.isEmpty
+        ? await request.order('created_at', ascending: false).limit(20)
+        : await request
+            .or('first_name.ilike.%$q%,last_name.ilike.%$q%,email.ilike.%$q%')
+            .order('created_at', ascending: false)
+            .limit(30);
+
+    return (res as List)
+        .map((e) => _profileToRegisterData(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<String?> fetchTeacherWhatsAppNumber(String teacherId) async {
+    final id = teacherId.trim();
+    if (id.isEmpty) return null;
+    try {
+      final row =
+          await _client.from('profiles').select().eq('id', id).maybeSingle();
+      if (row is! Map<String, dynamic>) return null;
+      const keys = <String>[
+        'whatsapp_number',
+        'whatsapp',
+        'phone_number',
+        'phone',
+        'mobile',
+        'telephone',
+      ];
+      for (final key in keys) {
+        final raw = row[key];
+        if (raw == null) continue;
+        final value = raw.toString().trim();
+        if (value.isNotEmpty) {
+          return value;
+        }
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -422,15 +569,87 @@ class SupabaseService {
   // PDF (download from URL – e.g. Supabase Storage or external)
   // ---------------------------------------------------------------------------
 
-  Future<File> fetchPdfData(String url) async {
-    final dir = Directory.systemTemp;
-    final filePath =
-        '${dir.path}/downloaded_${DateTime.now().millisecondsSinceEpoch}.pdf';
+  Future<Uint8List> fetchPdfBytes(String url) async {
     final dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 60),
+      headers: const {'Accept': 'application/pdf,*/*'},
     ));
-    await dio.download(url, filePath);
-    return File(filePath);
+
+    final response = await dio.get<List<int>>(
+      url,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: true,
+        validateStatus: (status) => status != null && status < 400,
+      ),
+    );
+
+    final data = response.data;
+    if (data == null || data.isEmpty) {
+      throw const FormatException('Empty file received');
+    }
+
+    final bytes = Uint8List.fromList(data);
+    final contentTypeHeader =
+        response.headers.map['content-type']?.join(', ') ?? 'unknown';
+
+    if (_pdfDebugLogs) {
+      final signature = bytes.length >= 4
+          ? ascii.decode(bytes.take(4).toList(), allowInvalid: true)
+          : 'n/a';
+      final lowerType = contentTypeHeader.toLowerCase();
+      String detectedType = 'unknown';
+      if (bytes.length >= 4 &&
+          bytes[0] == 0x25 &&
+          bytes[1] == 0x50 &&
+          bytes[2] == 0x44 &&
+          bytes[3] == 0x46) {
+        detectedType = 'application/pdf (signature)';
+      } else if (lowerType.contains('json')) {
+        detectedType = 'application/json (header)';
+      } else if (lowerType.contains('html')) {
+        detectedType = 'text/html (header)';
+      } else if (lowerType.contains('text/')) {
+        detectedType = 'text/* (header)';
+      } else if (lowerType.contains('xml')) {
+        detectedType = 'xml (header)';
+      }
+
+      // ignore: avoid_print
+      print('PDF fetch debug -> status: ${response.statusCode}, '
+          'content-type: $contentTypeHeader, '
+          'signature: "$signature", detected: $detectedType, '
+          'bytes: ${bytes.length}');
+
+      if (detectedType != 'application/pdf (signature)') {
+        final previewLength = bytes.length < 180 ? bytes.length : 180;
+        final preview = utf8.decode(bytes.take(previewLength).toList(),
+            allowMalformed: true);
+        // ignore: avoid_print
+        print('PDF fetch debug preview -> $preview');
+      }
+    }
+
+    final isPdf = bytes.length >= 4 &&
+        bytes[0] == 0x25 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x44 &&
+        bytes[3] == 0x46; // %PDF
+    if (!isPdf) {
+      throw const FormatException('Invalid PDF data');
+    }
+
+    return bytes;
+  }
+
+  Future<File> fetchPdfData(String url) async {
+    final bytes = await fetchPdfBytes(url);
+    final dir = Directory.systemTemp;
+    final filePath =
+        '${dir.path}/downloaded_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final file = File(filePath);
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
   }
 }

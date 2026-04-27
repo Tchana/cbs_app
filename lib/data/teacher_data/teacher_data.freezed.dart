@@ -22,6 +22,7 @@ TeacherData _$TeacherDataFromJson(Map<String, dynamic> json) {
 mixin _$TeacherData {
   String? get id => throw _privateConstructorUsedError;
   String? get name => throw _privateConstructorUsedError;
+  String? get phoneNumber => throw _privateConstructorUsedError;
   ProfileImage? get profileImage => throw _privateConstructorUsedError;
   List<CourseData>? get courses => throw _privateConstructorUsedError;
 
@@ -44,6 +45,7 @@ abstract class $TeacherDataCopyWith<$Res> {
   $Res call(
       {String? id,
       String? name,
+      String? phoneNumber,
       ProfileImage? profileImage,
       List<CourseData>? courses});
 
@@ -67,6 +69,7 @@ class _$TeacherDataCopyWithImpl<$Res, $Val extends TeacherData>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? phoneNumber = freezed,
     Object? profileImage = freezed,
     Object? courses = freezed,
   }) {
@@ -78,6 +81,10 @@ class _$TeacherDataCopyWithImpl<$Res, $Val extends TeacherData>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phoneNumber: freezed == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String?,
       profileImage: freezed == profileImage
           ? _value.profileImage
@@ -116,6 +123,7 @@ abstract class _$$TeacherDataImplCopyWith<$Res>
   $Res call(
       {String? id,
       String? name,
+      String? phoneNumber,
       ProfileImage? profileImage,
       List<CourseData>? courses});
 
@@ -138,6 +146,7 @@ class __$$TeacherDataImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? name = freezed,
+    Object? phoneNumber = freezed,
     Object? profileImage = freezed,
     Object? courses = freezed,
   }) {
@@ -149,6 +158,10 @@ class __$$TeacherDataImplCopyWithImpl<$Res>
       name: freezed == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phoneNumber: freezed == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String?,
       profileImage: freezed == profileImage
           ? _value.profileImage
@@ -166,7 +179,11 @@ class __$$TeacherDataImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TeacherDataImpl extends _TeacherData {
   const _$TeacherDataImpl(
-      {this.id, this.name, this.profileImage, final List<CourseData>? courses})
+      {this.id,
+      this.name,
+      this.phoneNumber,
+      this.profileImage,
+      final List<CourseData>? courses})
       : _courses = courses,
         super._();
 
@@ -177,6 +194,8 @@ class _$TeacherDataImpl extends _TeacherData {
   final String? id;
   @override
   final String? name;
+  @override
+  final String? phoneNumber;
   @override
   final ProfileImage? profileImage;
   final List<CourseData>? _courses;
@@ -191,7 +210,7 @@ class _$TeacherDataImpl extends _TeacherData {
 
   @override
   String toString() {
-    return 'TeacherData(id: $id, name: $name, profileImage: $profileImage, courses: $courses)';
+    return 'TeacherData(id: $id, name: $name, phoneNumber: $phoneNumber, profileImage: $profileImage, courses: $courses)';
   }
 
   @override
@@ -201,6 +220,8 @@ class _$TeacherDataImpl extends _TeacherData {
             other is _$TeacherDataImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.phoneNumber, phoneNumber) ||
+                other.phoneNumber == phoneNumber) &&
             (identical(other.profileImage, profileImage) ||
                 other.profileImage == profileImage) &&
             const DeepCollectionEquality().equals(other._courses, _courses));
@@ -208,8 +229,8 @@ class _$TeacherDataImpl extends _TeacherData {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, profileImage,
-      const DeepCollectionEquality().hash(_courses));
+  int get hashCode => Object.hash(runtimeType, id, name, phoneNumber,
+      profileImage, const DeepCollectionEquality().hash(_courses));
 
   /// Create a copy of TeacherData
   /// with the given fields replaced by the non-null parameter values.
@@ -231,6 +252,7 @@ abstract class _TeacherData extends TeacherData {
   const factory _TeacherData(
       {final String? id,
       final String? name,
+      final String? phoneNumber,
       final ProfileImage? profileImage,
       final List<CourseData>? courses}) = _$TeacherDataImpl;
   const _TeacherData._() : super._();
@@ -242,6 +264,8 @@ abstract class _TeacherData extends TeacherData {
   String? get id;
   @override
   String? get name;
+  @override
+  String? get phoneNumber;
   @override
   ProfileImage? get profileImage;
   @override

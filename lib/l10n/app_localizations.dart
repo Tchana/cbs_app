@@ -145,6 +145,13 @@ class AppLocalizations {
       'lesson_label': 'Lesson',
       'open_pdf': 'Open PDF',
       'not_available': 'Not available',
+      'good_morning': 'Good morning',
+      'good_afternoon': 'Good afternoon',
+      'good_evening': 'Good evening',
+      'verse_of_the_day': 'Verse of the day',
+      'verse_unavailable': 'Unable to load verse of the day.',
+      'pdf_load_error': 'Unable to open this PDF file.',
+      'retry': 'Retry',
     },
     'fr': {
       'settings': 'Paramètres',
@@ -278,6 +285,13 @@ class AppLocalizations {
       'lesson_label': 'Leçon',
       'open_pdf': 'Ouvrir le PDF',
       'not_available': 'Non disponible',
+      'good_morning': 'Bonjour',
+      'good_afternoon': 'Bon apres-midi',
+      'good_evening': 'Bonsoir',
+      'verse_of_the_day': 'Verset du jour',
+      'verse_unavailable': 'Impossible de charger le verset du jour.',
+      'pdf_load_error': 'Impossible d\'ouvrir ce fichier PDF.',
+      'retry': 'Reessayer',
     },
   };
 
@@ -416,6 +430,13 @@ class AppLocalizations {
   String get lessonLabel => translate('lesson_label');
   String get openPdf => translate('open_pdf');
   String get notAvailable => translate('not_available');
+  String get goodMorning => translate('good_morning');
+  String get goodAfternoon => translate('good_afternoon');
+  String get goodEvening => translate('good_evening');
+  String get verseOfTheDay => translate('verse_of_the_day');
+  String get verseUnavailable => translate('verse_unavailable');
+  String get pdfLoadError => translate('pdf_load_error');
+  String get retry => translate('retry');
 }
 
 class _AppLocalizationsDelegate

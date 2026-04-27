@@ -15,63 +15,82 @@ class BookItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = (book.title ?? '').trim();
+    final author = (book.author ?? '').trim();
+    final hasCover = (book.bookCover ?? '').trim().isNotEmpty;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-          child: Row(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: CbsColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: CbsColors.primaryBrown.withValues(alpha: 0.14),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      book.title ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: smallStyle18.copyWith(
-                        color: CbsColors.primaryDark[800],
-                        fontWeight: FontWeight.w600,
-                      ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    if ((book.description ?? '').trim().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        book.description ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: smallStyle18.copyWith(
-                          color: CbsColors.hintColor,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ],
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: hasCover
+                          ? Image.network(
+                              book.bookCover!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _coverFallback(),
+                            )
+                          : _coverFallback(),
+                    ),
+                  ),
                 ),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 10),
+              Text(
+                title.isEmpty ? '—' : title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: smallStyle18.copyWith(
+                  color: CbsColors.primaryDark[800],
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
                 ),
-                child: Text(
-                  book.language ?? 'ENG',
-                  style: smallStyle18.copyWith(
-                    color: CbsColors.primaryBrown,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                author.isEmpty ? 'Author: —' : 'Author: $author',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: smallStyle18.copyWith(
+                  color: CbsColors.hintColor,
+                  fontSize: 12,
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _coverFallback() {
+    return Center(
+      child: Icon(
+        Icons.menu_book_rounded,
+        size: 24,
+        color: CbsColors.primaryBrown.withValues(alpha: 0.55),
       ),
     );
   }

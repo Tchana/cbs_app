@@ -11,6 +11,7 @@ class TeacherData with _$TeacherData {
   const factory TeacherData({
     String? id,
     String? name,
+    String? phoneNumber,
     ProfileImage? profileImage,
     List<CourseData>? courses,
   }) = _TeacherData;

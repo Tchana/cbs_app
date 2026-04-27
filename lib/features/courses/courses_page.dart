@@ -4,7 +4,6 @@ import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
-import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -41,7 +40,6 @@ class _CoursesPageState extends State<CoursesPage>
 
     try {
       final courses = await apiService.fetchCourses();
-      print("List of courses: $courses");
       dataController.setCourses(courses);
     } catch (e) {
       // Handle errors if needed
@@ -60,8 +58,26 @@ class _CoursesPageState extends State<CoursesPage>
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    print(dataController.courses);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          l10n.navCourses,
+          style: smallStyle18.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: fetchData,
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: l10n.refresh,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -70,14 +86,6 @@ class _CoursesPageState extends State<CoursesPage>
             children: [
               Column(
                 children: [
-                  gapH16,
-                  PageHeader(
-                    title: l10n.navCourses,
-                    titleIcon: const Icon(
-                      Icons.school_outlined,
-                      color: CbsColors.primaryBrown,
-                    ),
-                  ),
                   gapH16,
                   Container(
                     padding: const EdgeInsets.all(3),

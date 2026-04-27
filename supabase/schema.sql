@@ -206,3 +206,25 @@ DROP POLICY IF EXISTS "Authenticated users can send messages" ON public.messages
 CREATE POLICY "Authenticated users can send messages" ON public.messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Users can soft-delete own messages" ON public.messages;
 CREATE POLICY "Users can soft-delete own messages" ON public.messages FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+-- -----------------------------------------------------------------------------
+-- RPC helpers
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_enum_values(enum_name text)
+RETURNS TABLE(value text, sort_order real)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+  SELECT
+    e.enumlabel::text AS value,
+    e.enumsortorder::real AS sort_order
+  FROM pg_type t
+  JOIN pg_enum e ON e.enumtypid = t.oid
+  JOIN pg_namespace n ON n.oid = t.typnamespace
+  WHERE n.nspname = 'public'
+    AND t.typname = enum_name
+  ORDER BY e.enumsortorder;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_enum_values(text) TO authenticated;

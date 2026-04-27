@@ -4,7 +4,6 @@ import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/features/forum/group_chat_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
-import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -61,188 +60,22 @@ class _ForumPageState extends State<ForumPage> {
   }
 
   Future<void> _showCreateGroupDialog() async {
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-    bool isPrivate = false;
-
-    try {
-      await showDialog(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          final l10n = AppLocalizations.of(dialogContext) ??
-              AppLocalizations(const Locale('fr'));
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                title: Text(
-                  l10n.createGroup,
-                  style:
-                      largeStyle32Bold.copyWith(color: CbsColors.primaryBrown),
-                ),
-                content: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          labelText: l10n.groupName,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: CbsColors.primaryBrown,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                      gapH16,
-                      TextField(
-                        controller: descriptionController,
-                        decoration: InputDecoration(
-                          labelText: l10n.description,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: CbsColors.primaryBrown,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        maxLines: 3,
-                      ),
-                      gapH16,
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: isPrivate,
-                            onChanged: (value) {
-                              setDialogState(() {
-                                isPrivate = value ?? false;
-                              });
-                            },
-                            activeColor: CbsColors.primaryBrown,
-                          ),
-                          Text(
-                            l10n.privateGroup,
-                            style: smallStyle18,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      l10n.cancel,
-                      style:
-                          smallStyle18.copyWith(color: CbsColors.primaryBrown),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (nameController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(l10n.groupNameRequired),
-                          ),
-                        );
-                        return;
-                      }
-
-                      Navigator.of(context).pop();
-                      await _createGroup(
-                        nameController.text.trim(),
-                        descriptionController.text.trim(),
-                        isPrivate,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CbsColors.primaryBrown,
-                      foregroundColor: CbsColors.white,
-                    ),
-                    child: Text(l10n.create),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final messenger = ScaffoldMessenger.of(context);
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const _CreateRoomPage()),
+    );
+    if (created == true) {
+      if (!mounted) return;
+      await fetchGroups();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.groupCreatedSuccess),
+          backgroundColor: CbsColors.successColor,
+        ),
       );
-    } finally {
-      // Always dispose controllers to prevent memory leaks
-      nameController.dispose();
-      descriptionController.dispose();
-    }
-  }
-
-  Future<void> _createGroup(
-      String name, String description, bool isPrivate) async {
-    if (!mounted) return;
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
-    try {
-      final result = await apiService.createGroup(
-        name: name,
-        description: description,
-        isPrivate: isPrivate,
-      );
-
-      if (result["success"] == true) {
-        // Refresh groups list
-        await fetchGroups();
-        if (mounted) {
-          final l10n = AppLocalizations.of(context) ??
-              AppLocalizations(const Locale('fr'));
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(l10n.groupCreatedSuccess),
-              backgroundColor: CbsColors.successColor,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            errorMessage = result["message"] ??
-                (AppLocalizations.of(context) ??
-                        AppLocalizations(const Locale('fr')))
-                    .groupCreateError;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context) ??
-            AppLocalizations(const Locale('fr'));
-        setState(() {
-          errorMessage = e.toString();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.errorPrefix}: ${e.toString()}'),
-            backgroundColor: CbsColors.errorColor,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
     }
   }
 
@@ -250,110 +83,112 @@ class _ForumPageState extends State<ForumPage> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          l10n.forum,
+          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: fetchGroups,
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: l10n.refresh,
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: fetchGroups,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Container(
-            padding: const EdgeInsets.only(top: 60),
-            child: Column(
-              children: [
-                gapH16,
-                PageHeader(
-                  title: l10n.forum,
-                  titleIcon: const Icon(
-                    Icons.message,
-                    color: CbsColors.primaryBlue,
+        child: Column(
+          children: [
+            if (errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: CbsColors.errorColor[100],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: CbsColors.errorColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: CbsColors.errorColor),
+                      gapW8,
+                      Expanded(
+                        child: Text(
+                          errorMessage!,
+                          style: smallStyle18.copyWith(
+                            color: CbsColors.errorColor,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                gapH32,
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: CbsColors.errorColor[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: CbsColors.errorColor),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline,
-                              color: CbsColors.errorColor),
-                          gapW8,
-                          Expanded(
-                            child: Text(
-                              errorMessage!,
-                              style: smallStyle18.copyWith(
-                                color: CbsColors.errorColor,
-                              ),
+              ),
+            Expanded(
+              child: isLoading && dataController.groups.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : dataController.groups.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.group_outlined,
+                                  size: 64,
+                                  color: CbsColors.primaryBrown
+                                      .withValues(alpha: 0.5),
+                                ),
+                                gapH16,
+                                Text(
+                                  l10n.noGroups,
+                                  style: smallStyle18.copyWith(
+                                    color: CbsColors.primaryBrown,
+                                  ),
+                                ),
+                                gapH8,
+                                Text(
+                                  l10n.createFirst,
+                                  style: smallStyle18.copyWith(
+                                    color: CbsColors.hintColor,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (isLoading && dataController.groups.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(),
-                  )
-                else if (dataController.groups.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.group_outlined,
-                          size: 64,
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.5),
-                        ),
-                        gapH16,
-                        Text(
-                          l10n.noGroups,
-                          style: smallStyle18.copyWith(
-                            color: CbsColors.primaryBrown,
+                        )
+                      : Obx(
+                          () => ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+                            itemCount: dataController.groups.length,
+                            separatorBuilder: (_, __) => Divider(
+                              height: 10,
+                              thickness: 1,
+                              color: CbsColors.primaryBrown
+                                  .withValues(alpha: 0.10),
+                            ),
+                            itemBuilder: (context, index) {
+                              final group = dataController.groups[index];
+                              if (group.is_deleted == true) {
+                                return const SizedBox.shrink();
+                              }
+                              return _GroupCard(group: group);
+                            },
                           ),
                         ),
-                        gapH8,
-                        Text(
-                          l10n.createFirst,
-                          style: smallStyle18.copyWith(
-                            color: CbsColors.hintColor,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Obx(() => ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: dataController.groups.length,
-                        separatorBuilder: (context, index) => Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-                          indent: 20,
-                          endIndent: 20,
-                        ),
-                        itemBuilder: (context, index) {
-                          final group = dataController.groups[index];
-                          // Skip deleted groups
-                          if (group.is_deleted == true) {
-                            return const SizedBox.shrink();
-                          }
-                          return _GroupCard(group: group);
-                        },
-                      )),
-                gapH32,
-              ],
             ),
-          ),
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -378,10 +213,191 @@ class _GroupCard extends StatefulWidget {
   State<_GroupCard> createState() => _GroupCardState();
 }
 
+class _CreateRoomPage extends StatefulWidget {
+  const _CreateRoomPage();
+
+  @override
+  State<_CreateRoomPage> createState() => _CreateRoomPageState();
+}
+
+class _CreateRoomPageState extends State<_CreateRoomPage> {
+  final SupabaseService _apiService = SupabaseService();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  bool _isPrivate = false;
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.groupNameRequired)),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      final result = await _apiService.createGroup(
+        name: name,
+        description: description,
+        isPrivate: _isPrivate,
+      );
+      if (!mounted) return;
+      if (result['success'] == true) {
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? l10n.groupCreateError),
+            backgroundColor: CbsColors.errorColor,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${l10n.errorPrefix}: $e'),
+          backgroundColor: CbsColors.errorColor,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          l10n.createGroup,
+          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.groups_rounded,
+                      color: CbsColors.primaryBrown),
+                  gapW8,
+                  Expanded(
+                    child: Text(
+                      l10n.createFirst,
+                      style: smallStyle18.copyWith(
+                        fontSize: 13,
+                        color: CbsColors.primaryBrown,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            gapH16,
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: l10n.groupName,
+                prefixIcon: const Icon(Icons.title_rounded),
+                filled: true,
+                fillColor: CbsColors.primaryBrown.withValues(alpha: 0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: l10n.description,
+                prefixIcon: const Icon(Icons.description_outlined),
+                alignLabelWithHint: true,
+                filled: true,
+                fillColor: CbsColors.primaryBrown.withValues(alpha: 0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            SwitchListTile(
+              value: _isPrivate,
+              onChanged: (v) => setState(() => _isPrivate = v),
+              activeThumbColor: CbsColors.primaryBrown,
+              title: Text(
+                l10n.privateGroup,
+                style: smallStyle18.copyWith(fontSize: 14),
+              ),
+              secondary: const Icon(Icons.lock_outline_rounded,
+                  color: CbsColors.primaryBrown),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.20),
+                ),
+              ),
+            ),
+            gapH20,
+            FilledButton.icon(
+              onPressed: _isSubmitting ? null : _submit,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_rounded),
+              label: Text(_isSubmitting ? l10n.loading : l10n.create),
+              style: FilledButton.styleFrom(
+                backgroundColor: CbsColors.primaryBrown,
+                foregroundColor: CbsColors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _GroupCardState extends State<_GroupCard> {
   final SupabaseService _apiService = SupabaseService();
   MessageData? _lastMessage;
   bool _isLoadingLastMessage = false;
+  bool _hasVisibleMessages = false;
 
   @override
   void initState() {
@@ -398,27 +414,21 @@ class _GroupCardState extends State<_GroupCard> {
 
     try {
       final messages = await _apiService.fetchMessages(widget.group.uuid!);
-      if (messages.isNotEmpty && mounted) {
-        // Get the last message (most recent)
-        final sortedMessages = List<MessageData>.from(messages);
-        sortedMessages.sort((a, b) {
+      if (mounted) {
+        final visibleMessages = messages
+            .where(
+              (m) =>
+                  m.is_deleted != true &&
+                  (m.content ?? '').trim().isNotEmpty,
+            )
+            .toList();
+        visibleMessages.sort((a, b) {
           if (a.timestamp == null || b.timestamp == null) return 0;
-          return b.timestamp!.compareTo(a.timestamp!); // Sort descending
+          return b.timestamp!.compareTo(a.timestamp!); // newest first
         });
-
-        final lastMsg = sortedMessages.firstWhere(
-          (msg) => msg.is_deleted != true,
-          orElse: () => sortedMessages.first,
-        );
-
-        if (mounted) {
-          setState(() {
-            _lastMessage = lastMsg;
-            _isLoadingLastMessage = false;
-          });
-        }
-      } else if (mounted) {
         setState(() {
+          _hasVisibleMessages = visibleMessages.isNotEmpty;
+          _lastMessage = visibleMessages.isNotEmpty ? visibleMessages.first : null;
           _isLoadingLastMessage = false;
         });
       }
@@ -456,98 +466,118 @@ class _GroupCardState extends State<_GroupCard> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          Icons.group,
-          color: CbsColors.primaryBrown,
-          size: 28,
-        ),
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              widget.group.name ?? l10n.unnamedGroup,
-              style: largeStyle32Bold.copyWith(
-                fontSize: 18,
-                color: CbsColors.primaryBrown,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return Material(
+      color: CbsColors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => GroupChatPage(group: widget.group),
             ),
-          ),
-          if (widget.group.is_private == true)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 2,
+          );
+          if (mounted) {
+            await _fetchLastMessage();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.group,
+                  color: CbsColors.primaryBrown,
+                  size: 26,
+                ),
               ),
-              decoration: BoxDecoration(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.lock,
-                    size: 12,
-                    color: CbsColors.primaryBrown,
-                  ),
-                  gapW4,
-                  Text(
-                    l10n.private,
-                    style: smallStyle18.copyWith(
-                      fontSize: 10,
-                      color: CbsColors.primaryBrown,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.group.name ?? l10n.unnamedGroup,
+                            style: largeStyle32Bold.copyWith(
+                              fontSize: 17,
+                              color: CbsColors.primaryBrown,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (widget.group.is_private == true)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  CbsColors.primaryBrown.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lock,
+                                  size: 12,
+                                  color: CbsColors.primaryBrown,
+                                ),
+                                gapW4,
+                                Text(
+                                  l10n.private,
+                                  style: smallStyle18.copyWith(
+                                    fontSize: 10,
+                                    color: CbsColors.primaryBrown,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isLoadingLastMessage
+                          ? l10n.loading
+                          : (_hasVisibleMessages
+                              ? (_lastMessage?.content ?? l10n.noMessage)
+                              : l10n.noMessage),
+                      style: smallStyle18.copyWith(
+                        fontSize: 13,
+                        color: CbsColors.hintColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (_lastMessage?.timestamp != null)
+                Text(
+                  _formatTime(_lastMessage!.timestamp),
+                  style: smallStyle18.copyWith(
+                    fontSize: 11,
+                    color: CbsColors.hintColor,
                   ),
-                ],
-              ),
-            ),
-        ],
-      ),
-      subtitle: _isLoadingLastMessage
-          ? Text(
-              l10n.loading,
-              style: smallStyle18.copyWith(
-                fontSize: 14,
-                color: CbsColors.hintColor,
-              ),
-            )
-          : Text(
-              _lastMessage?.content ?? l10n.noMessage,
-              style: smallStyle18.copyWith(
-                fontSize: 14,
-                color: CbsColors.hintColor,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-      trailing: _lastMessage?.timestamp != null
-          ? Text(
-              _formatTime(_lastMessage!.timestamp),
-              style: smallStyle18.copyWith(
-                fontSize: 12,
-                color: CbsColors.hintColor,
-              ),
-            )
-          : null,
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => GroupChatPage(group: widget.group),
+                ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

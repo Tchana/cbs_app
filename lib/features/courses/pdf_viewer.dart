@@ -15,6 +15,8 @@ class PdfViewerScreen extends StatefulWidget {
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
   PdfController? _pdfController;
   final SupabaseService _supabase = SupabaseService();
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -23,11 +25,24 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   }
 
   Future<void> _loadPdf() async {
-    final file = await _supabase.fetchPdfData(widget.pdfUrl);
-    final bytes = await file.readAsBytes();
-    if (mounted) {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final bytes = await _supabase.fetchPdfBytes(widget.pdfUrl);
+      if (!mounted) return;
       setState(() {
         _pdfController = PdfController(document: PdfDocument.openData(bytes));
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      final l10n =
+          AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+      setState(() {
+        _errorMessage = l10n.pdfLoadError;
+        _isLoading = false;
       });
     }
   }
@@ -38,11 +53,36 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
       appBar: AppBar(title: Text(l10n.pdfViewer)),
-      body: _pdfController != null
-          ? PdfView(
-              controller: _pdfController!,
-            )
-          : const Center(child: CircularProgressIndicator()),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _pdfController != null
+              ? PdfView(
+                  controller: _pdfController!,
+                )
+              : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMessage ?? l10n.pdfLoadError,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 14),
+                        FilledButton(
+                          onPressed: _loadPdf,
+                          child: Text(l10n.retry),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
     );
   }
 

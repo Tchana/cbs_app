@@ -10,6 +10,7 @@ _$TeacherDataImpl _$$TeacherDataImplFromJson(Map<String, dynamic> json) =>
     _$TeacherDataImpl(
       id: json['id'] as String?,
       name: json['name'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
       profileImage: json['profileImage'] == null
           ? null
           : ProfileImage.fromJson(json['profileImage'] as Map<String, dynamic>),
@@ -22,6 +23,7 @@ Map<String, dynamic> _$$TeacherDataImplToJson(_$TeacherDataImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
+      'phoneNumber': instance.phoneNumber,
       'profileImage': instance.profileImage,
       'courses': instance.courses,
     };

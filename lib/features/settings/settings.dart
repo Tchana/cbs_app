@@ -2,7 +2,6 @@ import 'package:center_for_biblical_studies/features/authentication/login_page.d
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
-import 'package:center_for_biblical_studies/shared/page_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -141,20 +140,27 @@ class _SettingsState extends State<Settings> {
     final muted = isDark ? CbsColors.darkHint : CbsColors.hintColor;
 
     return Scaffold(
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          localizations.settings,
+          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 6),
+            child: Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageHeader(
-                title: localizations.settings,
-                titleIcon: const Icon(
-                  Icons.settings,
-                  color: CbsColors.primaryBrown,
-                ),
-              ),
-              gapH8,
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

@@ -102,18 +102,18 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor:
+          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
       appBar: AppBar(
-        backgroundColor: CbsColors.primaryBrown,
-        foregroundColor: CbsColors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               widget.group.name ?? l10n.unnamedGroup,
               style: smallStyle18.copyWith(
-                color: CbsColors.white,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (widget.group.online_count != null &&
@@ -122,14 +122,18 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 '${widget.group.online_count} ${l10n.online}',
                 style: smallStyle18.copyWith(
                   fontSize: 12,
-                  color: CbsColors.white.withValues(alpha: 0.8),
+                  color: Theme.of(context)
+                      .appBarTheme
+                      .foregroundColor
+                      ?.withValues(alpha: 0.8),
                 ),
               ),
           ],
         ),
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             onPressed: fetchMessages,
             tooltip: l10n.refresh,
           ),
