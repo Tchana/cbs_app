@@ -13,34 +13,34 @@ class ResponsiveLayout extends StatelessWidget {
   final Widget xLargeBody;
 
   const ResponsiveLayout({
-    Key? key,
+    super.key,
     required this.xSmallBody,
     required this.largeBody,
     this.mediumBody,
     required this.smallBody,
     required this.xLargeBody,
-  }) : super(key: key);
+  });
 
-  static bool isXSmall(context) {
+  static bool isXSmall(BuildContext context) {
     return MediaQuery.of(context).size.width <= xSmall;
   }
 
-  static bool isSmall(context) {
+  static bool isSmall(BuildContext context) {
     return MediaQuery.of(context).size.width > xSmall &&
         MediaQuery.of(context).size.width <= small;
   }
 
-  static bool isMedium(context) {
+  static bool isMedium(BuildContext context) {
     return MediaQuery.of(context).size.width > small &&
         MediaQuery.of(context).size.width <= medium;
   }
 
-  static bool isLarge(context) {
+  static bool isLarge(BuildContext context) {
     return MediaQuery.of(context).size.width > medium &&
         MediaQuery.of(context).size.width <= large;
   }
 
-  static bool isXLarge(context) {
+  static bool isXLarge(BuildContext context) {
     return MediaQuery.of(context).size.width > large &&
         MediaQuery.of(context).size.width <= xLarge;
   }

@@ -1,3 +1,5 @@
+// ignore_for_file: file_names
+
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';

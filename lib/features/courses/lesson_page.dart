@@ -1,14 +1,18 @@
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
+import 'package:center_for_biblical_studies/features/assignments/course_assignments_page.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class LessonPage extends StatelessWidget {
+class LessonPage extends StatefulWidget {
   final CourseData? courseData;
   final VoidCallback? onBack;
 
@@ -25,11 +29,52 @@ class LessonPage extends StatelessWidget {
   }
 
   @override
+  State<LessonPage> createState() => _LessonPageState();
+}
+
+class _LessonPageState extends State<LessonPage> {
+  final SupabaseService _apiService = SupabaseService();
+  late CourseData? _courseData = widget.courseData;
+
+  bool _isEnrolling = false;
+  bool _isEnrolled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _courseData = widget.courseData;
+    final courseId = _courseData?.id;
+    if (courseId != null) {
+      final dc = Get.find<DataController>();
+      _isEnrolled = dc.isCourseEnrolled(courseId);
+    }
+  }
+
+  Future<void> _enroll() async {
+    final courseId = _courseData?.id;
+    if (courseId == null) return;
+
+    setState(() => _isEnrolling = true);
+    try {
+      await _apiService.enrollInCourse(courseId);
+      setState(() {
+        _isEnrolled = true;
+      });
+
+      final dc = Get.find<DataController>();
+      final updated = <String>{...dc.enrolledCourseIds, courseId};
+      dc.setEnrolledCourseIds(updated);
+    } finally {
+      if (mounted) setState(() => _isEnrolling = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    final description = (courseData?.description ?? '').trim();
-    final lessonCount = courseData?.lessons?.length ?? 0;
+    final description = (_courseData?.description ?? '').trim();
+    final lessonCount = _courseData?.lessons?.length ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? CbsColors.darkCard : CbsColors.white;
     final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
@@ -85,7 +130,8 @@ class LessonPage extends StatelessWidget {
                     _InfoChip(
                       icon: Icons.person_outline_rounded,
                       label: l10n.teacherLabel,
-                      value: _teacherDisplayName(courseData?.teacher),
+                      value:
+                          LessonPage._teacherDisplayName(_courseData?.teacher),
                     ),
                     const SizedBox(width: 16),
                     _InfoChip(
@@ -95,6 +141,30 @@ class LessonPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                if (_isEnrolled == true)
+                  Text(
+                    'Enrolled',
+                    style: smallStyle18.copyWith(
+                      color: CbsColors.primaryBrown,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else
+                  CbsButton(
+                    width: double.infinity,
+                    height: 44,
+                    bgColor: CbsColors.primaryBrown,
+                    borderColor: CbsColors.primaryBrown,
+                    onPressed: _isEnrolling ? null : _enroll,
+                    child: Text(
+                      _isEnrolling ? 'Enrolling...' : 'Enroll',
+                      style: verySmallStyle12.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -133,7 +203,7 @@ class LessonPage extends StatelessWidget {
             )
           else
             ...List.generate(lessonCount, (index) {
-              final lesson = courseData?.lessons?[index];
+              final lesson = _courseData?.lessons?[index];
               return lesson != null
                   ? _LessonCard(
                       index: index,
@@ -148,6 +218,44 @@ class LessonPage extends StatelessWidget {
                     )
                   : const SizedBox.shrink();
             }),
+          gapH24,
+
+          // Assignments section
+          Text(
+            'Assignments',
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              color: titleColor,
+            ),
+          ),
+          gapH12,
+          if (_isEnrolled == true)
+            CbsButton(
+              width: double.infinity,
+              height: 50,
+              bgColor: CbsColors.primaryBrown,
+              borderColor: CbsColors.primaryBrown,
+              onPressed: () {
+                final courseId = _courseData?.id;
+                if (courseId == null) return;
+                Get.to(() => CourseAssignmentsPage(courseId: courseId));
+              },
+              child: Text(
+                'View assignments',
+                style: verySmallStyle12.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          else
+            Text(
+              'Enroll to access assignments',
+              style: verySmallStyle12.copyWith(
+                color: CbsColors.hintColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
         ],
       ),
     );

@@ -43,6 +43,7 @@ class AppLocalizations {
       // Auth
       'login': 'Login',
       'register': 'Register',
+      'enrolled': 'Enrolled',
       'create_your_account': 'Create your account',
       'sign_in_to_your_account': 'Sign in to your Account',
       'sign_in_to_your_n_account': 'Sign in to your\nAccount',
@@ -183,6 +184,7 @@ class AppLocalizations {
       // Auth
       'login': 'Connexion',
       'register': 'S\'inscrire',
+      'enrolled': 'Inscrit',
       'create_your_account': 'Créer votre compte',
       'sign_in_to_your_account': 'Connectez-vous à votre compte',
       'sign_in_to_your_n_account': 'Connectez-vous à votre\nCompte',
@@ -329,6 +331,7 @@ class AppLocalizations {
   // Auth
   String get login => translate('login');
   String get register => translate('register');
+  String get enrolled => translate('enrolled');
   String get createYourAccount => translate('create_your_account');
   String get signInToYourAccount => translate('sign_in_to_your_account');
   String get signInToYourNAccount => translate('sign_in_to_your_n_account');

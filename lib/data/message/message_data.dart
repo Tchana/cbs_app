@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -5,7 +7,7 @@ part 'message_data.freezed.dart';
 part 'message_data.g.dart';
 
 @freezed
-class MessageData with _$MessageData {
+abstract class MessageData with _$MessageData {
   const MessageData._();
 
   const factory MessageData({

@@ -1,10 +1,12 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'group_data.freezed.dart';
 part 'group_data.g.dart';
 
 @freezed
-class GroupData with _$GroupData {
+abstract class GroupData with _$GroupData {
   const GroupData._();
 
   const factory GroupData({

@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'dart:typed_data';
-import 'dart:convert';
 
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/authentication/login_data.dart';
 import 'package:dio/dio.dart';
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
@@ -13,6 +13,7 @@ import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Replaces the previous REST API. Uses Supabase Auth + Database.
@@ -165,10 +166,32 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<CourseData>> fetchCourses() async {
+    final userId = _client.auth.currentUser?.id;
+
+    final enrolledCourseIds = <String>{};
+    if (userId != null) {
+      final enrollRes = await _client
+          .from('enrollments')
+          .select('course_id')
+          .eq('student_id', userId);
+
+      enrolledCourseIds.addAll((enrollRes as List)
+          .map((e) => (e as Map<String, dynamic>)['course_id']?.toString())
+          .whereType<String>());
+    }
+
     final res = await _client
         .from('courses')
         .select('*, teacher:profiles(*), lessons:lessons(*)')
+        .eq('active', true)
         .order('created_at', ascending: false);
+
+    // Expose enrollment info to the UI without changing CourseData.
+    try {
+      Get.find<DataController>().setEnrolledCourseIds(enrolledCourseIds);
+    } catch (_) {
+      // Ignore if controller isn't ready (e.g. in tests).
+    }
 
     return (res as List)
         .map((row) => _courseFromRow(row as Map<String, dynamic>))
@@ -177,10 +200,12 @@ class SupabaseService {
 
   Future<List<CourseData>> searchCourses(String query) async {
     final q = query.trim();
+
     if (q.isEmpty) {
       final res = await _client
           .from('courses')
           .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .eq('active', true)
           .order('created_at', ascending: false)
           .limit(12);
       return (res as List)
@@ -191,6 +216,7 @@ class SupabaseService {
     final byTextRes = await _client
         .from('courses')
         .select('*, teacher:profiles(*), lessons:lessons(*)')
+        .eq('active', true)
         .or('title.ilike.%$q%,description.ilike.%$q%')
         .order('created_at', ascending: false)
         .limit(30);
@@ -216,11 +242,14 @@ class SupabaseService {
       final byTeacherRes = await _client
           .from('courses')
           .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .eq('active', true)
           .inFilter('teacher_id', teacherIds)
           .order('created_at', ascending: false)
           .limit(30);
       byTeacher = (byTeacherRes as List)
-          .map((row) => _courseFromRow(row as Map<String, dynamic>))
+          .map(
+            (row) => _courseFromRow(row as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -362,6 +391,312 @@ class SupabaseService {
   @visibleForTesting
   LibraryData mapBookFromRowForTest(Map<String, dynamic> row) =>
       _bookFromRow(row);
+
+  // ---------------------------------------------------------------------------
+  // Assignments (course/lesson + student submission + MCQ auto-grading)
+  // ---------------------------------------------------------------------------
+
+  Future<void> enrollInCourse(String courseId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Not authenticated');
+    }
+
+    await _client.from('enrollments').insert({
+      'course_id': courseId,
+      'student_id': userId,
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchPublishedAssignmentsForCourse(
+      String courseId) async {
+    final res = await _client
+        .from('assignments')
+        .select(
+          'id,title,description,pdf_url,published,due_date,lesson_id,lesson:lessons(id,title),created_at',
+        )
+        .eq('course_id', courseId)
+        .eq('published', true)
+        .order('created_at', ascending: false);
+
+    return (res as List).map((row) {
+      final m = row as Map<String, dynamic>;
+      return {
+        ...m,
+        'lesson_title': (m['lesson']?['title'] as String?),
+      };
+    }).toList();
+  }
+
+  Future<Map<String, dynamic>> fetchAssignmentDetails(
+      String assignmentId) async {
+    final assignmentRes = await _client
+        .from('assignments')
+        .select('id,title,description,pdf_url,due_date,lesson_id')
+        .eq('id', assignmentId)
+        .maybeSingle();
+
+    final assignment = assignmentRes as Map<String, dynamic>;
+
+    final questionsRes = await _client
+        .from('assignment_questions')
+        .select('id,type,prompt,order_index,points')
+        .eq('assignment_id', assignmentId)
+        .order('order_index');
+
+    final questions = (questionsRes as List).map((qRow) {
+      final q = qRow as Map<String, dynamic>;
+      final type = (q['type'] ?? '').toString();
+      return <String, dynamic>{
+        'id': q['id']?.toString(),
+        'type': type,
+        'prompt': q['prompt'] as String?,
+        'order_index': q['order_index'],
+        'points': (q['points'] as num?)?.toDouble(),
+        'options': <Map<String, dynamic>>[],
+      };
+    }).toList();
+
+    final mcqQuestionIds = questions
+        .where((q) => (q['type'] as String?) == 'mcq_single')
+        .map((q) => q['id'] as String)
+        .toList();
+
+    if (mcqQuestionIds.isNotEmpty) {
+      final optionsRes = await _client
+          .from('assignment_mcq_options')
+          .select('id,question_id,option_text,order_index')
+          .inFilter('question_id', mcqQuestionIds)
+          .order('order_index');
+
+      final optionRows = (optionsRes as List).cast<Map<String, dynamic>>();
+
+      final byQuestionId = <String, List<Map<String, dynamic>>>{};
+      for (final o in optionRows) {
+        final qid = o['question_id']?.toString();
+        if (qid == null) continue;
+        byQuestionId.putIfAbsent(qid, () => <Map<String, dynamic>>[]);
+        byQuestionId[qid]!.add({
+          'id': o['id']?.toString(),
+          'question_id': qid,
+          'option_text': o['option_text'] as String?,
+          'order_index': o['order_index'],
+        });
+      }
+
+      for (final q in questions) {
+        final qid = q['id'] as String?;
+        if (qid == null) continue;
+        if (byQuestionId.containsKey(qid)) {
+          q['options'] = byQuestionId[qid]!;
+        }
+      }
+    }
+
+    return {
+      'assignment': assignment,
+      'questions': questions,
+    };
+  }
+
+  Future<Map<String, dynamic>?> fetchMySubmissionForAssignment(
+      String assignmentId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final submissionRes = await _client
+        .from('assignment_submissions')
+        .select(
+          'id,submitted_at,mcq_score_total,open_score_total,final_score_total',
+        )
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', userId)
+        .maybeSingle();
+
+    if (submissionRes == null) return null;
+
+    final submission = Map<String, dynamic>.from(submissionRes);
+    final submissionId = submission['id']?.toString();
+    if (submissionId == null) return submission;
+
+    final answersRes = await _client
+        .from('assignment_submission_answers')
+        .select(
+          'question_id,selected_option_id,student_answer_pdf_url,teacher_points,teacher_feedback,mcq_points_awarded,mcq_is_correct',
+        )
+        .eq('submission_id', submissionId);
+
+    final answersRows =
+        (answersRes as List).cast<Map<String, dynamic>>();
+
+    final answersByQuestionId = <String, Map<String, dynamic>>{};
+    for (final a in answersRows) {
+      final qid = a['question_id']?.toString();
+      if (qid == null) continue;
+      answersByQuestionId[qid] = a;
+    }
+
+    submission['answers_by_question_id'] = answersByQuestionId;
+    return submission;
+  }
+
+  Future<void> submitAssignment({
+    required String assignmentId,
+    required List<Map<String, dynamic>> questions,
+    required Map<String, String?> selectedOptionByQuestionId,
+    required Map<String, File?> openPdfByQuestionId,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Not authenticated');
+    }
+
+    // Insert submission first so we can build student answer storage paths.
+    final submissionRes = await _client
+        .from('assignment_submissions')
+        .insert({
+          'assignment_id': assignmentId,
+          'student_id': userId,
+        })
+        .select('id')
+        .maybeSingle();
+
+    if (submissionRes == null) {
+      throw Exception('Failed to create submission');
+    }
+
+    final submissionId = submissionRes['id']?.toString();
+    if (submissionId == null) {
+      throw Exception('Missing submission id');
+    }
+
+    // Upload/open answer PDFs (optional) and insert per-question answer rows.
+    for (final q in questions) {
+      final qid = q['id']?.toString();
+      if (qid == null) continue;
+      final type = (q['type'] ?? '').toString();
+
+      if (type == 'mcq_single') {
+        final selectedOptionId = selectedOptionByQuestionId[qid];
+        await _client.from('assignment_submission_answers').insert({
+          'submission_id': submissionId,
+          'question_id': qid,
+          'selected_option_id': selectedOptionId,
+          'student_answer_pdf_url': null,
+        });
+      } else if (type == 'open_pdf') {
+        final file = openPdfByQuestionId[qid];
+        String? publicUrl;
+
+        if (file != null) {
+          final ext = file.path.split('.').last.toLowerCase();
+          final fileName =
+              '${DateTime.now().microsecondsSinceEpoch}.$ext';
+          final storagePath = '$submissionId/$qid/$fileName';
+
+          await _client.storage
+              .from('assignment-submissions')
+              .upload(storagePath, file, fileOptions: FileOptions(contentType: 'application/pdf'));
+
+          publicUrl = _client.storage
+              .from('assignment-submissions')
+              .getPublicUrl(storagePath);
+        }
+
+        await _client.from('assignment_submission_answers').insert({
+          'submission_id': submissionId,
+          'question_id': qid,
+          'selected_option_id': null,
+          'student_answer_pdf_url': publicUrl,
+        });
+      } else {
+        throw Exception('Unknown question type: $type');
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Announcements / notifications
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>> fetchVisibleAnnouncements({
+    int limit = 50,
+  }) async {
+    final res = await _client
+        .from('announcements')
+        .select('id,title,body,created_at,course_id,course:courses(id,title)')
+        .eq('published', true)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>?> fetchLatestAnnouncement() async {
+    final rows = await fetchVisibleAnnouncements(limit: 1);
+    if (rows.isEmpty) return null;
+    return rows.first;
+  }
+
+  Future<List<String>> fetchReadAnnouncementIds(List<String> announcementIds) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || announcementIds.isEmpty) return const [];
+
+    final res = await _client
+        .from('announcement_reads')
+        .select('announcement_id')
+        .eq('student_id', userId)
+        .inFilter('announcement_id', announcementIds);
+
+    return (res as List)
+        .map((e) => (e as Map<String, dynamic>)['announcement_id']?.toString())
+        .whereType<String>()
+        .toList();
+  }
+
+  Future<int> fetchUnreadAnnouncementsCount() async {
+    final announcements = await fetchVisibleAnnouncements(limit: 100);
+    if (announcements.isEmpty) return 0;
+    final ids = announcements
+        .map((a) => a['id']?.toString())
+        .whereType<String>()
+        .toList();
+    final readIds = await fetchReadAnnouncementIds(ids);
+    return ids.where((id) => !readIds.contains(id)).length;
+  }
+
+  Future<void> markAnnouncementAsRead(String announcementId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    await _client.from('announcement_reads').upsert(
+      {
+        'announcement_id': announcementId,
+        'student_id': userId,
+        'read_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'announcement_id,student_id',
+    );
+  }
+
+  Future<void> markAnnouncementsAsRead(List<String> announcementIds) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || announcementIds.isEmpty) return;
+
+    final payload = announcementIds
+        .map(
+          (id) => {
+            'announcement_id': id,
+            'student_id': userId,
+            'read_at': DateTime.now().toUtc().toIso8601String(),
+          },
+        )
+        .toList();
+
+    await _client
+        .from('announcement_reads')
+        .upsert(payload, onConflict: 'announcement_id,student_id');
+  }
 
   // ---------------------------------------------------------------------------
   // Teachers (profiles with role teacher)

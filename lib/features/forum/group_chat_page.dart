@@ -2,6 +2,7 @@ import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -27,6 +28,30 @@ class _GroupChatPageState extends State<GroupChatPage> {
   bool isLoading = false;
   bool isSending = false;
   String? errorMessage;
+
+  String _dateKey(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return '';
+    final date = DateTime.tryParse(dateString);
+    if (date == null) return '';
+    final local = date.toLocal();
+    final y = local.year.toString().padLeft(4, '0');
+    final m = local.month.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
+  }
+
+  String _dateLabel(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return '';
+    final date = DateTime.tryParse(dateString)?.toLocal();
+    if (date == null) return '';
+    final messageDay = DateTime(date.year, date.month, date.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (messageDay == today) return 'Today';
+    if (messageDay == yesterday) return 'Yesterday';
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
 
   @override
   void initState() {
@@ -212,7 +237,52 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             if (message.is_deleted == true) {
                               return const SizedBox.shrink();
                             }
-                            return _MessageBubble(message: message, l10n: l10n);
+                            final prevMessage =
+                                index > 0 ? messages[index - 1] : null;
+                            final showDateHeader = index == 0 ||
+                                _dateKey(message.timestamp) !=
+                                    _dateKey(prevMessage?.timestamp);
+                            final isCurrentUser =
+                                message.user?.uuid != null &&
+                                    message.user!.uuid == AuthService.currentUser?.id;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (showDateHeader)
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(top: 4, bottom: 10),
+                                    child: Align(
+                                      alignment: Alignment.center,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: CbsColors.primaryBrown
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          _dateLabel(message.timestamp),
+                                          style: smallStyle18.copyWith(
+                                            fontSize: 11,
+                                            color: CbsColors.primaryBrown,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                _MessageBubble(
+                                  message: message,
+                                  l10n: l10n,
+                                  isCurrentUser: isCurrentUser,
+                                ),
+                              ],
+                            );
                           },
                         ),
                       ),
@@ -408,8 +478,13 @@ class _MessageInputField extends StatelessWidget {
 class _MessageBubble extends StatelessWidget {
   final MessageData message;
   final AppLocalizations l10n;
+  final bool isCurrentUser;
 
-  const _MessageBubble({required this.message, required this.l10n});
+  const _MessageBubble({
+    required this.message,
+    required this.l10n,
+    required this.isCurrentUser,
+  });
 
   String _getDisplayNameForUser(UserData? user) {
     if (user == null) return l10n.unknownUser;
@@ -423,18 +498,8 @@ class _MessageBubble extends StatelessWidget {
     if (dateString == null) return '';
     try {
       final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
       final localeCode = l10n.locale.languageCode;
-      final hm = DateFormat.Hm(localeCode).format(date);
-
-      if (difference.inDays == 0) {
-        return hm;
-      } else if (difference.inDays == 1) {
-        return "${l10n.yesterday} $hm";
-      } else {
-        return DateFormat.MMMd(localeCode).add_Hm().format(date);
-      }
+      return DateFormat.Hm(localeCode).format(date.toLocal());
     } catch (e) {
       return dateString;
     }
@@ -442,15 +507,28 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final align = isCurrentUser
+        ? CrossAxisAlignment.start
+        : CrossAxisAlignment.end;
+    final metaAlign =
+        isCurrentUser ? MainAxisAlignment.start : MainAxisAlignment.end;
+    final bubbleColor = isCurrentUser
+        ? CbsColors.primaryBrown.withValues(alpha: 0.1)
+        : CbsColors.brandDeepBlue.withValues(alpha: 0.14);
+    final borderColor = isCurrentUser
+        ? CbsColors.primaryBrown.withValues(alpha: 0.2)
+        : CbsColors.brandDeepBlue.withValues(alpha: 0.22);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: align,
         children: [
           if (message.user != null)
             Padding(
-              padding: const EdgeInsets.only(bottom: 4, left: 8),
+              padding: const EdgeInsets.only(bottom: 4, left: 8, right: 8),
               child: Row(
+                mainAxisAlignment: metaAlign,
                 children: [
                   Text(
                     _getDisplayNameForUser(message.user),
@@ -472,13 +550,15 @@ class _MessageBubble extends StatelessWidget {
                 ],
               ),
             ),
-          Container(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+              color: bubbleColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                color: borderColor,
                 width: 1,
               ),
             ),
@@ -494,6 +574,7 @@ class _MessageBubble extends StatelessWidget {
                   ),
               ],
             ),
+          ),
           ),
         ],
       ),

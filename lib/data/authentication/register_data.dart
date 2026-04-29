@@ -5,7 +5,7 @@ part 'register_data.freezed.dart';
 part 'register_data.g.dart';
 
 @freezed
-class RegisterData with _$RegisterData {
+abstract class RegisterData with _$RegisterData {
   const RegisterData._();
 
   const factory RegisterData({

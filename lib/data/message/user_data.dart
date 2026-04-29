@@ -1,10 +1,12 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'user_data.freezed.dart';
 part 'user_data.g.dart';
 
 @freezed
-class UserData with _$UserData {
+abstract class UserData with _$UserData {
   const UserData._();
 
   const factory UserData({

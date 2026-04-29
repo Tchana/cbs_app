@@ -4,7 +4,7 @@ part 'login_data.freezed.dart';
 part 'login_data.g.dart';
 
 @freezed
-class LoginData with _$LoginData {
+abstract class LoginData with _$LoginData {
   const LoginData._();
 
   const factory LoginData({

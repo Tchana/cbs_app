@@ -1,13 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
-
 part of 'group_data.dart';
 
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-_$GroupDataImpl _$$GroupDataImplFromJson(Map<String, dynamic> json) =>
-    _$GroupDataImpl(
+_GroupData _$GroupDataFromJson(Map<String, dynamic> json) => _GroupData(
       uuid: json['uuid'] as String?,
       name: json['name'] as String?,
       description: json['description'] as String?,
@@ -17,12 +10,12 @@ _$GroupDataImpl _$$GroupDataImplFromJson(Map<String, dynamic> json) =>
       is_deleted: json['is_deleted'] as bool?,
       deleted_at: json['deleted_at'] as String?,
       deleted_by: json['deleted_by'] as String?,
-      participants_count: (json['participants_count'] as num?)?.toInt(),
-      online_count: (json['online_count'] as num?)?.toInt(),
+      participants_count: json['participants_count'] as int?,
+      online_count: json['online_count'] as int?,
       can_delete: json['can_delete'] as bool?,
     );
 
-Map<String, dynamic> _$$GroupDataImplToJson(_$GroupDataImpl instance) =>
+Map<String, dynamic> _$GroupDataToJson(_GroupData instance) =>
     <String, dynamic>{
       'uuid': instance.uuid,
       'name': instance.name,
@@ -37,3 +30,4 @@ Map<String, dynamic> _$$GroupDataImplToJson(_$GroupDataImpl instance) =>
       'online_count': instance.online_count,
       'can_delete': instance.can_delete,
     };
+

@@ -2,6 +2,7 @@ import 'package:center_for_biblical_studies/data/authentication/register_data.da
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
+import 'package:center_for_biblical_studies/features/announcements/announcements_page.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
@@ -41,6 +42,8 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _loading = false;
   _DailyVerse? _dailyVerse;
   bool _loadingVerse = false;
+  int _unreadAnnouncements = 0;
+  Map<String, dynamic>? _latestAnnouncement;
   static const _verseCacheDateKey = 'daily_verse_cache_date';
   static const _verseCacheTextKey = 'daily_verse_cache_text';
   static const _verseCacheRefKey = 'daily_verse_cache_ref';
@@ -69,6 +72,16 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final teachers = await apiService.fetchTeachers();
       dataController.setTeachers(teachers);
+    } catch (_) {}
+    try {
+      final latest = await apiService.fetchLatestAnnouncement();
+      final unreadCount = await apiService.fetchUnreadAnnouncementsCount();
+      if (mounted) {
+        setState(() {
+          _latestAnnouncement = latest;
+          _unreadAnnouncements = unreadCount;
+        });
+      }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
   }
@@ -197,6 +210,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final greeting = _greeting(l10n);
     final greetingText = username.isEmpty ? greeting : '$greeting, $username';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final latest = _latestAnnouncement;
 
     return Scaffold(
       backgroundColor:
@@ -210,6 +224,51 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         centerTitle: false,
         actions: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AnnouncementsPage(apiService: apiService),
+                    ),
+                  );
+                  if (mounted) {
+                    final unread = await apiService.fetchUnreadAnnouncementsCount();
+                    setState(() {
+                      _unreadAnnouncements = unread;
+                    });
+                  }
+                },
+                icon: const Icon(Icons.notifications_outlined),
+                tooltip: 'Notifications',
+              ),
+              if (_unreadAnnouncements > 0)
+                Positioned(
+                  right: 7,
+                  top: 7,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _unreadAnnouncements > 99
+                          ? '99+'
+                          : _unreadAnnouncements.toString(),
+                      style: verySmallStyle12.copyWith(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             onPressed: () => _openSearch(l10n),
             icon: const Icon(Icons.search_rounded),
@@ -240,6 +299,94 @@ class _DashboardPageState extends State<DashboardPage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
+                  if (latest != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                      decoration: BoxDecoration(
+                        color: isDark ? CbsColors.darkCard : Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: CbsColors.primaryBrown.withValues(alpha: 0.15),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.campaign_outlined,
+                                color: CbsColors.primaryBrown,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Latest announcement',
+                                style: smallStyle18.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: CbsColors.primaryBrown,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            (latest['title'] ?? 'Announcement').toString(),
+                            style: smallStyle18.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? CbsColors.darkText
+                                  : CbsColors.primaryDark[800],
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            (latest['body'] ?? '').toString(),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: smallStyle18.copyWith(
+                              fontSize: 14,
+                              color:
+                                  isDark ? CbsColors.darkHint : CbsColors.hintColor,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        AnnouncementsPage(apiService: apiService),
+                                  ),
+                                );
+                                if (mounted) {
+                                  final unread = await apiService
+                                      .fetchUnreadAnnouncementsCount();
+                                  setState(() {
+                                    _unreadAnnouncements = unread;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                              label: const Text('View all'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
@@ -395,6 +542,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                         .map(
                                           (course) => CourseCard(
                                             courseData: course,
+                                            isEnrolled: (course.id ?? '').isNotEmpty
+                                                ? dc.isCourseEnrolled(course.id!)
+                                                : false,
                                             onPressed: () {
                                               Navigator.of(context).push(
                                                 MaterialPageRoute(
@@ -823,68 +973,114 @@ class _TeacherCard extends StatelessWidget {
 
   Widget _buildCompactCard(String name, bool hasImage, String initials) {
     return Material(
-      color: CbsColors.white,
-      borderRadius: BorderRadius.circular(18),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.10),
-                backgroundImage:
-                    hasImage ? NetworkImage(teacher.pImage!) : null,
-                child: hasImage
-                    ? null
-                    : Text(
-                        initials,
-                        style: mediumStyle24Bold.copyWith(
-                          fontSize: 22,
-                          color: CbsColors.primaryBrown,
-                        ),
-                      ),
-              ),
-              gapH10,
-              Text(
-                name.isEmpty ? '—' : name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: mediumBodyStyle.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: CbsColors.primaryDark[800],
-                ),
-              ),
-              gapH4,
-              Text(
-                teacher.email ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: smallBodyStyle.copyWith(
-                  color: CbsColors.hintColor,
-                  fontSize: 12,
-                ),
-              ),
-              gapH10,
-              CbsButton(
-                width: double.infinity,
-                height: 32,
-                bgColor: CbsColors.primaryBrown,
-                onPressed: onContact,
-                child: Text(
-                  contactLabel,
-                  style: verySmallStyle10.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: CbsColors.white,
-                  ),
-                ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [
+                CbsColors.white,
+                CbsColors.primaryBrown.withValues(alpha: 0.06),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: CbsColors.primaryBrown.withValues(alpha: 0.14),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 78,
+                  height: 78,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        CbsColors.primaryBrown.withValues(alpha: 0.85),
+                        CbsColors.brandDeepBlue.withValues(alpha: 0.80),
+                      ],
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 34,
+                    backgroundColor:
+                        CbsColors.primaryBrown.withValues(alpha: 0.10),
+                    backgroundImage: hasImage ? NetworkImage(teacher.pImage!) : null,
+                    child: hasImage
+                        ? null
+                        : Text(
+                            initials,
+                            style: mediumStyle24Bold.copyWith(
+                              fontSize: 22,
+                              color: CbsColors.primaryBrown,
+                            ),
+                          ),
+                  ),
+                ),
+                gapH10,
+                Text(
+                  name.isEmpty ? '—' : name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: mediumBodyStyle.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: CbsColors.primaryDark[800],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  teacher.email ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: smallBodyStyle.copyWith(
+                    color: CbsColors.hintColor,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CbsButton(
+                  width: double.infinity,
+                  height: 34,
+                  bgColor: CbsColors.primaryBrown,
+                  onPressed: onContact,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.chat_outlined,
+                          size: 14, color: CbsColors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        contactLabel,
+                        style: verySmallStyle10.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: CbsColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

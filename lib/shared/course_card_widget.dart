@@ -8,11 +8,13 @@ import 'package:flutter/material.dart';
 class CourseCard extends StatelessWidget {
   final CourseData courseData;
   final void Function()? onPressed;
+  final bool isEnrolled;
 
   const CourseCard({
     super.key,
     required this.courseData,
     this.onPressed,
+    this.isEnrolled = false,
   });
 
   String get _teacherName {
@@ -30,7 +32,10 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final registerLabel = AppLocalizations.of(context)?.register ?? 'Register';
+    final l10n = AppLocalizations.of(context);
+    final registerLabel = l10n?.register ?? 'Register';
+    final enrolledLabel = l10n?.enrolled ?? 'Enrolled';
+    final ctaLabel = isEnrolled ? enrolledLabel : registerLabel;
     final hasLevel = _levelLabel.isNotEmpty;
 
     return Padding(
@@ -125,10 +130,12 @@ class CourseCard extends StatelessWidget {
                           ),
                         if (hasLevel) const SizedBox(width: 8),
                         Text(
-                          registerLabel,
+                          ctaLabel,
                           style: verySmallStyle12.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CbsColors.primaryBrown,
+                            color: isEnrolled
+                                ? CbsColors.successColor
+                                : CbsColors.primaryBrown,
                           ),
                         ),
                       ],

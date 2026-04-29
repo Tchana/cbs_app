@@ -35,6 +35,12 @@ class _CoursesPageState extends State<CoursesPage>
     });
   }
 
+  bool _isCourseEnrolled(CourseData course) {
+    final id = course.id;
+    if (id == null || id.isEmpty) return false;
+    return dataController.isCourseEnrolled(id);
+  }
+
   void fetchData() async {
     final dataController = Get.find<DataController>();
 
@@ -160,6 +166,7 @@ class _CoursesPageState extends State<CoursesPage>
                           children: dataController.courses.map((course) {
                             return CourseCard(
                               courseData: course,
+                              isEnrolled: _isCourseEnrolled(course),
                               onPressed: () {
                                 setState(() {
                                   selectedCourse = course;
@@ -171,12 +178,18 @@ class _CoursesPageState extends State<CoursesPage>
                         ),
                         ListView(
                           children: dataController.courses.map((course) {
-                            return CourseCard(courseData: course);
+                            return CourseCard(
+                              courseData: course,
+                              isEnrolled: _isCourseEnrolled(course),
+                            );
                           }).toList(),
                         ),
                         ListView(
                           children: dataController.courses.map((course) {
-                            return CourseCard(courseData: course);
+                            return CourseCard(
+                              courseData: course,
+                              isEnrolled: _isCourseEnrolled(course),
+                            );
                           }).toList(),
                         )
                       ],

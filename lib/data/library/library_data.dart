@@ -12,7 +12,7 @@ enum BookType {
 }
 
 @freezed
-class LibraryData with _$LibraryData {
+abstract class LibraryData with _$LibraryData {
   const LibraryData._();
 
   const factory LibraryData({

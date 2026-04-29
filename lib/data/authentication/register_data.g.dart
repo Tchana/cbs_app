@@ -1,13 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
-
 part of 'register_data.dart';
 
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-_$RegisterDataImpl _$$RegisterDataImplFromJson(Map<String, dynamic> json) =>
-    _$RegisterDataImpl(
+_RegisterData _$RegisterDataFromJson(Map<String, dynamic> json) => _RegisterData(
       id: json['id'] as String?,
       email: json['email'] as String?,
       password: json['password'] as String?,
@@ -16,11 +9,12 @@ _$RegisterDataImpl _$$RegisterDataImplFromJson(Map<String, dynamic> json) =>
       pImage: json['pImage'] as String?,
       role: json['role'] as String?,
       course: (json['course'] as List<dynamic>?)
-          ?.map((e) => CourseData.fromJson(e as Map<String, dynamic>))
+          ?.map((e) =>
+              CourseData.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
 
-Map<String, dynamic> _$$RegisterDataImplToJson(_$RegisterDataImpl instance) =>
+Map<String, dynamic> _$RegisterDataToJson(_RegisterData instance) =>
     <String, dynamic>{
       'id': instance.id,
       'email': instance.email,
@@ -29,5 +23,6 @@ Map<String, dynamic> _$$RegisterDataImplToJson(_$RegisterDataImpl instance) =>
       'lastName': instance.lastName,
       'pImage': instance.pImage,
       'role': instance.role,
-      'course': instance.course,
+      'course': instance.course?.map((e) => e.toJson()).toList(),
     };
+

@@ -5,7 +5,7 @@ part 'course_data.freezed.dart';
 part 'course_data.g.dart';
 
 @freezed
-class CourseData with _$CourseData {
+abstract class CourseData with _$CourseData {
   const CourseData._();
 
   const factory CourseData({
@@ -14,6 +14,7 @@ class CourseData with _$CourseData {
     RegisterData? teacher,
     String? description,
     String? level,
+    bool? isEnrolled,
     List<LessonData>? lessons,
   }) = _CourseData;
 
@@ -22,7 +23,7 @@ class CourseData with _$CourseData {
 }
 
 @freezed
-class LessonData with _$LessonData {
+abstract class LessonData with _$LessonData {
   const LessonData._();
 
   const factory LessonData({

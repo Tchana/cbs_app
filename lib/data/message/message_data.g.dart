@@ -1,13 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
-
 part of 'message_data.dart';
 
-// **************************************************************************
-// JsonSerializableGenerator
-// **************************************************************************
-
-_$MessageDataImpl _$$MessageDataImplFromJson(Map<String, dynamic> json) =>
-    _$MessageDataImpl(
+_MessageData _$MessageDataFromJson(Map<String, dynamic> json) => _MessageData(
       uuid: json['uuid'] as String?,
       room: json['room'] as String?,
       user: json['user'] == null
@@ -20,14 +13,15 @@ _$MessageDataImpl _$$MessageDataImplFromJson(Map<String, dynamic> json) =>
       deleted_at: json['deleted_at'] as String?,
     );
 
-Map<String, dynamic> _$$MessageDataImplToJson(_$MessageDataImpl instance) =>
+Map<String, dynamic> _$MessageDataToJson(_MessageData instance) =>
     <String, dynamic>{
       'uuid': instance.uuid,
       'room': instance.room,
-      'user': instance.user,
+      'user': instance.user?.toJson(),
       'content': instance.content,
       'timestamp': instance.timestamp,
       'message_type': instance.message_type,
       'is_deleted': instance.is_deleted,
       'deleted_at': instance.deleted_at,
     };
+
