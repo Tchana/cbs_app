@@ -698,6 +698,23 @@ class SupabaseService {
         .upsert(payload, onConflict: 'announcement_id,student_id');
   }
 
+  Future<int> fetchMyOutstandingBalance() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return 0;
+
+    final res = await _client
+        .from('v_student_finance_summary')
+        .select('balance_due')
+        .eq('student_id', userId)
+        .maybeSingle();
+
+    if (res == null) return 0;
+    final raw = res['balance_due'];
+    if (raw is int) return raw;
+    if (raw is double) return raw.round();
+    return int.tryParse(raw?.toString() ?? '0') ?? 0;
+  }
+
   // ---------------------------------------------------------------------------
   // Teachers (profiles with role teacher)
   // ---------------------------------------------------------------------------

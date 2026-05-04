@@ -43,6 +43,7 @@ class _DashboardPageState extends State<DashboardPage> {
   _DailyVerse? _dailyVerse;
   bool _loadingVerse = false;
   int _unreadAnnouncements = 0;
+  int _outstandingBalance = 0;
   Map<String, dynamic>? _latestAnnouncement;
   static const _verseCacheDateKey = 'daily_verse_cache_date';
   static const _verseCacheTextKey = 'daily_verse_cache_text';
@@ -76,10 +77,12 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final latest = await apiService.fetchLatestAnnouncement();
       final unreadCount = await apiService.fetchUnreadAnnouncementsCount();
+      final balanceDue = await apiService.fetchMyOutstandingBalance();
       if (mounted) {
         setState(() {
           _latestAnnouncement = latest;
           _unreadAnnouncements = unreadCount;
+          _outstandingBalance = balanceDue;
         });
       }
     } catch (_) {}
@@ -298,6 +301,43 @@ class _DashboardPageState extends State<DashboardPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (_outstandingBalance > 0) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CbsColors.errorColor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: CbsColors.errorColor.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: CbsColors.errorColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'You owe ${NumberFormat.decimalPattern().format(_outstandingBalance)} FCFA',
+                              style: smallStyle18.copyWith(
+                                color: CbsColors.errorColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   if (latest != null) ...[
                     Container(
