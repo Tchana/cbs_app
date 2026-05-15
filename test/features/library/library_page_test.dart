@@ -44,6 +44,8 @@ void main() {
   testWidgets('LibraryPage renders fetched tabs and continue reading',
       (tester) async {
     final dc = Get.put(DataController());
+    // Library UI access is subscription-driven; enable it for this widget test.
+    dc.setAccessProfile(role: 'library_user', subscription: 'library_user', maxLevel: 0);
     dc.setBooks(const [
       LibraryData(
         id: '1',

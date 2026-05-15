@@ -2,7 +2,9 @@
 
 import 'dart:io';
 
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -76,6 +78,8 @@ class _AssignmentPageState extends State<AssignmentPage> {
   }
 
   Future<void> _submit() async {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     if (_details == null) return;
     final questions = (_details!['questions'] as List).cast<Map<String, dynamic>>();
 
@@ -89,7 +93,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
         final selected = _selectedOptionByQuestionId[qid];
         if (selected == null || selected.toString().isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please answer all MCQ questions.')),
+            SnackBar(content: Text(l10n.assignmentAnswerAllMcq)),
           );
           return;
         }
@@ -120,10 +124,13 @@ class _AssignmentPageState extends State<AssignmentPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _details?['assignment']?['title']?.toString() ?? 'Assignment',
+          _details?['assignment']?['title']?.toString() ??
+              l10n.assignmentTitleFallback,
         ),
         centerTitle: false,
       ),
@@ -141,7 +148,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
             final submission = results?[1];
 
             if (details == null) {
-              return const Center(child: Text('Assignment not found.'));
+              return Center(child: Text(l10n.assignmentNotFound));
             }
 
             _details = details;
@@ -150,6 +157,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
             final pdfUrl = assignment['pdf_url']?.toString();
             final questions = (details['questions'] as List)
                 .cast<Map<String, dynamic>>();
+            final dataController =
+                Get.isRegistered<DataController>() ? Get.find<DataController>() : null;
+            final canSubmitAssignments =
+                dataController?.canSubmitAssignments ?? true;
+            final isSuspended = dataController?.isSuspended ?? false;
 
             _initAnswerStateIfNeeded(questions);
 
@@ -164,7 +176,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
-                      'Assignment PDF',
+                      l10n.assignmentPdfLabel,
                       style: smallStyle18.copyWith(
                         fontWeight: FontWeight.w700,
                         color: CbsColors.primaryBrown,
@@ -185,7 +197,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       },
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
-                        'Open PDF',
+                        l10n.assignmentOpenPdf,
                         style: smallStyle18.copyWith(
                           color: CbsColors.primaryBrown,
                         ),
@@ -203,6 +215,28 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   ),
                 ),
                 const SizedBox(height: 18),
+                if (submission == null && !canSubmitAssignments) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Text(
+                      isSuspended
+                          ? l10n.assignmentSubmissionSuspended
+                          : l10n.assignmentSubmissionDowngraded,
+                      style: smallStyle18.copyWith(
+                        color: CbsColors.primaryDark[800],
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
 
                 ...questions.map((q) {
                   final qid = q['id']?.toString() ?? '';
@@ -251,7 +285,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               groupValue: groupVal,
                               title: Text(optionText),
                               dense: true,
-                              onChanged: submission != null
+                              onChanged: submission != null || !canSubmitAssignments
                                   ? null
                                   : (v) {
                                       setState(() {
@@ -264,7 +298,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           if (showGrade) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'MCQ points: ${mcqScore ?? 0}',
+                              l10n.assignmentMcqPoints('${mcqScore ?? 0}'),
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: CbsColors.primaryBrown,
@@ -311,8 +345,12 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               Expanded(
                                 child: Text(
                                   pickedFile != null
-                                      ? 'Selected: ${pickedFile.path.split('/').last}'
-                                      : 'No PDF selected (optional)',
+                                      ? l10n.assignmentPdfSelected(
+                                          pickedFile.path
+                                              .split(RegExp(r'[\\/]'))
+                                              .last,
+                                        )
+                                      : l10n.assignmentNoPdfSelectedOptional,
                                   style: smallStyle18.copyWith(
                                     color: CbsColors.hintColor,
                                     fontSize: 13,
@@ -321,9 +359,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               ),
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
-                                onPressed: () => _pickOpenPdf(qid),
+                                onPressed:
+                                    canSubmitAssignments ? () => _pickOpenPdf(qid) : null,
                                 icon: const Icon(Icons.upload_file_rounded),
-                                label: const Text('Upload PDF'),
+                                label: Text(l10n.uploadPdf),
                               ),
                             ],
                           ),
@@ -334,11 +373,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                 Get.to(() => PdfViewerScreen(pdfUrl: studentPdfUrl));
                               },
                               icon: const Icon(Icons.picture_as_pdf_outlined),
-                              label: const Text('Open submitted PDF'),
+                              label: Text(l10n.openSubmittedPdf),
                             ),
                           ] else ...[
                             Text(
-                              'No PDF submitted.',
+                              l10n.assignmentNoPdfSubmitted,
                               style: smallStyle18.copyWith(
                                 color: CbsColors.hintColor,
                                 fontSize: 13,
@@ -348,7 +387,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           const SizedBox(height: 6),
                           if (teacherPoints != null) ...[
                             Text(
-                              'Teacher points: ${teacherPoints.toString()}',
+                              l10n.assignmentTeacherPoints(
+                                teacherPoints.toString(),
+                              ),
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: CbsColors.primaryBrown,
@@ -357,7 +398,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             if (teacherFeedback != null && teacherFeedback.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'Feedback: $teacherFeedback',
+                                l10n.assignmentFeedbackPrefix(teacherFeedback),
                                 style: smallStyle18.copyWith(
                                   color: CbsColors.primaryDark[800],
                                   fontSize: 13,
@@ -366,7 +407,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             ],
                           ] else ...[
                             Text(
-                              'Waiting for teacher review...',
+                              l10n.assignmentWaitingReview,
                               style: smallStyle18.copyWith(
                                 color: CbsColors.hintColor,
                                 fontSize: 13,
@@ -390,7 +431,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Final score total: ${submission['final_score_total'] ?? 0}',
+                    l10n.assignmentFinalScoreTotal(
+                      '${submission['final_score_total'] ?? 0}',
+                    ),
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
                       color: CbsColors.primaryDark[800],
@@ -403,7 +446,8 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _submitting ? null : _submit,
+                      onPressed:
+                          _submitting || !canSubmitAssignments ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: CbsColors.primaryBrown,
                         foregroundColor: Colors.white,
@@ -417,7 +461,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               height: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Submit'),
+                          : Text(l10n.submit),
                     ),
                   ),
               ],

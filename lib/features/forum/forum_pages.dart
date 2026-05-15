@@ -273,7 +273,7 @@ class _GroupCardState extends State<_GroupCard> {
     }
   }
 
-  String _formatTime(String? dateString) {
+  String _formatTime(AppLocalizations l10n, String? dateString) {
     if (dateString == null) return '';
     try {
       final date = DateTime.parse(dateString);
@@ -283,9 +283,9 @@ class _GroupCardState extends State<_GroupCard> {
       if (difference.inDays == 0) {
         return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
       } else if (difference.inDays == 1) {
-        return "Hier";
+        return l10n.timeYesterdayShort;
       } else if (difference.inDays < 7) {
-        return "Il y a ${difference.inDays}j";
+        return l10n.daysAgo(difference.inDays);
       } else {
         return "${date.day}/${date.month}";
       }
@@ -404,7 +404,7 @@ class _GroupCardState extends State<_GroupCard> {
               const SizedBox(width: 8),
               if (_lastMessage?.timestamp != null)
                 Text(
-                  _formatTime(_lastMessage!.timestamp),
+                  _formatTime(l10n, _lastMessage!.timestamp),
                   style: smallStyle18.copyWith(
                     fontSize: 11,
                     color: subtitleColor,
@@ -474,7 +474,7 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${l10n.errorPrefix}: $e'),
+          content: Text(l10n.errorWithDetails(e)),
           backgroundColor: CbsColors.errorColor,
         ),
       );

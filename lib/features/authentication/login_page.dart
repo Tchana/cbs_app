@@ -73,10 +73,13 @@ class _LoginPageState extends State<LoginPage> {
       ));
 
       if (!mounted) return;
+      final l10nFallback =
+          AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
       setState(() {
         _isLoading = false;
         if (response["error"] == true) {
-          _errorMessage = response["message"] as String? ?? 'Unknown error';
+          _errorMessage =
+              response["message"] as String? ?? l10nFallback.unknownError;
           _logError(
             status: response["status"],
             message: _errorMessage!,

@@ -3,6 +3,7 @@ import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 
 class AnnouncementsPage extends StatefulWidget {
   const AnnouncementsPage({
@@ -48,10 +49,12 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.notificationsTitle),
         centerTitle: false,
       ),
       body: SafeArea(
@@ -67,9 +70,9 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               return RefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(
-                  children: const [
-                    SizedBox(height: 180),
-                    Center(child: Text('No announcements yet.')),
+                  children: [
+                    const SizedBox(height: 180),
+                    Center(child: Text(l10n.noAnnouncementsYet)),
                   ],
                 ),
               );
@@ -109,7 +112,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title.isEmpty ? 'Announcement' : title,
+                          title.isEmpty ? l10n.announcementFallback : title,
                           style: smallStyle18.copyWith(
                             fontWeight: FontWeight.w700,
                             color: isDark

@@ -32,9 +32,10 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final registerLabel = l10n?.register ?? 'Register';
-    final enrolledLabel = l10n?.enrolled ?? 'Enrolled';
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final registerLabel = l10n.register;
+    final enrolledLabel = l10n.enrolled;
     final ctaLabel = isEnrolled ? enrolledLabel : registerLabel;
     final hasLevel = _levelLabel.isNotEmpty;
 

@@ -5,6 +5,7 @@ import 'package:center_for_biblical_studies/features/assignments/course_assignme
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/shared/subscribe_bottom_sheet.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -36,7 +37,6 @@ class _LessonPageState extends State<LessonPage> {
   final SupabaseService _apiService = SupabaseService();
   late CourseData? _courseData = widget.courseData;
 
-  bool _isEnrolling = false;
   bool _isEnrolled = false;
 
   @override
@@ -50,23 +50,14 @@ class _LessonPageState extends State<LessonPage> {
     }
   }
 
-  Future<void> _enroll() async {
-    final courseId = _courseData?.id;
-    if (courseId == null) return;
-
-    setState(() => _isEnrolling = true);
-    try {
-      await _apiService.enrollInCourse(courseId);
-      setState(() {
-        _isEnrolled = true;
-      });
-
-      final dc = Get.find<DataController>();
-      final updated = <String>{...dc.enrolledCourseIds, courseId};
-      dc.setEnrolledCourseIds(updated);
-    } finally {
-      if (mounted) setState(() => _isEnrolling = false);
-    }
+  Future<void> _showSubscribeDialog() async {
+    await showSubscribeBottomSheet(
+      context: context,
+      api: _apiService,
+      onActivated: () {
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   @override
@@ -79,6 +70,8 @@ class _LessonPageState extends State<LessonPage> {
     final cardColor = isDark ? CbsColors.darkCard : CbsColors.white;
     final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
     final bodyColor = isDark ? CbsColors.darkHint : CbsColors.primaryDark[500];
+    final canAccessLessons =
+        Get.find<DataController>().canAccessCourseLevel(_courseData?.level);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -144,7 +137,7 @@ class _LessonPageState extends State<LessonPage> {
                 const SizedBox(height: 16),
                 if (_isEnrolled == true)
                   Text(
-                    'Enrolled',
+                    l10n.enrolled,
                     style: smallStyle18.copyWith(
                       color: CbsColors.primaryBrown,
                       fontWeight: FontWeight.w700,
@@ -156,9 +149,9 @@ class _LessonPageState extends State<LessonPage> {
                     height: 44,
                     bgColor: CbsColors.primaryBrown,
                     borderColor: CbsColors.primaryBrown,
-                    onPressed: _isEnrolling ? null : _enroll,
+                    onPressed: _showSubscribeDialog,
                     child: Text(
-                      _isEnrolling ? 'Enrolling...' : 'Enroll',
+                      l10n.enroll,
                       style: verySmallStyle12.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -210,11 +203,16 @@ class _LessonPageState extends State<LessonPage> {
                       lesson: lesson,
                       l10n: l10n,
                       onTap: () {
+                        if (!canAccessLessons) {
+                          _showSubscribeDialog();
+                          return;
+                        }
                         final url = lesson.file;
                         if (url != null && url.isNotEmpty) {
                           Get.to(() => PdfViewerScreen(pdfUrl: url));
                         }
                       },
+                      isLockedByAccess: !canAccessLessons,
                     )
                   : const SizedBox.shrink();
             }),
@@ -222,7 +220,7 @@ class _LessonPageState extends State<LessonPage> {
 
           // Assignments section
           Text(
-            'Assignments',
+            l10n.assignmentsTitle,
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
               color: titleColor,
@@ -241,7 +239,7 @@ class _LessonPageState extends State<LessonPage> {
                 Get.to(() => CourseAssignmentsPage(courseId: courseId));
               },
               child: Text(
-                'View assignments',
+                l10n.viewAssignments,
                 style: verySmallStyle12.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -250,7 +248,7 @@ class _LessonPageState extends State<LessonPage> {
             )
           else
             Text(
-              'Enroll to access assignments',
+              l10n.enrollToAccessAssignments,
               style: verySmallStyle12.copyWith(
                 color: CbsColors.hintColor,
                 fontWeight: FontWeight.w600,
@@ -323,17 +321,19 @@ class _LessonCard extends StatelessWidget {
   final LessonData lesson;
   final AppLocalizations l10n;
   final VoidCallback? onTap;
+  final bool isLockedByAccess;
 
   const _LessonCard({
     required this.index,
     required this.lesson,
     required this.l10n,
     this.onTap,
+    this.isLockedByAccess = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasPdf = (lesson.file ?? '').trim().isNotEmpty;
+    final hasPdf = (lesson.file ?? '').trim().isNotEmpty && !isLockedByAccess;
     final rawTitle = (lesson.title ?? '').trim();
     final displayTitle = rawTitle.isEmpty
         ? '${l10n.lessonLabel} ${index + 1}'
@@ -403,7 +403,9 @@ class _LessonCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        hasPdf ? l10n.openPdf : l10n.notAvailable,
+                        hasPdf
+                            ? l10n.openPdf
+                            : (isLockedByAccess ? l10n.locked : l10n.notAvailable),
                         style: verySmallStyle12.copyWith(
                           color: hasPdf
                               ? CbsColors.primaryBrown

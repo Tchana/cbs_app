@@ -5,7 +5,9 @@ import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/shared/book_item.dart';
+import 'package:center_for_biblical_studies/shared/subscribe_bottom_sheet.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -34,7 +36,7 @@ class _LibraryPageState extends State<LibraryPage>
     BookType.dictionnaire,
   ];
 
-  void fetchData() async {
+  Future<void> fetchData() async {
     final dataController = Get.find<DataController>();
     try {
       final books = await apiService.fetchBooks();
@@ -77,6 +79,10 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   void _openBook(LibraryData book, AppLocalizations l10n) {
+    if (_isBookLocked(book)) {
+      _showSubscribeDialog();
+      return;
+    }
     final url = (book.book ?? '').trim();
     if (url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,7 +90,23 @@ class _LibraryPageState extends State<LibraryPage>
       );
       return;
     }
+    RecentAccessService.markBookAccessed(book.id);
     Get.to(() => PdfViewerScreen(pdfUrl: url));
+  }
+
+  bool _isBookLocked(LibraryData book) {
+    final d = (book.description ?? '').trim();
+    return d.startsWith('__LOCKED__');
+  }
+
+  void _showSubscribeDialog() {
+    showSubscribeBottomSheet(
+      context: context,
+      api: apiService,
+      onActivated: () async {
+        await fetchData();
+      },
+    );
   }
 
   @override
@@ -118,97 +140,168 @@ class _LibraryPageState extends State<LibraryPage>
         ),
       );
     }
-    return Scaffold(
-      backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          l10n.library,
-          style: smallStyle18.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: false,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 6),
-            child: Icon(Icons.favorite_border_rounded),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            gapH20,
-            // Tabs - compact, less circular
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: CbsColors.primaryBrown.withValues(alpha: 0.18),
-                    width: 1,
-                  ),
-                ),
-                child: TabBar(
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  dividerHeight: 0,
-                  controller: tabController,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  indicator: BoxDecoration(
-                    color: CbsColors.primaryBrown,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  labelColor: CbsColors.white,
-                  unselectedLabelColor:
-                      CbsColors.primaryBrown.withValues(alpha: 0.85),
-                  labelStyle: smallStyle18.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                  unselectedLabelStyle: smallStyle18.copyWith(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                    color: CbsColors.primaryBrown.withValues(alpha: 0.85),
-                  ),
-                  overlayColor: WidgetStateProperty.all(Colors.transparent),
-                  labelPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  padding: EdgeInsets.zero,
-                  tabs: [
-                    Tab(text: l10n.tabAll),
-                    ..._categories
-                        .map((c) => Tab(text: _categoryLabel(c, l10n))),
-                  ],
-                ),
-              ),
+    return Obx(() {
+      final sub = dataController.subscriptionType.value.trim();
+      final hasLibrary = dataController.hasLibraryAccess;
+
+      if (!hasLibrary) {
+        return Scaffold(
+          backgroundColor:
+              isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+          appBar: AppBar(
+            title: Text(
+              l10n.library,
+              style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
             ),
-            gapH16,
-            Expanded(
-              child: TabBarView(
-                controller: tabController,
+            centerTitle: false,
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildAllTab(l10n),
-                  ..._categories.map((c) => _buildCategoryTab(c, l10n)),
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 56,
+                    color: CbsColors.primaryBrown.withValues(alpha: 0.6),
+                  ),
+                  gapH16,
+                  Text(
+                    l10n.subscriptionRequiredTitle,
+                    textAlign: TextAlign.center,
+                    style: smallStyle18.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                    ),
+                  ),
+                  gapH8,
+                  Text(
+                    sub.isEmpty || sub == 'none'
+                        ? l10n.subscriptionRequiredLibrary
+                        : l10n.subscriptionRequiredNoAccess,
+                    textAlign: TextAlign.center,
+                    style: smallStyle18.copyWith(
+                      color: isDark ? CbsColors.darkHint : CbsColors.hintColor,
+                      fontSize: 13,
+                      height: 1.35,
+                    ),
+                  ),
+                  gapH20,
+                  FilledButton(
+                    onPressed: _showSubscribeDialog,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: CbsColors.primaryBrown,
+                      foregroundColor: CbsColors.white,
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(l10n.subscribe),
+                  ),
                 ],
               ),
             ),
+          ),
+        );
+      }
+
+      return Scaffold(
+        backgroundColor:
+            isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+        appBar: AppBar(
+          title: Text(
+            l10n.library,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: false,
+          actions: const [
+            Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Icon(Icons.favorite_border_rounded),
+            ),
           ],
         ),
-      ),
-    );
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              gapH20,
+              // Tabs - compact, less circular
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                      width: 1,
+                    ),
+                  ),
+                  child: TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    dividerHeight: 0,
+                    controller: tabController,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: CbsColors.primaryBrown,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              CbsColors.primaryBrown.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    labelColor: CbsColors.white,
+                    unselectedLabelColor:
+                        CbsColors.primaryBrown.withValues(alpha: 0.85),
+                    labelStyle: smallStyle18.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                    unselectedLabelStyle: smallStyle18.copyWith(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.85),
+                    ),
+                    overlayColor:
+                        WidgetStateProperty.all(Colors.transparent),
+                    labelPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    padding: EdgeInsets.zero,
+                    tabs: [
+                      Tab(text: l10n.tabAll),
+                      ..._categories.map((c) => Tab(text: _categoryLabel(c, l10n))),
+                    ],
+                  ),
+                ),
+              ),
+              gapH16,
+              Expanded(
+                child: TabBarView(
+                  controller: tabController,
+                  children: [
+                    _buildAllTab(l10n),
+                    ..._categories.map((c) => _buildCategoryTab(c, l10n)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildAllTab(AppLocalizations l10n) {
@@ -254,6 +347,7 @@ class _LibraryPageState extends State<LibraryPage>
             ),
             itemBuilder: (_, index) => BookItem(
               book: items[index],
+              isLocked: _isBookLocked(items[index]),
               onPressed: () => _openBook(items[index], l10n),
             ),
           ),
@@ -283,7 +377,7 @@ class _LibraryPageState extends State<LibraryPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Continue reading',
+            l10n.continueReading,
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
               color: titleColor,
@@ -343,7 +437,7 @@ class _LibraryPageState extends State<LibraryPage>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              author.isEmpty ? 'Author: —' : 'Author: $author',
+                              author.isEmpty ? l10n.authorUnknown : l10n.authorPrefix(author),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: smallStyle18.copyWith(
@@ -443,6 +537,7 @@ class _LibraryPageState extends State<LibraryPage>
             ),
             itemBuilder: (_, index) => BookItem(
               book: items[index],
+              isLocked: _isBookLocked(items[index]),
               onPressed: () => _openBook(items[index], l10n),
             ),
           ),

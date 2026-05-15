@@ -40,7 +40,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
     return '$y-$m-$d';
   }
 
-  String _dateLabel(String? dateString) {
+  String _dateLabel(
+    AppLocalizations l10n,
+    String localeName,
+    String? dateString,
+  ) {
     if (dateString == null || dateString.isEmpty) return '';
     final date = DateTime.tryParse(dateString)?.toLocal();
     if (date == null) return '';
@@ -48,9 +52,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    if (messageDay == today) return 'Today';
-    if (messageDay == yesterday) return 'Yesterday';
-    return DateFormat('dd/MM/yyyy').format(date);
+    if (messageDay == today) return l10n.today;
+    if (messageDay == yesterday) {
+      return l10n.yesterday;
+    }
+    return DateFormat(l10n.chatDateFormatPattern, localeName).format(date);
   }
 
   @override
@@ -70,8 +76,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Future<void> fetchMessages() async {
     if (widget.group.uuid == null) {
       if (mounted) {
+        final l10n =
+            AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
         setState(() {
-          errorMessage = "Group UUID is missing";
+          errorMessage = l10n.groupUuidMissing;
         });
       }
       return;
@@ -127,6 +135,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final localeName = Localizations.localeOf(context).toString();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor:
@@ -266,7 +275,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
                                               BorderRadius.circular(999),
                                         ),
                                         child: Text(
-                                          _dateLabel(message.timestamp),
+                                          _dateLabel(
+                                            l10n,
+                                            localeName,
+                                            message.timestamp,
+                                          ),
                                           style: smallStyle18.copyWith(
                                             fontSize: 11,
                                             color: CbsColors.primaryBrown,
@@ -360,7 +373,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${l10n.errorPrefix}: ${e.toString()}'),
+            content: Text(l10n.errorWithDetails(e.toString())),
             backgroundColor: CbsColors.errorColor,
           ),
         );

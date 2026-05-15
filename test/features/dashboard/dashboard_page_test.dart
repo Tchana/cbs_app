@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeDashboardSupabaseService extends SupabaseService {
   const _FakeDashboardSupabaseService();
@@ -16,6 +17,7 @@ void main() {
   setUp(() {
     Get.testMode = true;
     Get.reset();
+    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets('Dashboard greeting has no comma when username is empty',
@@ -69,6 +71,12 @@ void main() {
       ),
     ]);
 
+    // Dashboard shows courses inside the "Recently accessed" block, sourced from RecentAccessService.
+    // Seed shared_preferences so the recent list includes our course id.
+    SharedPreferences.setMockInitialValues({
+      'recent_course_ids': ['c1'],
+    });
+
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: [
@@ -87,7 +95,13 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Apologetics 101'));
+    expect(find.text('Apologetics 101'), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.text('Apologetics 101').first,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Apologetics 101').first, warnIfMissed: false);
     await tester.pumpAndSettle();
 
     expect(find.text('Apologetics 101'), findsWidgets);

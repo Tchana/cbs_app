@@ -1,9 +1,11 @@
 import 'package:center_for_biblical_studies/features/assignments/assignment_page.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class CourseAssignmentsPage extends StatefulWidget {
   final String courseId;
@@ -34,9 +36,12 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final localeName = Localizations.localeOf(context).toString();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assignments'),
+        title: Text(l10n.assignmentsTitle),
         centerTitle: false,
       ),
       body: SafeArea(
@@ -50,9 +55,9 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
             final items = snapshot.data ?? [];
 
             if (items.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'No assignments found.',
+                  l10n.assignmentsEmpty,
                   style: TextStyle(color: Colors.grey),
                 ),
               );
@@ -70,6 +75,13 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                   final title = (a['title'] ?? '').toString();
                   final lessonTitle = a['lesson_title'] as String?;
                   final dueDate = a['due_date']?.toString();
+                  String? dueLabel;
+                  if (dueDate != null && dueDate.trim().isNotEmpty) {
+                    final parsed = DateTime.tryParse(dueDate);
+                    dueLabel = parsed == null
+                        ? dueDate
+                        : DateFormat.yMMMd(localeName).format(parsed.toLocal());
+                  }
 
                   return Material(
                     color: Colors.transparent,
@@ -104,7 +116,7 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                             if (lessonTitle != null && lessonTitle.trim().isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'Lesson: $lessonTitle',
+                                l10n.lessonPrefix(lessonTitle.trim()),
                                 style: smallStyle18.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: CbsColors.hintColor,
@@ -112,10 +124,10 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                                 ),
                               ),
                             ],
-                            if (dueDate != null && dueDate.isNotEmpty) ...[
+                            if (dueLabel != null && dueLabel.isNotEmpty) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'Due: $dueDate',
+                                l10n.duePrefix(dueLabel),
                                 style: smallStyle18.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: CbsColors.hintColor,

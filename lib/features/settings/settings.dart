@@ -7,6 +7,7 @@ import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:center_for_biblical_studies/features/subscriptions/subscription_status_page.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -360,27 +361,61 @@ class _SettingsState extends State<Settings> {
               gapH8,
               _buildCard(
                 surface: surface,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading:
-                      const Icon(Icons.logout, color: CbsColors.errorColor),
-                  title: Text(
-                    localizations.logout,
-                    style: smallStyle18.copyWith(
-                      color: CbsColors.errorColor,
-                      fontWeight: FontWeight.w600,
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.workspace_premium_rounded,
+                        color: CbsColors.primaryBrown,
+                      ),
+                      title: Text(
+                        localizations.subscriptionStatusTitle,
+                        style: smallStyle18.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        localizations.subscriptionStatusSubtitle,
+                        style: smallStyle18.copyWith(
+                          fontSize: 13,
+                          color: muted,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                        color: CbsColors.hintColor,
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SubscriptionStatusPage(),
+                        ),
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    localizations.logoutDescription,
-                    style: smallStyle18.copyWith(
-                      fontSize: 13,
-                      color: muted,
+                    _divider(isDark),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const Icon(Icons.logout, color: CbsColors.errorColor),
+                      title: Text(
+                        localizations.logout,
+                        style: smallStyle18.copyWith(
+                          color: CbsColors.errorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        localizations.logoutDescription,
+                        style: smallStyle18.copyWith(
+                          fontSize: 13,
+                          color: muted,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right,
+                          color: CbsColors.hintColor),
+                      onTap: _handleLogout,
                     ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right,
-                      color: CbsColors.hintColor),
-                  onTap: _handleLogout,
+                  ],
                 ),
               ),
             ],

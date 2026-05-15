@@ -4,6 +4,7 @@ import 'package:center_for_biblical_studies/features/forum/forum_pages.dart';
 import 'package:center_for_biblical_studies/features/library/Library_page.dart';
 import 'package:center_for_biblical_studies/features/settings/settings.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
@@ -27,6 +28,17 @@ class _MainPageState extends State<MainPage> {
   void onTap(int index) {
     setState(() {
       currentStep = index;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep library/courses gates in sync after cold start (splash skips data load).
+    Future<void>(() async {
+      try {
+        await const SupabaseService().refreshMyEntitlement();
+      } catch (_) {}
     });
   }
 

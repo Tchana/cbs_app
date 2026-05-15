@@ -2,8 +2,16 @@ import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 
 void main() {
+  setUp(() {
+    Get.testMode = true;
+    Get.reset();
+    Get.put(DataController());
+  });
+
   testWidgets('LessonPage renders description and no inline back button',
       (tester) async {
     const course = CourseData(
@@ -13,7 +21,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: LessonPage(courseData: course),
         ),

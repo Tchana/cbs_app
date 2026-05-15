@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/features/announcements/announcements_page.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
+import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
+import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
@@ -44,7 +48,11 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _loadingVerse = false;
   int _unreadAnnouncements = 0;
   int _outstandingBalance = 0;
-  Map<String, dynamic>? _latestAnnouncement;
+  List<Map<String, dynamic>> _announcements = const <Map<String, dynamic>>[];
+  int _announcementIndex = 0;
+  Timer? _announcementTimer;
+  List<String> _recentCourseIds = const <String>[];
+  List<String> _recentBookIds = const <String>[];
   static const _verseCacheDateKey = 'daily_verse_cache_date';
   static const _verseCacheTextKey = 'daily_verse_cache_text';
   static const _verseCacheRefKey = 'daily_verse_cache_ref';
@@ -75,15 +83,19 @@ class _DashboardPageState extends State<DashboardPage> {
       dataController.setTeachers(teachers);
     } catch (_) {}
     try {
-      final latest = await apiService.fetchLatestAnnouncement();
+      final announcements = await apiService.fetchVisibleAnnouncements(limit: 20);
       final unreadCount = await apiService.fetchUnreadAnnouncementsCount();
       final balanceDue = await apiService.fetchMyOutstandingBalance();
       if (mounted) {
         setState(() {
-          _latestAnnouncement = latest;
+          _announcements = announcements;
+          if (_announcementIndex >= _announcements.length) {
+            _announcementIndex = 0;
+          }
           _unreadAnnouncements = unreadCount;
           _outstandingBalance = balanceDue;
         });
+        _configureAnnouncementTimer();
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
@@ -97,6 +109,43 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _profileLastName = lastName;
     });
+  }
+
+  Future<void> _loadRecentAccess() async {
+    final courseIds = await RecentAccessService.getRecentCourseIds();
+    final bookIds = await RecentAccessService.getRecentBookIds();
+    if (!mounted) return;
+    setState(() {
+      _recentCourseIds = courseIds;
+      _recentBookIds = bookIds;
+    });
+  }
+
+  Future<void> _openCourseDetails(CourseData course) async {
+    await RecentAccessService.markCourseAccessed(course.id);
+    await _loadRecentAccess();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _CourseDetailsPage(course: course),
+      ),
+    );
+  }
+
+  Future<void> _openBookQuick(LibraryData book, AppLocalizations l10n) async {
+    final url = (book.book ?? '').trim();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noItemsFound)),
+      );
+      return;
+    }
+    await RecentAccessService.markBookAccessed(book.id);
+    await _loadRecentAccess();
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => PdfViewerScreen(pdfUrl: url)),
+    );
   }
 
   Future<void> _fetchDailyVerseFromApi() async {
@@ -175,9 +224,28 @@ class _DashboardPageState extends State<DashboardPage> {
     if (widget.enableProfileLoad) {
       _loadProfileLastName();
     }
+    _loadRecentAccess();
     if (widget.enableVerseLoad) {
       _fetchDailyVerseFromApi();
     }
+  }
+
+  void _configureAnnouncementTimer() {
+    _announcementTimer?.cancel();
+    if (_announcements.length <= 1) return;
+    _announcementTimer =
+        Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || _announcements.isEmpty) return;
+      setState(() {
+        _announcementIndex = (_announcementIndex + 1) % _announcements.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _announcementTimer?.cancel();
+    super.dispose();
   }
 
   void _openSearch(AppLocalizations l10n) {
@@ -213,7 +281,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final greeting = _greeting(l10n);
     final greetingText = username.isEmpty ? greeting : '$greeting, $username';
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final latest = _latestAnnouncement;
+    final latest = _announcements.isEmpty
+        ? null
+        : _announcements[_announcementIndex % _announcements.length];
 
     return Scaffold(
       backgroundColor:
@@ -245,7 +315,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   }
                 },
                 icon: const Icon(Icons.notifications_outlined),
-                tooltip: 'Notifications',
+                tooltip: l10n.notificationsTooltip,
               ),
               if (_unreadAnnouncements > 0)
                 Positioned(
@@ -326,7 +396,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'You owe ${NumberFormat.decimalPattern().format(_outstandingBalance)} FCFA',
+                              l10n.outstandingBalance(
+                                NumberFormat.decimalPattern().format(
+                                  _outstandingBalance,
+                                ),
+                              ),
                               style: smallStyle18.copyWith(
                                 color: CbsColors.errorColor,
                                 fontWeight: FontWeight.w700,
@@ -339,94 +413,97 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  if (latest != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                      decoration: BoxDecoration(
-                        color: isDark ? CbsColors.darkCard : Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.15),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    decoration: BoxDecoration(
+                      color: isDark ? CbsColors.darkCard : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.15),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.campaign_outlined,
-                                color: CbsColors.primaryBrown,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Latest announcement',
-                                style: smallStyle18.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: CbsColors.primaryBrown,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            (latest['title'] ?? 'Announcement').toString(),
-                            style: smallStyle18.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? CbsColors.darkText
-                                  : CbsColors.primaryDark[800],
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            (latest['body'] ?? '').toString(),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: smallStyle18.copyWith(
-                              fontSize: 14,
-                              color:
-                                  isDark ? CbsColors.darkHint : CbsColors.hintColor,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        AnnouncementsPage(apiService: apiService),
-                                  ),
-                                );
-                                if (mounted) {
-                                  final unread = await apiService
-                                      .fetchUnreadAnnouncementsCount();
-                                  setState(() {
-                                    _unreadAnnouncements = unread;
-                                  });
-                                }
-                              },
-                              icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                              label: const Text('View all'),
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 14),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.campaign_outlined,
+                              color: CbsColors.primaryBrown,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.latestAnnouncement,
+                              style: smallStyle18.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: CbsColors.primaryBrown,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          latest == null
+                              ? l10n.noAnnouncementsYet
+                              : (latest['title'] ?? l10n.announcementFallback)
+                                  .toString(),
+                          style: smallStyle18.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isDark
+                                ? CbsColors.darkText
+                                : CbsColors.primaryDark[800],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          latest == null
+                              ? l10n.announcementsEmptyHint
+                              : (latest['body'] ?? '').toString(),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: smallStyle18.copyWith(
+                            fontSize: 14,
+                            color:
+                                isDark ? CbsColors.darkHint : CbsColors.hintColor,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AnnouncementsPage(apiService: apiService),
+                                ),
+                              );
+                              if (mounted) {
+                                final unread = await apiService
+                                    .fetchUnreadAnnouncementsCount();
+                                setState(() {
+                                  _unreadAnnouncements = unread;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                            label: Text(l10n.viewAll),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
@@ -507,7 +584,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 22),
                   GetX<DataController>(builder: (dc) {
                     final teacherCount = dc.teachers.length;
-                    final courseCount = dc.courses.length;
                     final teachers = dc.teachers.toList(growable: false);
                     final courses = dc.courses.toList(growable: false);
 
@@ -541,7 +617,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     height: 200,
                                     child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
-                                      itemCount: teachers.take(5).length,
+                                      itemCount: teachers.length,
                                       separatorBuilder: (_, __) => gapW16,
                                       itemBuilder: (_, i) => _TeacherCard(
                                         teacher: teachers[i],
@@ -568,37 +644,17 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                         gapH28,
                         SectionHeader(
-                          title: l10n.coursesSection,
+                          title: l10n.recentlyAccessed,
                           moreText: '',
                         ),
                         gapH12,
                         _loading
                             ? const SizedBox.shrink()
-                            : courseCount == 0
-                                ? _emptyBlock(l10n.noItemsFound)
-                                : Column(
-                                    children: courses
-                                        .take(5)
-                                        .map(
-                                          (course) => CourseCard(
-                                            courseData: course,
-                                            isEnrolled: (course.id ?? '').isNotEmpty
-                                                ? dc.isCourseEnrolled(course.id!)
-                                                : false,
-                                            onPressed: () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      _CourseDetailsPage(
-                                                    course: course,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
+                            : _buildRecentAccessBlock(
+                                l10n: l10n,
+                                dc: dc,
+                                courses: courses,
+                              ),
                       ],
                     );
                   }),
@@ -624,6 +680,84 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRecentAccessBlock({
+    required AppLocalizations l10n,
+    required DataController dc,
+    required List<CourseData> courses,
+  }) {
+    final byCourseId = <String, CourseData>{
+      for (final c in courses)
+        if ((c.id ?? '').trim().isNotEmpty) c.id!.trim(): c,
+    };
+    final byBookId = <String, LibraryData>{
+      for (final b in dc.books)
+        if ((b.id ?? '').trim().isNotEmpty) b.id!.trim(): b,
+    };
+
+    final recentCourses = _recentCourseIds
+        .map((id) => byCourseId[id])
+        .whereType<CourseData>()
+        .take(4)
+        .toList();
+    final recentBooks = _recentBookIds
+        .map((id) => byBookId[id])
+        .whereType<LibraryData>()
+        .take(4)
+        .toList();
+
+    if (recentCourses.isEmpty && recentBooks.isEmpty) {
+      return _emptyBlock(l10n.noRecentAccessYet);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (recentCourses.isNotEmpty) ...[
+          Text(
+            l10n.recentCourses,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              color: CbsColors.primaryBrown,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...recentCourses.map(
+            (course) => CourseCard(
+              courseData: course,
+              isEnrolled: (course.id ?? '').isNotEmpty
+                  ? dc.isCourseEnrolled(course.id!)
+                  : false,
+              onPressed: () => _openCourseDetails(course),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (recentBooks.isNotEmpty) ...[
+          Text(
+            l10n.recentBooks,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              color: CbsColors.primaryBrown,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...recentBooks.map(
+            (book) => ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: const Icon(Icons.menu_book_rounded),
+              title: Text(book.title ?? l10n.dash),
+              subtitle: Text((book.author ?? '').trim().isEmpty
+                  ? l10n.book
+                  : (book.author ?? '')),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _openBookQuick(book, l10n),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -749,7 +883,7 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                             ),
                           ),
                   ),
-                  title: Text(name.isEmpty ? '—' : name),
+                  title: Text(name.isEmpty ? l10n.dash : name),
                   subtitle: Text(t.email ?? ''),
                   onTap: () {
                     final navigator = Navigator.of(context);
@@ -849,7 +983,8 @@ Future<void> _openTeacherWhatsAppContact({
   required SupabaseService supabase,
   required RegisterData teacher,
 }) async {
-  final localeCode = Localizations.localeOf(context).languageCode;
+  final l10n =
+      AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
   final id = (teacher.id ?? '').trim();
   String? phone;
   if (id.isNotEmpty) {
@@ -857,12 +992,9 @@ Future<void> _openTeacherWhatsAppContact({
   }
 
   if (phone == null || phone.trim().isEmpty) {
-    final message = localeCode == 'fr'
-        ? 'Numero WhatsApp de cet enseignant indisponible.'
-        : 'This teacher does not have a WhatsApp number yet.';
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
+        SnackBar(content: Text(l10n.teacherWhatsAppUnavailable)),
       );
     }
     return;

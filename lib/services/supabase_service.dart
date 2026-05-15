@@ -30,10 +30,41 @@ class SupabaseService {
 
   Future<Map<String, dynamic>> login(LoginData data) async {
     try {
-      await _client.auth.signInWithPassword(
+      final res = await _client.auth.signInWithPassword(
         email: data.email?.trim() ?? '',
         password: data.password ?? '',
       );
+
+      final user = res.user ?? _client.auth.currentUser;
+      if (user == null) {
+        return {
+          'error': true,
+          'message': 'Login failed. Please try again.',
+          'status': 400,
+        };
+      }
+
+      // Mobile app access is restricted to students and library users only.
+      // If a teacher/admin signs in successfully (credentials valid), we still block app access.
+      final profile = await _client
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+      final role = (profile is Map<String, dynamic>)
+          ? (profile['role'] ?? '').toString().trim()
+          : '';
+      final allowed = role == 'student' || role == 'library_user';
+      if (!allowed) {
+        await _client.auth.signOut();
+        return {
+          'error': true,
+          'message':
+              'This app is only available for Students and Library members. Please use the backoffice if you are an admin/teacher.',
+          'status': 403,
+        };
+      }
+
       return {'success': true};
     } on AuthException catch (e) {
       final message = _friendlyAuthMessage(e.message);
@@ -100,9 +131,16 @@ class SupabaseService {
       final response = await _client.auth.signUp(
         email: email.trim(),
         password: password,
-        data: name != null && name.trim().isNotEmpty
-            ? {'name': name.trim(), 'first_name': name.trim()}
-            : null,
+        // Ensure mobile-created accounts are app-eligible.
+        // The DB trigger `handle_new_user()` defaults `profiles.role` to 'teacher'
+        // when no `role` meta is provided, which would block mobile login.
+        data: {
+          if (name != null && name.trim().isNotEmpty) ...{
+            'name': name.trim(),
+            'first_name': name.trim(),
+          },
+          'role': 'student',
+        },
       );
       final session = response.session;
       final user = response.user;
@@ -192,6 +230,11 @@ class SupabaseService {
     } catch (_) {
       // Ignore if controller isn't ready (e.g. in tests).
     }
+
+    try {
+      final access = await fetchMyAccessProfile();
+      _syncAccessProfileToController(access);
+    } catch (_) {}
 
     return (res as List)
         .map((row) => _courseFromRow(row as Map<String, dynamic>))
@@ -304,13 +347,161 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<LibraryData>> fetchBooks() async {
+    final access = await fetchMyAccessProfile();
+    _syncAccessProfileToController(access);
+    final subscription = (access['subscription_type'] ?? '').toString();
+    // Library access is subscription-driven (ignore role).
+    final hasLibraryAccess = subscription == 'student' || subscription == 'library_user';
+
     final res = await _client
         .from('books')
         .select()
         .order('created_at', ascending: false);
+    return (res as List).map((row) {
+      final m = row as Map<String, dynamic>;
+      final tier = (m['access_tier'] ?? 'public').toString();
+      final isLocked = tier == 'subscriber' && !hasLibraryAccess;
+      final description = (m['description'] as String?) ?? '';
+      final withLockTag = isLocked ? '__LOCKED__ $description' : description;
+      return LibraryData(
+        id: m['id']?.toString(),
+        title: m['title'] as String?,
+        author: m['author'] as String?,
+        book: isLocked ? null : m['book_url'] as String?,
+        category: _bookTypeFromRaw(m['category'] as String?),
+        bookCover: m['book_cover_url'] as String?,
+        description: withLockTag,
+        language: m['language'] as String?,
+      );
+    }).toList();
+  }
+
+  void _syncAccessProfileToController(Map<String, dynamic> access) {
+    try {
+      Get.find<DataController>().setAccessProfile(
+        role: access['role'] ?? '',
+        subscription: access['subscription_type'] ?? '',
+        maxLevel: access['school_max_level'] ?? 0,
+        accessState: access['access_state'] ?? 'none',
+      );
+    } catch (_) {
+      // Ignore if controller isn't ready (e.g. in tests).
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchMyAccessProfile() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      return {
+        'role': '',
+        'subscription_type': 'none',
+        'school_max_level': 0,
+        'access_state': 'none',
+        'can_submit_assignments': false,
+        'is_suspended': false,
+      };
+    }
+    final statusRow = await _client
+        .from('v_user_subscription_status')
+        .select(
+            'role,subscription_type,school_max_level,access_state,can_submit_assignments,is_suspended')
+        .eq('user_id', userId)
+        .maybeSingle();
+    final row = statusRow ??
+        await _client
+            .from('profiles')
+            .select('role,subscription_type,school_max_level')
+            .eq('id', userId)
+            .maybeSingle();
+    if (row == null) {
+      return {
+        'role': '',
+        'subscription_type': 'none',
+        'school_max_level': 0,
+        'access_state': 'none',
+        'can_submit_assignments': false,
+        'is_suspended': false,
+      };
+    }
+    return {
+      'role': row['role']?.toString() ?? '',
+      'subscription_type': row['subscription_type']?.toString() ?? 'none',
+      'school_max_level':
+          int.tryParse(row['school_max_level']?.toString() ?? '0') ?? 0,
+      'access_state': row['access_state']?.toString() ?? 'none',
+      'can_submit_assignments': row['can_submit_assignments'] == true,
+      'is_suspended': row['is_suspended'] == true,
+    };
+  }
+
+  Future<void> subscribeCurrentUser(String type) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw Exception('Not authenticated');
+    final normalized = type == 'student' ? 'student' : 'library_user';
+    await _client.from('profiles').update({
+      'role': normalized,
+      'subscription_type': normalized,
+      if (normalized == 'student') 'school_max_level': 1,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', userId);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchSubscriptionPlans() async {
+    final res = await _client
+        .from('subscription_plans')
+        .select(
+            'id,code,name,target_role,duration_months,price_amount,currency,active,installments:subscription_plan_installments(installment_number,amount,due_after_days,active)')
+        .eq('active', true)
+        .order('price_amount', ascending: true);
     return (res as List)
-        .map((row) => _bookFromRow(row as Map<String, dynamic>))
+        .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
+  }
+
+  Future<Map<String, dynamic>> createSubscriptionPayment(
+    String planCode, {
+    required String phoneNumber,
+  }) async {
+    final response = await _client.functions.invoke(
+      'create-subscription-payment',
+      body: {
+        'planCode': planCode,
+        'phoneNumber': phoneNumber,
+      },
+    );
+    if (response.status >= 400) {
+      throw Exception(
+          (response.data is Map<String, dynamic> ? response.data['error'] : null) ??
+              'Failed to create subscription payment');
+    }
+    if (response.data is! Map<String, dynamic>) {
+      throw Exception('Invalid payment response');
+    }
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  Future<Map<String, dynamic>?> fetchMySubscriptionStatus() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+    final row = await _client
+        .from('v_user_subscription_status')
+        .select(
+            'user_id,subscription_status,starts_at,ends_at,days_remaining,plan_code,plan_name,payment_reference,payment_status,role,subscription_type,school_max_level,access_state,can_submit_assignments,is_suspended,total_due,total_paid,amount_owing,overdue_amount,overdue_installments,next_due_at')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (row == null) return null;
+    return Map<String, dynamic>.from(row as Map);
+  }
+
+  Future<Map<String, dynamic>> refreshMyEntitlement() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('Not authenticated');
+    }
+    await _client.rpc('apply_subscription_entitlement', params: {'p_user_id': userId});
+    final access = await fetchMyAccessProfile();
+    _syncAccessProfileToController(access);
+    return access;
   }
 
   Future<List<BookType>> fetchBookCategories() async {
@@ -551,6 +742,11 @@ class SupabaseService {
       throw Exception('Not authenticated');
     }
 
+    final access = await fetchMyAccessProfile();
+    if (access['can_submit_assignments'] != true) {
+      throw Exception('Assignment submission is disabled for your current subscription status.');
+    }
+
     // Insert submission first so we can build student answer storage paths.
     final submissionRes = await _client
         .from('assignment_submissions')
@@ -622,10 +818,12 @@ class SupabaseService {
   Future<List<Map<String, dynamic>>> fetchVisibleAnnouncements({
     int limit = 50,
   }) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
     final res = await _client
         .from('announcements')
-        .select('id,title,body,created_at,course_id,course:courses(id,title)')
+        .select('id,title,body,visible_until,created_at,course_id,course:courses(id,title)')
         .eq('published', true)
+        .gte('visible_until', nowIso)
         .order('created_at', ascending: false)
         .limit(limit);
 

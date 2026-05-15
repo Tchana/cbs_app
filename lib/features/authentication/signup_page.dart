@@ -99,7 +99,8 @@ class _SignupPageState extends State<SignupPage> {
     setState(() {
       _isLoading = false;
       if (result['error'] == true) {
-        _errorMessage = result['message'] as String? ?? 'Registration failed';
+        _errorMessage =
+            result['message'] as String? ?? l10n.registrationFailed;
       } else if (result['requiresEmailConfirmation'] == true) {
         SnackbarHelper.showSnackBar(l10n.checkEmailToConfirm);
         nameController.clear();
