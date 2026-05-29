@@ -2,9 +2,10 @@
 
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
-import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/services/book_reading_progress_service.dart';
 import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/shared/book_item.dart';
 import 'package:center_for_biblical_studies/shared/subscribe_bottom_sheet.dart';
@@ -29,7 +30,10 @@ class LibraryPage extends StatefulWidget {
 class _LibraryPageState extends State<LibraryPage>
     with TickerProviderStateMixin {
   final DataController dataController = Get.find<DataController>();
+  final BookReadingProgressService _readingProgressService =
+      BookReadingProgressService();
   TabController? _tabController;
+  ContinueReadingEntry? _continueReading;
   List<BookType> _categories = const [
     BookType.bible,
     BookType.commentary,
@@ -41,8 +45,12 @@ class _LibraryPageState extends State<LibraryPage>
     try {
       final books = await apiService.fetchBooks();
       dataController.setBooks(books);
+      final continueEntry =
+          await _readingProgressService.resolveContinueReading(books);
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _continueReading = continueEntry;
+        });
       }
     } catch (e) {
       // Handle errors if needed
@@ -78,7 +86,7 @@ class _LibraryPageState extends State<LibraryPage>
     if (mounted) setState(() {});
   }
 
-  void _openBook(LibraryData book, AppLocalizations l10n) {
+  Future<void> _openBook(LibraryData book, AppLocalizations l10n) async {
     if (_isBookLocked(book)) {
       _showSubscribeDialog();
       return;
@@ -91,7 +99,11 @@ class _LibraryPageState extends State<LibraryPage>
       return;
     }
     RecentAccessService.markBookAccessed(book.id);
-    Get.to(() => PdfViewerScreen(pdfUrl: url));
+    await _readingProgressService.ensureStarted(book.id);
+    await openRemoteFile(url, title: book.title, bookId: book.id);
+    if (mounted) {
+      await fetchData();
+    }
   }
 
   bool _isBookLocked(LibraryData book) {
@@ -113,9 +125,7 @@ class _LibraryPageState extends State<LibraryPage>
   void initState() {
     _rebuildTabController();
     _loadCategories();
-    if (dataController.books.isEmpty) {
-      fetchData();
-    }
+    fetchData();
     super.initState();
   }
 
@@ -352,19 +362,22 @@ class _LibraryPageState extends State<LibraryPage>
             ),
           ),
         ),
-        if (dataController.books.isNotEmpty) ...[
+        if (_continueReading != null) ...[
           const SizedBox(height: 6),
-          _buildContinueReading(l10n),
+          _buildContinueReading(l10n, _continueReading!),
         ],
       ],
     );
   }
 
-  Widget _buildContinueReading(AppLocalizations l10n) {
-    final book = dataController.books.first;
+  Widget _buildContinueReading(
+    AppLocalizations l10n,
+    ContinueReadingEntry entry,
+  ) {
+    final book = entry.book;
     final title = (book.title ?? '').trim();
     final author = (book.author ?? '').trim();
-    final progress = 0.38;
+    final progress = entry.progress.clamp(0.0, 1.0);
     final hasCover = (book.bookCover ?? '').trim().isNotEmpty;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
@@ -542,9 +555,9 @@ class _LibraryPageState extends State<LibraryPage>
             ),
           ),
         ),
-        if (dataController.books.isNotEmpty) ...[
+        if (_continueReading != null) ...[
           const SizedBox(height: 6),
-          _buildContinueReading(l10n),
+          _buildContinueReading(l10n, _continueReading!),
         ],
       ],
     );

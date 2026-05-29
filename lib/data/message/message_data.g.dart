@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'message_data.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _MessageData _$MessageDataFromJson(Map<String, dynamic> json) => _MessageData(
       uuid: json['uuid'] as String?,
@@ -17,11 +23,10 @@ Map<String, dynamic> _$MessageDataToJson(_MessageData instance) =>
     <String, dynamic>{
       'uuid': instance.uuid,
       'room': instance.room,
-      'user': instance.user?.toJson(),
+      'user': instance.user,
       'content': instance.content,
       'timestamp': instance.timestamp,
       'message_type': instance.message_type,
       'is_deleted': instance.is_deleted,
       'deleted_at': instance.deleted_at,
     };
-

@@ -18,6 +18,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
 
   bool _loading = true;
   bool _renewing = false;
+  bool _paymentsEnabled = false;
   Map<String, dynamic>? _status;
   String? _error;
 
@@ -33,10 +34,14 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
       _error = null;
     });
     try {
-      final status = await _api.fetchMySubscriptionStatus();
+      final results = await Future.wait([
+        _api.fetchMySubscriptionStatus(),
+        _api.subscriptionPaymentsEnabled(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _status = status;
+        _status = results[0] as Map<String, dynamic>?;
+        _paymentsEnabled = results[1] as bool;
         _loading = false;
       });
     } catch (e) {
@@ -96,7 +101,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
     final daysRemaining = int.tryParse((_status?['days_remaining'] ?? '').toString()) ?? 0;
     final subStatus = (_status?['subscription_status'] ?? '').toString();
 
-    final canRenew = planCode.isNotEmpty;
+    final canRenew = planCode.isNotEmpty && _paymentsEnabled;
 
     return Scaffold(
       backgroundColor: isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,

@@ -38,6 +38,7 @@ class _SubscribeBottomSheet extends StatefulWidget {
 class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
   bool _loading = true;
   bool _processing = false;
+  bool _paymentsEnabled = false;
   String? _error;
   List<Map<String, dynamic>> _plans = const [];
 
@@ -53,10 +54,14 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
       _error = null;
     });
     try {
-      final plans = await widget.api.fetchSubscriptionPlans();
+      final results = await Future.wait([
+        widget.api.fetchSubscriptionPlans(),
+        widget.api.subscriptionPaymentsEnabled(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _plans = plans;
+        _plans = results[0] as List<Map<String, dynamic>>;
+        _paymentsEnabled = results[1] as bool;
         _loading = false;
       });
     } catch (e) {
@@ -109,6 +114,7 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
   }
 
   Future<void> _startCheckout(Map<String, dynamic> plan) async {
+    if (!_paymentsEnabled) return;
     if (plan.isEmpty) return;
     final planCode = (plan['code'] ?? '').toString().trim();
     if (planCode.isEmpty) return;
@@ -219,6 +225,27 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
                   ),
                 ),
               ] else ...[
+                if (!_paymentsEnabled) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.subscriptionPaymentsDisabled,
+                      style: smallStyle18.copyWith(
+                        fontSize: 13,
+                        color: muted,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                  gapH12,
+                ],
                 if (_error != null) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -247,7 +274,8 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
                   duration: studentPlan.isEmpty ? '' : _duration(studentPlan),
                   icon: Icons.school_rounded,
                   primary: true,
-                  disabled: studentPlan.isEmpty || _processing,
+                  disabled:
+                      studentPlan.isEmpty || _processing || !_paymentsEnabled,
                   onTap: () => _startCheckout(studentPlan),
                 ),
                 gapH10,
@@ -259,7 +287,8 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
                   duration: libraryPlan.isEmpty ? '' : _duration(libraryPlan),
                   icon: Icons.menu_book_rounded,
                   primary: false,
-                  disabled: libraryPlan.isEmpty || _processing,
+                  disabled:
+                      libraryPlan.isEmpty || _processing || !_paymentsEnabled,
                   onTap: () => _startCheckout(libraryPlan),
                 ),
                 gapH12,

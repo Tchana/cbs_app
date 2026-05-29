@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'user_data.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _UserData _$UserDataFromJson(Map<String, dynamic> json) => _UserData(
       uuid: json['uuid'] as String?,
@@ -19,4 +25,3 @@ Map<String, dynamic> _$UserDataToJson(_UserData instance) => <String, dynamic>{
       'online_status': instance.online_status,
       'last_seen': instance.last_seen,
     };
-

@@ -14,270 +14,331 @@ T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$LoginData {
+  String? get id;
+  String? get email;
+  String? get password;
 
- String? get id; String? get email; String? get password;
-/// Create a copy of LoginData
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-$LoginDataCopyWith<LoginData> get copyWith => _$LoginDataCopyWithImpl<LoginData>(this as LoginData, _$identity);
+  /// Create a copy of LoginData
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $LoginDataCopyWith<LoginData> get copyWith =>
+      _$LoginDataCopyWithImpl<LoginData>(this as LoginData, _$identity);
 
   /// Serializes this LoginData to a JSON map.
   Map<String, dynamic> toJson();
 
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is LoginData &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.email, email) || other.email == email) &&
+            (identical(other.password, password) ||
+                other.password == password));
+  }
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LoginData&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password));
-}
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, email, password);
 
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,id,email,password);
-
-@override
-String toString() {
-  return 'LoginData(id: $id, email: $email, password: $password)';
-}
-
-
+  @override
+  String toString() {
+    return 'LoginData(id: $id, email: $email, password: $password)';
+  }
 }
 
 /// @nodoc
-abstract mixin class $LoginDataCopyWith<$Res>  {
-  factory $LoginDataCopyWith(LoginData value, $Res Function(LoginData) _then) = _$LoginDataCopyWithImpl;
-@useResult
-$Res call({
- String? id, String? email, String? password
-});
-
-
-
-
+abstract mixin class $LoginDataCopyWith<$Res> {
+  factory $LoginDataCopyWith(LoginData value, $Res Function(LoginData) _then) =
+      _$LoginDataCopyWithImpl;
+  @useResult
+  $Res call({String? id, String? email, String? password});
 }
+
 /// @nodoc
-class _$LoginDataCopyWithImpl<$Res>
-    implements $LoginDataCopyWith<$Res> {
+class _$LoginDataCopyWithImpl<$Res> implements $LoginDataCopyWith<$Res> {
   _$LoginDataCopyWithImpl(this._self, this._then);
 
   final LoginData _self;
   final $Res Function(LoginData) _then;
 
-/// Create a copy of LoginData
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? email = freezed,Object? password = freezed,}) {
-  return _then(_self.copyWith(
-id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String?,password: freezed == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
-as String?,
-  ));
+  /// Create a copy of LoginData
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? id = freezed,
+    Object? email = freezed,
+    Object? password = freezed,
+  }) {
+    return _then(_self.copyWith(
+      id: freezed == id
+          ? _self.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String?,
+      email: freezed == email
+          ? _self.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
+      password: freezed == password
+          ? _self.password
+          : password // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
 }
-
-}
-
 
 /// Adds pattern-matching-related methods to [LoginData].
 extension LoginDataPatterns on LoginData {
-/// A variant of `map` that fallback to returning `orElse`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _LoginData value)?  $default,{required TResult orElse(),}){
-final _that = this;
-switch (_that) {
-case _LoginData() when $default != null:
-return $default(_that);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_LoginData value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// Callbacks receives the raw object, upcasted.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case final Subclass2 value:
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _LoginData value)  $default,){
-final _that = this;
-switch (_that) {
-case _LoginData():
-return $default(_that);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_LoginData value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `map` that fallback to returning `null`.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case final Subclass value:
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _LoginData value)?  $default,){
-final _that = this;
-switch (_that) {
-case _LoginData() when $default != null:
-return $default(_that);case _:
-  return null;
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_LoginData value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to an `orElse` callback.
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return orElse();
-/// }
-/// ```
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id,  String? email,  String? password)?  $default,{required TResult orElse(),}) {final _that = this;
-switch (_that) {
-case _LoginData() when $default != null:
-return $default(_that.id,_that.email,_that.password);case _:
-  return orElse();
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(String? id, String? email, String? password)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData() when $default != null:
+        return $default(_that.id, _that.email, _that.password);
+      case _:
+        return orElse();
+    }
+  }
 
-}
-}
-/// A `switch`-like method, using callbacks.
-///
-/// As opposed to `map`, this offers destructuring.
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case Subclass2(:final field2):
-///     return ...;
-/// }
-/// ```
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id,  String? email,  String? password)  $default,) {final _that = this;
-switch (_that) {
-case _LoginData():
-return $default(_that.id,_that.email,_that.password);case _:
-  throw StateError('Unexpected subclass');
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(String? id, String? email, String? password) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData():
+        return $default(_that.id, _that.email, _that.password);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
 
-}
-}
-/// A variant of `when` that fallback to returning `null`
-///
-/// It is equivalent to doing:
-/// ```dart
-/// switch (sealedClass) {
-///   case Subclass(:final field):
-///     return ...;
-///   case _:
-///     return null;
-/// }
-/// ```
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id,  String? email,  String? password)?  $default,) {final _that = this;
-switch (_that) {
-case _LoginData() when $default != null:
-return $default(_that.id,_that.email,_that.password);case _:
-  return null;
-
-}
-}
-
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(String? id, String? email, String? password)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _LoginData() when $default != null:
+        return $default(_that.id, _that.email, _that.password);
+      case _:
+        return null;
+    }
+  }
 }
 
 /// @nodoc
 @JsonSerializable()
-
 class _LoginData extends LoginData {
-  const _LoginData({this.id, this.email, this.password}): super._();
-  factory _LoginData.fromJson(Map<String, dynamic> json) => _$LoginDataFromJson(json);
+  const _LoginData({this.id, this.email, this.password}) : super._();
+  factory _LoginData.fromJson(Map<String, dynamic> json) =>
+      _$LoginDataFromJson(json);
 
-@override final  String? id;
-@override final  String? email;
-@override final  String? password;
+  @override
+  final String? id;
+  @override
+  final String? email;
+  @override
+  final String? password;
 
-/// Create a copy of LoginData
-/// with the given fields replaced by the non-null parameter values.
-@override @JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$LoginDataCopyWith<_LoginData> get copyWith => __$LoginDataCopyWithImpl<_LoginData>(this, _$identity);
+  /// Create a copy of LoginData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$LoginDataCopyWith<_LoginData> get copyWith =>
+      __$LoginDataCopyWithImpl<_LoginData>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$LoginDataToJson(this, );
-}
+  @override
+  Map<String, dynamic> toJson() {
+    return _$LoginDataToJson(
+      this,
+    );
+  }
 
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LoginData&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password));
-}
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _LoginData &&
+            (identical(other.id, id) || other.id == id) &&
+            (identical(other.email, email) || other.email == email) &&
+            (identical(other.password, password) ||
+                other.password == password));
+  }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
-@override
-int get hashCode => Object.hash(runtimeType,id,email,password);
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, id, email, password);
 
-@override
-String toString() {
-  return 'LoginData(id: $id, email: $email, password: $password)';
-}
-
-
+  @override
+  String toString() {
+    return 'LoginData(id: $id, email: $email, password: $password)';
+  }
 }
 
 /// @nodoc
-abstract mixin class _$LoginDataCopyWith<$Res> implements $LoginDataCopyWith<$Res> {
-  factory _$LoginDataCopyWith(_LoginData value, $Res Function(_LoginData) _then) = __$LoginDataCopyWithImpl;
-@override @useResult
-$Res call({
- String? id, String? email, String? password
-});
-
-
-
-
+abstract mixin class _$LoginDataCopyWith<$Res>
+    implements $LoginDataCopyWith<$Res> {
+  factory _$LoginDataCopyWith(
+          _LoginData value, $Res Function(_LoginData) _then) =
+      __$LoginDataCopyWithImpl;
+  @override
+  @useResult
+  $Res call({String? id, String? email, String? password});
 }
+
 /// @nodoc
-class __$LoginDataCopyWithImpl<$Res>
-    implements _$LoginDataCopyWith<$Res> {
+class __$LoginDataCopyWithImpl<$Res> implements _$LoginDataCopyWith<$Res> {
   __$LoginDataCopyWithImpl(this._self, this._then);
 
   final _LoginData _self;
   final $Res Function(_LoginData) _then;
 
-/// Create a copy of LoginData
-/// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? email = freezed,Object? password = freezed,}) {
-  return _then(_LoginData(
-id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String?,password: freezed == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
-as String?,
-  ));
-}
-
-
+  /// Create a copy of LoginData
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? id = freezed,
+    Object? email = freezed,
+    Object? password = freezed,
+  }) {
+    return _then(_LoginData(
+      id: freezed == id
+          ? _self.id
+          : id // ignore: cast_nullable_to_non_nullable
+              as String?,
+      email: freezed == email
+          ? _self.email
+          : email // ignore: cast_nullable_to_non_nullable
+              as String?,
+      password: freezed == password
+          ? _self.password
+          : password // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
 }
 
 // dart format on

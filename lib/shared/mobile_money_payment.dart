@@ -78,6 +78,14 @@ Future<bool> initiateMobileMoneyPayment({
       AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
   final messenger = ScaffoldMessenger.of(context);
 
+  final paymentsEnabled = await api.subscriptionPaymentsEnabled();
+  if (!paymentsEnabled) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(l10n.subscriptionPaymentsDisabled)),
+    );
+    return false;
+  }
+
   final phoneNumber = await promptMobileMoneyPhoneNumber(
     context,
     initialPhone: initialPhoneFromUser(),

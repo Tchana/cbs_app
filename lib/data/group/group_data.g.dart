@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'group_data.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _GroupData _$GroupDataFromJson(Map<String, dynamic> json) => _GroupData(
       uuid: json['uuid'] as String?,
@@ -10,8 +16,8 @@ _GroupData _$GroupDataFromJson(Map<String, dynamic> json) => _GroupData(
       is_deleted: json['is_deleted'] as bool?,
       deleted_at: json['deleted_at'] as String?,
       deleted_by: json['deleted_by'] as String?,
-      participants_count: json['participants_count'] as int?,
-      online_count: json['online_count'] as int?,
+      participants_count: (json['participants_count'] as num?)?.toInt(),
+      online_count: (json['online_count'] as num?)?.toInt(),
       can_delete: json['can_delete'] as bool?,
     );
 
@@ -30,4 +36,3 @@ Map<String, dynamic> _$GroupDataToJson(_GroupData instance) =>
       'online_count': instance.online_count,
       'can_delete': instance.can_delete,
     };
-

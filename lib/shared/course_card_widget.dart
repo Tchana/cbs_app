@@ -8,13 +8,11 @@ import 'package:flutter/material.dart';
 class CourseCard extends StatelessWidget {
   final CourseData courseData;
   final void Function()? onPressed;
-  final bool isEnrolled;
 
   const CourseCard({
     super.key,
     required this.courseData,
     this.onPressed,
-    this.isEnrolled = false,
   });
 
   String get _teacherName {
@@ -34,9 +32,6 @@ class CourseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    final registerLabel = l10n.register;
-    final enrolledLabel = l10n.enrolled;
-    final ctaLabel = isEnrolled ? enrolledLabel : registerLabel;
     final hasLevel = _levelLabel.isNotEmpty;
 
     return Padding(
@@ -129,16 +124,6 @@ class CourseCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        if (hasLevel) const SizedBox(width: 8),
-                        Text(
-                          ctaLabel,
-                          style: verySmallStyle12.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isEnrolled
-                                ? CbsColors.successColor
-                                : CbsColors.primaryBrown,
-                          ),
-                        ),
                       ],
                     ),
                   ],

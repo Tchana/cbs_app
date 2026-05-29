@@ -133,7 +133,7 @@ class AppLocalizations {
       'lesson_prefix': 'Lesson: {lesson}',
       'due_prefix': 'Due: {date}',
       'view_assignments': 'View assignments',
-      'enroll_to_access_assignments': 'Enroll to access assignments',
+      'enroll_to_access_assignments': 'Your subscription level does not include this course yet',
       'assignment_open_pdf': 'Open PDF',
       'assignment_mcq_points': 'MCQ points: {points}',
       'assignment_pdf_selected': 'Selected: {file}',
@@ -183,6 +183,14 @@ class AppLocalizations {
       'no_lessons_yet': 'No lessons yet',
       'lesson_label': 'Lesson',
       'open_pdf': 'Open PDF',
+      'open_file': 'Open file',
+      'document_viewer': 'Document',
+      'file_load_error': 'Could not load this file. Check your connection and try again.',
+      'open_with_external_app': 'Open with another app',
+      'open_in_browser': 'Open in browser',
+      'external_file_hint': 'This file type opens with another app on your device (Word, Excel, etc.).',
+      'external_file_opened': 'If nothing opened, tap the button below to try again.',
+      'open_file_externally_failed': 'No app found to open this file.',
       'not_available': 'Not available',
       'locked': 'Locked',
       'good_morning': 'Good morning',
@@ -214,6 +222,8 @@ class AppLocalizations {
       'mobile_money_start_failed': 'Could not start the mobile money payment',
       'mobile_money_payment_failed': 'Payment was not completed',
       'mobile_money_payment_timeout': 'Payment is still pending. Pull to refresh in a moment.',
+      'subscription_payments_disabled':
+          'Subscription payments are currently unavailable. Please contact an administrator for access.',
       'subscription_activated_success': 'Subscription activated successfully',
       'subscription_renewed_success': 'Subscription renewed successfully',
       'subscription_status_title': 'Subscription Status',
@@ -362,7 +372,7 @@ class AppLocalizations {
       'lesson_prefix': 'Leçon : {lesson}',
       'due_prefix': 'Date limite : {date}',
       'view_assignments': 'Voir les devoirs',
-      'enroll_to_access_assignments': 'Inscrivez-vous pour accéder aux devoirs',
+      'enroll_to_access_assignments': 'Votre niveau d’abonnement n’inclut pas encore ce cours',
       'assignment_open_pdf': 'Ouvrir le PDF',
       'assignment_mcq_points': 'Points QCM : {points}',
       'assignment_pdf_selected': 'Sélectionné : {file}',
@@ -413,6 +423,14 @@ class AppLocalizations {
       'no_lessons_yet': 'Aucune leçon pour le moment',
       'lesson_label': 'Leçon',
       'open_pdf': 'Ouvrir le PDF',
+      'open_file': 'Ouvrir le fichier',
+      'document_viewer': 'Document',
+      'file_load_error': 'Impossible de charger ce fichier. Vérifiez votre connexion et réessayez.',
+      'open_with_external_app': 'Ouvrir avec une autre application',
+      'open_in_browser': 'Ouvrir dans le navigateur',
+      'external_file_hint': 'Ce type de fichier s’ouvre avec une autre application (Word, Excel, etc.).',
+      'external_file_opened': 'Si rien ne s’est ouvert, appuyez sur le bouton ci-dessous.',
+      'open_file_externally_failed': 'Aucune application trouvée pour ouvrir ce fichier.',
       'not_available': 'Non disponible',
       'locked': 'Verrouillé',
       'good_morning': 'Bonjour',
@@ -444,6 +462,8 @@ class AppLocalizations {
       'mobile_money_start_failed': 'Impossible de lancer le paiement Mobile Money',
       'mobile_money_payment_failed': 'Le paiement n’a pas abouti',
       'mobile_money_payment_timeout': 'Paiement toujours en attente. Actualisez dans un instant.',
+      'subscription_payments_disabled':
+          'Les paiements d’abonnement ne sont pas disponibles pour le moment. Contactez un administrateur pour obtenir l’accès.',
       'subscription_activated_success': 'Abonnement activé avec succès',
       'subscription_renewed_success': 'Abonnement renouvelé avec succès',
       'subscription_status_title': 'Statut d’abonnement',
@@ -670,6 +690,14 @@ class AppLocalizations {
   String get noLessonsYet => translate('no_lessons_yet');
   String get lessonLabel => translate('lesson_label');
   String get openPdf => translate('open_pdf');
+  String get openFile => translate('open_file');
+  String get documentViewer => translate('document_viewer');
+  String get fileLoadError => translate('file_load_error');
+  String get openWithExternalApp => translate('open_with_external_app');
+  String get openInBrowser => translate('open_in_browser');
+  String get externalFileHint => translate('external_file_hint');
+  String get externalFileOpened => translate('external_file_opened');
+  String get openFileExternallyFailed => translate('open_file_externally_failed');
   String get notAvailable => translate('not_available');
   String get locked => translate('locked');
   String get goodMorning => translate('good_morning');
@@ -726,6 +754,8 @@ class AppLocalizations {
   String get uploadPdf => translate('upload_pdf');
   String get openSubmittedPdf => translate('open_submitted_pdf');
   String get submit => translate('submit');
+  String get subscriptionPaymentsDisabled =>
+      translate('subscription_payments_disabled');
   String get subscriptionActivatedSuccess => translate('subscription_activated_success');
   String get subscriptionRenewedSuccess => translate('subscription_renewed_success');
   String get subscriptionStatusTitle => translate('subscription_status_title');

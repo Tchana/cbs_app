@@ -2,7 +2,9 @@ import 'package:center_for_biblical_studies/data/authentication/register_data.da
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/features/assignments/course_assignments_page.dart';
-import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
+import 'package:center_for_biblical_studies/shared/remote_file_kind.dart';
+import 'package:center_for_biblical_studies/shared/remote_file_icons.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/subscribe_bottom_sheet.dart';
@@ -37,19 +39,6 @@ class _LessonPageState extends State<LessonPage> {
   final SupabaseService _apiService = SupabaseService();
   late CourseData? _courseData = widget.courseData;
 
-  bool _isEnrolled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _courseData = widget.courseData;
-    final courseId = _courseData?.id;
-    if (courseId != null) {
-      final dc = Get.find<DataController>();
-      _isEnrolled = dc.isCourseEnrolled(courseId);
-    }
-  }
-
   Future<void> _showSubscribeDialog() async {
     await showSubscribeBottomSheet(
       context: context,
@@ -70,8 +59,9 @@ class _LessonPageState extends State<LessonPage> {
     final cardColor = isDark ? CbsColors.darkCard : CbsColors.white;
     final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
     final bodyColor = isDark ? CbsColors.darkHint : CbsColors.primaryDark[500];
-    final canAccessLessons =
-        Get.find<DataController>().canAccessCourseLevel(_courseData?.level);
+    final dc = Get.find<DataController>();
+    final canAccessLessons = dc.canAccessCourseLevel(_courseData?.level);
+    final canSubmitAssignments = dc.canSubmitAssignments;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
@@ -134,30 +124,6 @@ class _LessonPageState extends State<LessonPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                if (_isEnrolled == true)
-                  Text(
-                    l10n.enrolled,
-                    style: smallStyle18.copyWith(
-                      color: CbsColors.primaryBrown,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  )
-                else
-                  CbsButton(
-                    width: double.infinity,
-                    height: 44,
-                    bgColor: CbsColors.primaryBrown,
-                    borderColor: CbsColors.primaryBrown,
-                    onPressed: _showSubscribeDialog,
-                    child: Text(
-                      l10n.enroll,
-                      style: verySmallStyle12.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -207,9 +173,9 @@ class _LessonPageState extends State<LessonPage> {
                           _showSubscribeDialog();
                           return;
                         }
-                        final url = lesson.file;
-                        if (url != null && url.isNotEmpty) {
-                          Get.to(() => PdfViewerScreen(pdfUrl: url));
+                        final url = lesson.file?.trim() ?? '';
+                        if (url.isNotEmpty) {
+                          openRemoteFile(url, title: lesson.title);
                         }
                       },
                       isLockedByAccess: !canAccessLessons,
@@ -227,7 +193,7 @@ class _LessonPageState extends State<LessonPage> {
             ),
           ),
           gapH12,
-          if (_isEnrolled == true)
+          if (canAccessLessons)
             CbsButton(
               width: double.infinity,
               height: 50,
@@ -248,12 +214,22 @@ class _LessonPageState extends State<LessonPage> {
             )
           else
             Text(
-              l10n.enrollToAccessAssignments,
+              l10n.locked,
               style: verySmallStyle12.copyWith(
                 color: CbsColors.hintColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
+          if (canAccessLessons && !canSubmitAssignments) ...[
+            gapH8,
+            Text(
+              l10n.subscriptionRequiredNoAccess,
+              style: verySmallStyle12.copyWith(
+                color: CbsColors.hintColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -333,7 +309,9 @@ class _LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPdf = (lesson.file ?? '').trim().isNotEmpty && !isLockedByAccess;
+    final fileUrl = (lesson.file ?? '').trim();
+    final hasFile = fileUrl.isNotEmpty && !isLockedByAccess;
+    final fileKind = hasFile ? remoteFileKindFromUrl(fileUrl) : RemoteFileKind.external;
     final rawTitle = (lesson.title ?? '').trim();
     final displayTitle = rawTitle.isEmpty
         ? '${l10n.lessonLabel} ${index + 1}'
@@ -344,7 +322,7 @@ class _LessonCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: hasPdf ? onTap : null,
+          onTap: hasFile ? onTap : null,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -373,9 +351,9 @@ class _LessonCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
-                    child: hasPdf
+                    child: hasFile
                         ? Icon(
-                            Icons.picture_as_pdf_rounded,
+                            iconForRemoteFileKind(fileKind),
                             size: 22,
                             color: CbsColors.primaryBrown,
                           )
@@ -403,11 +381,11 @@ class _LessonCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        hasPdf
-                            ? l10n.openPdf
+                        hasFile
+                            ? l10n.openFile
                             : (isLockedByAccess ? l10n.locked : l10n.notAvailable),
                         style: verySmallStyle12.copyWith(
-                          color: hasPdf
+                          color: hasFile
                               ? CbsColors.primaryBrown
                               : CbsColors.hintColor,
                         ),
@@ -416,9 +394,9 @@ class _LessonCard extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  hasPdf ? Icons.chevron_right_rounded : Icons.lock_rounded,
+                  hasFile ? Icons.chevron_right_rounded : Icons.lock_rounded,
                   size: 22,
-                  color: hasPdf ? CbsColors.primaryBrown : CbsColors.hintColor,
+                  color: hasFile ? CbsColors.primaryBrown : CbsColors.hintColor,
                 ),
               ],
             ),

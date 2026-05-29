@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 
 class DataController extends GetxController {
   var courses = <CourseData>[].obs;
-  var enrolledCourseIds = <String>{}.obs;
   var teachers = <RegisterData>[].obs;
   var books = <LibraryData>[].obs;
   var groups = <GroupData>[].obs;
@@ -17,14 +16,6 @@ class DataController extends GetxController {
 
   void setCourses(List<CourseData> newCourses) {
     courses.value = newCourses;
-  }
-
-  void setEnrolledCourseIds(Set<String> newCourseIds) {
-    enrolledCourseIds.assignAll(newCourseIds);
-  }
-
-  bool isCourseEnrolled(String courseId) {
-    return enrolledCourseIds.contains(courseId);
   }
 
   void setBooks(List<LibraryData> newBooks) {

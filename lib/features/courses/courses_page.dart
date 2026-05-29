@@ -31,12 +31,6 @@ class _CoursesPageState extends State<CoursesPage>
 
   CourseData? selectedCourse;
 
-  bool _isCourseEnrolled(CourseData course) {
-    final id = course.id;
-    if (id == null || id.isEmpty) return false;
-    return dataController.isCourseEnrolled(id);
-  }
-
   Future<void> _showSubscribeDialog() async {
     if (!mounted) return;
     await showSubscribeBottomSheet(
@@ -61,9 +55,7 @@ class _CoursesPageState extends State<CoursesPage>
 
   @override
   initState() {
-    if (dataController.courses.isEmpty) {
-      fetchData();
-    }
+    fetchData();
     super.initState();
   }
 
@@ -174,13 +166,7 @@ class _CoursesPageState extends State<CoursesPage>
                   tooltip: l10n.refresh,
                 ),
               ]
-            : [
-                TextButton.icon(
-                  onPressed: _showSubscribeDialog,
-                  icon: const Icon(Icons.school_outlined, size: 18),
-                  label: Text(l10n.enroll),
-                ),
-              ],
+            : null,
       ),
       body: SafeArea(
         child: Padding(
@@ -252,7 +238,6 @@ class _CoursesPageState extends State<CoursesPage>
                           children: dataController.courses.map((course) {
                             return CourseCard(
                               courseData: course,
-                              isEnrolled: _isCourseEnrolled(course),
                               onPressed: () {
                                 RecentAccessService.markCourseAccessed(course.id);
                                 Navigator.of(context).push(
@@ -268,7 +253,6 @@ class _CoursesPageState extends State<CoursesPage>
                           children: dataController.courses.map((course) {
                             return CourseCard(
                               courseData: course,
-                              isEnrolled: _isCourseEnrolled(course),
                               onPressed: () {
                                 RecentAccessService.markCourseAccessed(course.id);
                                 Navigator.of(context).push(
@@ -284,7 +268,6 @@ class _CoursesPageState extends State<CoursesPage>
                           children: dataController.courses.map((course) {
                             return CourseCard(
                               courseData: course,
-                              isEnrolled: _isCourseEnrolled(course),
                               onPressed: () {
                                 RecentAccessService.markCourseAccessed(course.id);
                                 Navigator.of(context).push(

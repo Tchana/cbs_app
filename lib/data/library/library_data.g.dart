@@ -1,33 +1,17 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'library_data.dart';
 
-BookType? _bookTypeFromJson(dynamic raw) {
-  final v = raw?.toString().trim();
-  switch (v) {
-    case 'bible':
-      return BookType.bible;
-    case 'commentary':
-      return BookType.commentary;
-    case 'dictionnaire':
-      return BookType.dictionnaire;
-    case 'concordance':
-      return BookType.concordance;
-    case 'other':
-      return BookType.other;
-    default:
-      return null;
-  }
-}
-
-String? _bookTypeToJson(BookType? type) {
-  return type?.name;
-}
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _LibraryData _$LibraryDataFromJson(Map<String, dynamic> json) => _LibraryData(
       id: json['id'] as String?,
       title: json['title'] as String?,
       author: json['author'] as String?,
       book: json['book'] as String?,
-      category: _bookTypeFromJson(json['category']),
+      category: $enumDecodeNullable(_$BookTypeEnumMap, json['category']),
       bookCover: json['bookCover'] as String?,
       description: json['description'] as String?,
       language: json['language'] as String?,
@@ -39,9 +23,16 @@ Map<String, dynamic> _$LibraryDataToJson(_LibraryData instance) =>
       'title': instance.title,
       'author': instance.author,
       'book': instance.book,
-      'category': _bookTypeToJson(instance.category),
+      'category': _$BookTypeEnumMap[instance.category],
       'bookCover': instance.bookCover,
       'description': instance.description,
       'language': instance.language,
     };
 
+const _$BookTypeEnumMap = {
+  BookType.bible: 'bible',
+  BookType.commentary: 'commentary',
+  BookType.dictionnaire: 'dictionnaire',
+  BookType.concordance: 'concordance',
+  BookType.other: 'other',
+};

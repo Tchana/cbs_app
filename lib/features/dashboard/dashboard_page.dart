@@ -6,7 +6,7 @@ import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/library/library_data.dart';
 import 'package:center_for_biblical_studies/features/announcements/announcements_page.dart';
 import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
-import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/recent_access_service.dart';
@@ -143,9 +143,7 @@ class _DashboardPageState extends State<DashboardPage> {
     await RecentAccessService.markBookAccessed(book.id);
     await _loadRecentAccess();
     if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PdfViewerScreen(pdfUrl: url)),
-    );
+    await openRemoteFile(url, title: book.title, bookId: book.id);
   }
 
   Future<void> _fetchDailyVerseFromApi() async {
@@ -727,9 +725,6 @@ class _DashboardPageState extends State<DashboardPage> {
           ...recentCourses.map(
             (course) => CourseCard(
               courseData: course,
-              isEnrolled: (course.id ?? '').isNotEmpty
-                  ? dc.isCourseEnrolled(course.id!)
-                  : false,
               onPressed: () => _openCourseDetails(course),
             ),
           ),
@@ -986,12 +981,14 @@ Future<void> _openTeacherWhatsAppContact({
   final l10n =
       AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
   final id = (teacher.id ?? '').trim();
-  String? phone;
+  String phone = (teacher.phone ?? '').trim();
   if (id.isNotEmpty) {
-    phone = await supabase.fetchTeacherWhatsAppNumber(id);
+    phone = phone.isNotEmpty
+        ? phone
+        : ((await supabase.fetchTeacherWhatsAppNumber(id)) ?? '').trim();
   }
 
-  if (phone == null || phone.trim().isEmpty) {
+  if (phone.trim().isEmpty) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.teacherWhatsAppUnavailable)),
@@ -1000,7 +997,12 @@ Future<void> _openTeacherWhatsAppContact({
     return;
   }
 
-  await checkWhatsAppAndCall(phone);
+  final opened = await openTeacherWhatsApp(phone);
+  if (!opened && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.teacherWhatsAppUnavailable)),
+    );
+  }
 }
 
 class _AllTeachersPage extends StatefulWidget {
@@ -1406,55 +1408,150 @@ class _TeacherDetailsPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(name.isEmpty ? l10n.unnamedGroup : name),
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CircleAvatar(
-              radius: 52,
-              backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.12),
-              backgroundImage: hasImage ? NetworkImage(teacher.pImage!) : null,
-              child: hasImage
-                  ? null
-                  : Text(
-                      initials,
-                      style: largeStyle32Bold.copyWith(
-                        fontSize: 34,
-                        color: CbsColors.primaryBrown,
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              name.isEmpty ? l10n.unnamedGroup : name,
-              textAlign: TextAlign.center,
-              style:
-                  mediumStyle24Bold.copyWith(color: CbsColors.primaryDark[800]),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              teacher.email ?? '',
-              textAlign: TextAlign.center,
-              style: smallStyle18.copyWith(
-                  color: CbsColors.hintColor, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            CbsButton(
-              width: double.infinity,
-              height: 46,
-              bgColor: CbsColors.primaryBrown,
-              onPressed: onContact,
-              child: Text(
-                l10n.contact,
-                style: smallStyle18.copyWith(
-                  color: CbsColors.white,
-                  fontWeight: FontWeight.w600,
+        children: [
+          Center(
+            child: Container(
+              width: 104,
+              height: 104,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: CbsColors.primaryBrown.withValues(alpha: 0.22),
+                  width: 2,
                 ),
+                color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+              ),
+              child: ClipOval(
+                child: hasImage
+                    ? Image.network(
+                        teacher.pImage!.trim(),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Text(
+                            initials,
+                            style: largeStyle32Bold.copyWith(
+                              fontSize: 34,
+                              color: CbsColors.primaryBrown,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          initials,
+                          style: largeStyle32Bold.copyWith(
+                            fontSize: 34,
+                            color: CbsColors.primaryBrown,
+                          ),
+                        ),
+                      ),
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            name.isEmpty ? l10n.unnamedGroup : name,
+            textAlign: TextAlign.center,
+            style: mediumStyle24Bold.copyWith(color: CbsColors.primaryDark[800]),
+          ),
+          const SizedBox(height: 6),
+          if ((teacher.email ?? '').trim().isNotEmpty)
+            Text(
+              teacher.email!.trim(),
+              textAlign: TextAlign.center,
+              style: smallStyle18.copyWith(color: CbsColors.hintColor, fontSize: 14),
+            ),
+          if ((teacher.phone ?? '').trim().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              teacher.phone!.trim(),
+              textAlign: TextAlign.center,
+              style: smallStyle18.copyWith(color: CbsColors.hintColor, fontSize: 14),
+            ),
           ],
+          const SizedBox(height: 20),
+          CbsButton(
+            width: double.infinity,
+            height: 46,
+            bgColor: CbsColors.primaryBrown,
+            onPressed: onContact,
+            child: Text(
+              l10n.contact,
+              style: smallStyle18.copyWith(
+                color: CbsColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          _TeacherInfoSection(
+            title: 'Vocation',
+            value: (teacher.vocation ?? '').trim(),
+          ),
+          const SizedBox(height: 12),
+          _TeacherInfoSection(
+            title: 'Testimony',
+            value: (teacher.testimony ?? '').trim(),
+          ),
+          const SizedBox(height: 12),
+          _TeacherInfoSection(
+            title: 'Journey (Parcours)',
+            value: (teacher.journey ?? '').trim(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TeacherInfoSection extends StatelessWidget {
+  const _TeacherInfoSection({required this.title, required this.value});
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value.trim();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: CbsColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: CbsColors.primaryBrown.withValues(alpha: 0.16),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              color: CbsColors.primaryDark[800],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            v.isEmpty ? '—' : v,
+            style: verySmallStyle14.copyWith(
+              color: CbsColors.primaryDark[700],
+              height: 1.35,
+            ),
+          ),
+        ],
       ),
     );
   }

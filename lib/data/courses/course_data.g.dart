@@ -1,13 +1,17 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'course_data.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _CourseData _$CourseDataFromJson(Map<String, dynamic> json) => _CourseData(
       id: json['id'] as String?,
       title: json['title'] as String?,
       teacher: json['teacher'] == null
           ? null
-          : RegisterData.fromJson(
-              json['teacher'] as Map<String, dynamic>,
-            ),
+          : RegisterData.fromJson(json['teacher'] as Map<String, dynamic>),
       description: json['description'] as String?,
       level: json['level'] as String?,
       isEnrolled: json['isEnrolled'] as bool?,
@@ -20,11 +24,11 @@ Map<String, dynamic> _$CourseDataToJson(_CourseData instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
-      'teacher': instance.teacher?.toJson(),
+      'teacher': instance.teacher,
       'description': instance.description,
       'level': instance.level,
       'isEnrolled': instance.isEnrolled,
-      'lessons': instance.lessons?.map((e) => e.toJson()).toList(),
+      'lessons': instance.lessons,
     };
 
 _LessonData _$LessonDataFromJson(Map<String, dynamic> json) => _LessonData(
@@ -43,4 +47,3 @@ Map<String, dynamic> _$LessonDataToJson(_LessonData instance) =>
       'description': instance.description,
       'file': instance.file,
     };
-

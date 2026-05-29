@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 
@@ -22,7 +21,6 @@ class SupabaseService {
   const SupabaseService.testable();
 
   static SupabaseClient get _client => Supabase.instance.client;
-  static const bool _pdfDebugLogs = true;
 
   // ---------------------------------------------------------------------------
   // Auth (session is managed by Supabase; no manual token storage)
@@ -204,40 +202,26 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<CourseData>> fetchCourses() async {
-    final userId = _client.auth.currentUser?.id;
-
-    final enrolledCourseIds = <String>{};
-    if (userId != null) {
-      final enrollRes = await _client
-          .from('enrollments')
-          .select('course_id')
-          .eq('student_id', userId);
-
-      enrolledCourseIds.addAll((enrollRes as List)
-          .map((e) => (e as Map<String, dynamic>)['course_id']?.toString())
-          .whereType<String>());
-    }
-
     final res = await _client
         .from('courses')
         .select('*, teacher:profiles(*), lessons:lessons(*)')
         .eq('active', true)
         .order('created_at', ascending: false);
 
-    // Expose enrollment info to the UI without changing CourseData.
+    DataController? dataController;
     try {
-      Get.find<DataController>().setEnrolledCourseIds(enrolledCourseIds);
-    } catch (_) {
-      // Ignore if controller isn't ready (e.g. in tests).
-    }
-
-    try {
-      final access = await fetchMyAccessProfile();
+      final access = await fetchMyAccessProfile(syncEntitlement: true);
+      dataController = Get.find<DataController>();
       _syncAccessProfileToController(access);
     } catch (_) {}
 
-    return (res as List)
+    final all = (res as List)
         .map((row) => _courseFromRow(row as Map<String, dynamic>))
+        .toList();
+
+    if (dataController == null) return all;
+    return all
+        .where((c) => dataController!.canAccessCourseLevel(c.level))
         .toList();
   }
 
@@ -337,6 +321,10 @@ class SupabaseService {
       email: p['email'] as String?,
       firstName: p['first_name'] as String?,
       lastName: p['last_name'] as String?,
+      phone: p['phone']?.toString(),
+      vocation: p['vocation']?.toString(),
+      testimony: p['testimony']?.toString(),
+      journey: p['journey']?.toString(),
       pImage: p['avatar_url'] as String?,
       role: p['role'] as String?,
     );
@@ -347,7 +335,7 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<LibraryData>> fetchBooks() async {
-    final access = await fetchMyAccessProfile();
+    final access = await fetchMyAccessProfile(syncEntitlement: true);
     _syncAccessProfileToController(access);
     final subscription = (access['subscription_type'] ?? '').toString();
     // Library access is subscription-driven (ignore role).
@@ -367,7 +355,7 @@ class SupabaseService {
         id: m['id']?.toString(),
         title: m['title'] as String?,
         author: m['author'] as String?,
-        book: isLocked ? null : m['book_url'] as String?,
+        book: isLocked ? null : _bookFileUrlFromRow(m),
         category: _bookTypeFromRaw(m['category'] as String?),
         bookCover: m['book_cover_url'] as String?,
         description: withLockTag,
@@ -389,7 +377,7 @@ class SupabaseService {
     }
   }
 
-  Future<Map<String, dynamic>> fetchMyAccessProfile() async {
+  Future<Map<String, dynamic>> fetchMyAccessProfile({bool syncEntitlement = false}) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       return {
@@ -400,6 +388,9 @@ class SupabaseService {
         'can_submit_assignments': false,
         'is_suspended': false,
       };
+    }
+    if (syncEntitlement) {
+      await _client.rpc('apply_subscription_entitlement', params: {'p_user_id': userId});
     }
     final statusRow = await _client
         .from('v_user_subscription_status')
@@ -444,6 +435,11 @@ class SupabaseService {
       if (normalized == 'student') 'school_max_level': 1,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', userId);
+  }
+
+  Future<bool> subscriptionPaymentsEnabled() async {
+    final enabled = await _client.rpc('subscription_payments_enabled');
+    return enabled == true;
   }
 
   Future<List<Map<String, dynamic>>> fetchSubscriptionPlans() async {
@@ -547,13 +543,19 @@ class SupabaseService {
         .toList();
   }
 
+  String? _bookFileUrlFromRow(Map<String, dynamic> row) {
+    final raw = (row['book_file_url'] ?? row['book_url'])?.toString().trim();
+    if (raw == null || raw.isEmpty) return null;
+    return raw;
+  }
+
   LibraryData _bookFromRow(Map<String, dynamic> row) {
     final category = _bookTypeFromRaw(row['category'] as String?);
     return LibraryData(
       id: row['id']?.toString(),
       title: row['title'] as String?,
       author: row['author'] as String?,
-      book: row['book_url'] as String?,
+      book: _bookFileUrlFromRow(row),
       category: category,
       bookCover: row['book_cover_url'] as String?,
       description: row['description'] as String?,
@@ -586,18 +588,6 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
   // Assignments (course/lesson + student submission + MCQ auto-grading)
   // ---------------------------------------------------------------------------
-
-  Future<void> enrollInCourse(String courseId) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('Not authenticated');
-    }
-
-    await _client.from('enrollments').insert({
-      'course_id': courseId,
-      'student_id': userId,
-    });
-  }
 
   Future<List<Map<String, dynamic>>> fetchPublishedAssignmentsForCourse(
       String courseId) async {
@@ -1147,11 +1137,11 @@ class SupabaseService {
   // PDF (download from URL – e.g. Supabase Storage or external)
   // ---------------------------------------------------------------------------
 
-  Future<Uint8List> fetchPdfBytes(String url) async {
+  Future<Uint8List> fetchRemoteFileBytes(String url) async {
     final dio = Dio(BaseOptions(
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      headers: const {'Accept': 'application/pdf,*/*'},
+      connectTimeout: const Duration(seconds: 90),
+      receiveTimeout: const Duration(seconds: 90),
+      headers: const {'Accept': '*/*'},
     ));
 
     final response = await dio.get<List<int>>(
@@ -1168,61 +1158,24 @@ class SupabaseService {
       throw const FormatException('Empty file received');
     }
 
-    final bytes = Uint8List.fromList(data);
-    final contentTypeHeader =
-        response.headers.map['content-type']?.join(', ') ?? 'unknown';
+    return Uint8List.fromList(data);
+  }
 
-    if (_pdfDebugLogs) {
-      final signature = bytes.length >= 4
-          ? ascii.decode(bytes.take(4).toList(), allowInvalid: true)
-          : 'n/a';
-      final lowerType = contentTypeHeader.toLowerCase();
-      String detectedType = 'unknown';
-      if (bytes.length >= 4 &&
-          bytes[0] == 0x25 &&
-          bytes[1] == 0x50 &&
-          bytes[2] == 0x44 &&
-          bytes[3] == 0x46) {
-        detectedType = 'application/pdf (signature)';
-      } else if (lowerType.contains('json')) {
-        detectedType = 'application/json (header)';
-      } else if (lowerType.contains('html')) {
-        detectedType = 'text/html (header)';
-      } else if (lowerType.contains('text/')) {
-        detectedType = 'text/* (header)';
-      } else if (lowerType.contains('xml')) {
-        detectedType = 'xml (header)';
-      }
-
-      // ignore: avoid_print
-      print('PDF fetch debug -> status: ${response.statusCode}, '
-          'content-type: $contentTypeHeader, '
-          'signature: "$signature", detected: $detectedType, '
-          'bytes: ${bytes.length}');
-
-      if (detectedType != 'application/pdf (signature)') {
-        final previewLength = bytes.length < 180 ? bytes.length : 180;
-        final preview = utf8.decode(bytes.take(previewLength).toList(),
-            allowMalformed: true);
-        // ignore: avoid_print
-        print('PDF fetch debug preview -> $preview');
-      }
-    }
-
+  Future<Uint8List> fetchPdfBytes(String url) async {
+    final bytes = await fetchRemoteFileBytes(url);
     final isPdf = bytes.length >= 4 &&
         bytes[0] == 0x25 &&
         bytes[1] == 0x50 &&
         bytes[2] == 0x44 &&
-        bytes[3] == 0x46; // %PDF
+        bytes[3] == 0x46;
     if (!isPdf) {
       throw const FormatException('Invalid PDF data');
     }
-
     return bytes;
   }
 
   Future<File> fetchPdfData(String url) async {
-    final bytes = await fetchPdfBytes(url);
+    final bytes = await fetchRemoteFileBytes(url);
     final dir = Directory.systemTemp;
     final filePath =
         '${dir.path}/downloaded_${DateTime.now().millisecondsSinceEpoch}.pdf';

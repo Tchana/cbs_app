@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
-import 'package:center_for_biblical_studies/features/courses/pdf_viewer.dart';
+import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
@@ -193,7 +193,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     ),
                     child: TextButton.icon(
                       onPressed: () {
-                        Get.to(() => PdfViewerScreen(pdfUrl: pdfUrl));
+                        openRemoteFile(pdfUrl);
                       },
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: Text(
@@ -370,7 +370,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           if (studentPdfUrl != null && studentPdfUrl.isNotEmpty) ...[
                             TextButton.icon(
                               onPressed: () {
-                                Get.to(() => PdfViewerScreen(pdfUrl: studentPdfUrl));
+                                openRemoteFile(studentPdfUrl);
                               },
                               icon: const Icon(Icons.picture_as_pdf_outlined),
                               label: Text(l10n.openSubmittedPdf),

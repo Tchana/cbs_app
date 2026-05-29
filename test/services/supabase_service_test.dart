@@ -28,7 +28,7 @@ void main() {
       'id': 'b1',
       'title': 'Romans',
       'author': 'Paul',
-      'book_url': 'https://example.com/romans.pdf',
+      'book_file_url': 'https://example.com/romans.pdf',
       'category': 'commentary',
       'book_cover_url': 'https://example.com/romans.jpg',
       'description': 'A commentary',

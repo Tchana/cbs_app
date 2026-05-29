@@ -15,7 +15,7 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   List pages = [
     DashboardPage(),
     LibraryPage(),
@@ -25,21 +25,40 @@ class _MainPageState extends State<MainPage> {
   ];
 
   int currentStep = 0;
+
+  Future<void> _refreshEntitlementIfNeeded(int index) async {
+    if (index == 0 || index == 1 || index == 2) {
+      try {
+        await const SupabaseService().refreshMyEntitlement();
+      } catch (_) {}
+    }
+  }
+
   void onTap(int index) {
     setState(() {
       currentStep = index;
     });
+    _refreshEntitlementIfNeeded(index);
   }
 
   @override
   void initState() {
     super.initState();
-    // Keep library/courses gates in sync after cold start (splash skips data load).
-    Future<void>(() async {
-      try {
-        await const SupabaseService().refreshMyEntitlement();
-      } catch (_) {}
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _refreshEntitlementIfNeeded(currentStep);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshEntitlementIfNeeded(currentStep);
+    }
   }
 
   @override
