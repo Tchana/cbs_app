@@ -69,9 +69,13 @@ class _BookProgressRecord {
 /// Local-only book reading progress by page (SharedPreferences on device).
 class BookReadingProgressService {
   String _storageKey() {
-    final userId =
-        (Supabase.instance.client.auth.currentUser?.id ?? '').trim();
-    return 'book_reading_progress_local_${userId.isEmpty ? 'guest' : userId}';
+    try {
+      final userId =
+          (Supabase.instance.client.auth.currentUser?.id ?? '').trim();
+      return 'book_reading_progress_local_${userId.isEmpty ? 'guest' : userId}';
+    } catch (_) {
+      return 'book_reading_progress_local_guest';
+    }
   }
 
   Future<Map<String, _BookProgressRecord>> _loadAll() async {
@@ -116,6 +120,23 @@ class BookReadingProgressService {
     return all[id]?.progress ?? 0;
   }
 
+  /// Virtual scroll segments (e.g. Word documents rendered as HTML).
+  static const int scrollSegmentCount = 100;
+
+  /// Updates progress from scroll position (0.0–1.0) using [scrollSegmentCount] segments.
+  Future<void> recordScrollProgress({
+    required String? bookId,
+    required double scrollFraction,
+  }) async {
+    final fraction = scrollFraction.clamp(0.0, 1.0);
+    final segment = (fraction * scrollSegmentCount).round().clamp(1, scrollSegmentCount);
+    await recordPageProgress(
+      bookId: bookId,
+      currentPage: segment,
+      totalPages: scrollSegmentCount,
+    );
+  }
+
   /// Updates progress from the page the user is on (1-based [currentPage]).
   Future<void> recordPageProgress({
     required String? bookId,
@@ -138,12 +159,34 @@ class BookReadingProgressService {
     await _saveAll(all);
   }
 
-  Future<void> ensureStarted(String? bookId) async {
+  /// Marks a book as the most recently opened (updates [lastReadAtMs]).
+  Future<void> markLastOpened(String? bookId) async {
     final id = (bookId ?? '').trim();
     if (id.isEmpty) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
     final all = await _loadAll();
-    if (all.containsKey(id)) return;
-    // Will be set on first page report from the PDF viewer.
+    final existing = all[id];
+
+    all[id] = _BookProgressRecord(
+      currentPage: existing?.currentPage ?? 1,
+      totalPages: existing?.totalPages ?? 0,
+      progress: existing != null && existing.progress > 0
+          ? existing.progress
+          : 0.001,
+      lastReadAtMs: now,
+    );
+    await _saveAll(all);
+  }
+
+  @Deprecated('Use markLastOpened')
+  Future<void> ensureStarted(String? bookId) => markLastOpened(bookId);
+
+  static bool isReadingComplete(_BookProgressRecord record) {
+    if (record.totalPages > 0 && record.currentPage >= record.totalPages) {
+      return true;
+    }
+    return record.progress >= 0.995;
   }
 
   Future<ContinueReadingEntry?> resolveContinueReading(
@@ -154,25 +197,26 @@ class BookReadingProgressService {
     final byId = {for (final b in books) if (b.id != null) b.id!: b};
     final all = await _loadAll();
 
-    String? bestId;
-    var bestLastRead = 0;
+    final candidates = <MapEntry<String, _BookProgressRecord>>[];
     for (final entry in all.entries) {
       if (!byId.containsKey(entry.key)) continue;
-      final p = entry.value.progress;
-      if (p <= 0 || p >= 0.995) continue;
-      if (entry.value.lastReadAtMs >= bestLastRead) {
-        bestLastRead = entry.value.lastReadAtMs;
-        bestId = entry.key;
-      }
+      if (isReadingComplete(entry.value)) continue;
+      candidates.add(entry);
     }
 
-    if (bestId == null) return null;
-    final record = all[bestId]!;
+    if (candidates.isEmpty) return null;
+
+    candidates.sort(
+      (a, b) => b.value.lastReadAtMs.compareTo(a.value.lastReadAtMs),
+    );
+
+    final bestId = candidates.first.key;
+    final record = candidates.first.value;
     return ContinueReadingEntry(
       book: byId[bestId]!,
-      progress: record.progress,
-      currentPage: record.currentPage,
-      totalPages: record.totalPages,
+      progress: record.progress.clamp(0.0, 1.0),
+      currentPage: record.currentPage > 0 ? record.currentPage : 1,
+      totalPages: record.totalPages > 0 ? record.totalPages : null,
     );
   }
 }

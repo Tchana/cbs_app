@@ -9,7 +9,7 @@ Future<String> resolveStorageViewUrl(String url) async {
   final uri = Uri.tryParse(trimmed);
   if (uri == null) return trimmed;
 
-  final parsed = _parseSupabaseObjectLocation(uri);
+  final parsed = parseSupabaseStorageObjectLocation(uri);
   if (parsed == null) return trimmed;
 
   final (bucket, objectPath, accessKind) = parsed;
@@ -25,7 +25,7 @@ Future<String> resolveStorageViewUrl(String url) async {
 }
 
 /// Returns `(bucket, objectPath, accessKind)` or null if not a storage object URL.
-(String, String, String)? _parseSupabaseObjectLocation(Uri uri) {
+(String, String, String)? parseSupabaseStorageObjectLocation(Uri uri) {
   final segments = uri.pathSegments;
   final objectIdx = segments.indexOf('object');
   if (objectIdx < 0 || objectIdx + 2 >= segments.length) return null;

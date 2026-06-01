@@ -28,9 +28,11 @@ dependencies:
   flutter_svg: ^2.0.17
   get: ^4.7.2
   webview_flutter: ^4.13.0
+  webview_flutter_android: ^4.10.13
   file_picker: ^11.0.2
   intl: ^0.20.2
   supabase_flutter: ^2.8.0
+  path_provider: ^2.1.5
   flutter_localizations:
     sdk: flutter
 

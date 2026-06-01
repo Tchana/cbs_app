@@ -15,6 +15,13 @@ import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+const _libraryBookGridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+  crossAxisCount: 3,
+  mainAxisSpacing: 8,
+  crossAxisSpacing: 8,
+  childAspectRatio: 0.58,
+);
+
 class LibraryPage extends StatefulWidget {
   const LibraryPage({
     super.key,
@@ -45,15 +52,18 @@ class _LibraryPageState extends State<LibraryPage>
     try {
       final books = await apiService.fetchBooks();
       dataController.setBooks(books);
-      final continueEntry =
-          await _readingProgressService.resolveContinueReading(books);
-      if (mounted) {
-        setState(() {
-          _continueReading = continueEntry;
-        });
-      }
+      await _refreshContinueReading();
     } catch (e) {
       // Handle errors if needed
+    }
+  }
+
+  Future<void> _refreshContinueReading() async {
+    final continueEntry = await _readingProgressService.resolveContinueReading(
+      dataController.books,
+    );
+    if (mounted) {
+      setState(() => _continueReading = continueEntry);
     }
   }
 
@@ -99,11 +109,10 @@ class _LibraryPageState extends State<LibraryPage>
       return;
     }
     RecentAccessService.markBookAccessed(book.id);
-    await _readingProgressService.ensureStarted(book.id);
+    await _readingProgressService.markLastOpened(book.id);
+    if (mounted) await _refreshContinueReading();
     await openRemoteFile(url, title: book.title, bookId: book.id);
-    if (mounted) {
-      await fetchData();
-    }
+    if (mounted) await _refreshContinueReading();
   }
 
   bool _isBookLocked(LibraryData book) {
@@ -349,14 +358,10 @@ class _LibraryPageState extends State<LibraryPage>
           child: GridView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: items.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.66,
-            ),
+            gridDelegate: _libraryBookGridDelegate,
             itemBuilder: (_, index) => BookItem(
               book: items[index],
+              compact: true,
               isLocked: _isBookLocked(items[index]),
               onPressed: () => _openBook(items[index], l10n),
             ),
@@ -542,14 +547,10 @@ class _LibraryPageState extends State<LibraryPage>
           child: GridView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: items.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 0.66,
-            ),
+            gridDelegate: _libraryBookGridDelegate,
             itemBuilder: (_, index) => BookItem(
               book: items[index],
+              compact: true,
               isLocked: _isBookLocked(items[index]),
               onPressed: () => _openBook(items[index], l10n),
             ),

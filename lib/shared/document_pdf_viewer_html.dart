@@ -1,10 +1,18 @@
-/// PDF.js in-WebView viewer with page navigation and progress reporting to Flutter.
-String buildPdfJsViewerHtml(
-  String fileUrl, {
+/// PDF.js in-WebView viewer with vertical scrolling and progress reporting to Flutter.
+String buildPdfJsViewerHtml({
   int startPage = 1,
+  String? fileUrl,
+  String? pdfBase64,
 }) {
-  final safeUrl = _escapeJsString(fileUrl);
+  assert(
+    fileUrl != null || pdfBase64 != null,
+    'Provide fileUrl or pdfBase64',
+  );
+
   final page = startPage < 1 ? 1 : startPage;
+  final loadDocumentJs = pdfBase64 != null
+      ? _jsLoadDocumentFromBase64(pdfBase64)
+      : "pdfjsLib.getDocument({ url: '${_escapeJsString(fileUrl!)}', withCredentials: false })";
 
   return '''
 <!DOCTYPE html>
@@ -15,117 +23,213 @@ String buildPdfJsViewerHtml(
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; background: #111; color: #eee; font-family: sans-serif; }
-  body { display: flex; flex-direction: column; }
-    #toolbar {
-      flex: 0 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 8px 12px;
-      background: #1a1a1a;
-      border-bottom: 1px solid #333;
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+      overflow: hidden;
     }
-    #toolbar button {
-      background: #4a3728;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 14px;
-      min-width: 44px;
-    }
-    #toolbar button:disabled { opacity: 0.35; }
-    #pageLabel { font-size: 14px; font-weight: 600; flex: 1; text-align: center; }
-    #canvasWrap {
+    body { display: flex; flex-direction: column; }
+    #viewer {
       flex: 1 1 auto;
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 10px 24px;
+    }
+    .page-wrap {
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      padding: 12px;
+      margin: 0 auto 14px;
+      max-width: 100%;
     }
-    #pdfCanvas { max-width: 100%; height: auto; background: #fff; }
-    #status { padding: 12px; text-align: center; color: #aaa; font-size: 13px; }
+    .page-wrap canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    }
+    #status {
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+      border-top: 1px solid #222;
+    }
   </style>
 </head>
 <body>
-  <div id="toolbar">
-    <button type="button" id="prevBtn" onclick="prevPage()">&#9664;</button>
-    <span id="pageLabel">…</span>
-    <button type="button" id="nextBtn" onclick="nextPage()">&#9654;</button>
-  </div>
-  <div id="canvasWrap"><canvas id="pdfCanvas"></canvas></div>
+  <div id="viewer"></div>
   <div id="status">Loading…</div>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  var pdfDoc = null;
-  var pageNum = $page;
-  var pageCount = 0;
-  var rendering = false;
+    var pdfDoc = null;
+    var pageNum = $page;
+    var pageCount = 0;
+    var scrollTargetPage = $page;
+    var scrollTimer = null;
+    var lastPostedPage = 0;
+    var viewer = document.getElementById('viewer');
 
-  function postProgress() {
-    if (!pageCount) return;
-    var payload = JSON.stringify({ page: pageNum, pages: pageCount });
-    if (window.ReadingProgress && ReadingProgress.postMessage) {
-      ReadingProgress.postMessage(payload);
+    function notifyError(err) {
+      var msg = (err && err.message) ? err.message : String(err);
+      document.getElementById('status').textContent = 'Failed to load PDF: ' + msg;
+      if (window.ReadingProgress && ReadingProgress.postMessage) {
+        ReadingProgress.postMessage(JSON.stringify({ error: msg }));
+      }
     }
-  }
 
-  function updateToolbar() {
-    document.getElementById('pageLabel').textContent = pageNum + ' / ' + pageCount;
-    document.getElementById('prevBtn').disabled = pageNum <= 1;
-    document.getElementById('nextBtn').disabled = pageNum >= pageCount;
-  }
+    function postProgress(force) {
+      if (!pageCount) return;
+      if (!force && pageNum === lastPostedPage) return;
+      lastPostedPage = pageNum;
+      var payload = JSON.stringify({ page: pageNum, pages: pageCount });
+      if (window.ReadingProgress && ReadingProgress.postMessage) {
+        ReadingProgress.postMessage(payload);
+      }
+    }
 
-  function renderPage(num) {
-    if (!pdfDoc || rendering) return;
-    rendering = true;
-    document.getElementById('status').textContent = '';
-    pdfDoc.getPage(num).then(function(page) {
-      var viewport = page.getViewport({ scale: 1.35 });
-      var canvas = document.getElementById('pdfCanvas');
-      var ctx = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-      return page.render({ canvasContext: ctx, viewport: viewport }).promise;
-    }).then(function() {
-      rendering = false;
-      updateToolbar();
-      postProgress();
-    }).catch(function(err) {
-      rendering = false;
-      document.getElementById('status').textContent = 'Page error: ' + err;
+    function pageScale(page) {
+      var base = page.getViewport({ scale: 1 });
+      var width = viewer.clientWidth - 4;
+      if (width < 120) width = 120;
+      return width / base.width;
+    }
+
+    function updateCurrentPageFromScroll() {
+      var wraps = viewer.querySelectorAll('.page-wrap[data-page]');
+      if (!wraps.length) return;
+
+      var viewTop = viewer.scrollTop;
+      var viewMid = viewTop + viewer.clientHeight * 0.35;
+      var current = 1;
+
+      for (var i = 0; i < wraps.length; i++) {
+        var el = wraps[i];
+        var top = el.offsetTop;
+        var bottom = top + el.offsetHeight;
+        if (bottom > viewMid) {
+          current = parseInt(el.getAttribute('data-page'), 10) || (i + 1);
+          break;
+        }
+        current = parseInt(el.getAttribute('data-page'), 10) || (i + 1);
+      }
+
+      if (current !== pageNum) {
+        pageNum = current;
+        postProgress();
+      }
+    }
+
+    viewer.addEventListener('scroll', function() {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(updateCurrentPageFromScroll, 120);
+    }, { passive: true });
+
+    function flushProgress() {
+      clearTimeout(scrollTimer);
+      updateCurrentPageFromScroll();
+      postProgress(true);
+    }
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') flushProgress();
     });
-  }
+    window.addEventListener('pagehide', flushProgress);
 
-  function prevPage() {
-    if (pageNum <= 1) return;
-    pageNum--;
-    renderPage(pageNum);
-  }
+    function scrollToPage(num) {
+      var target = viewer.querySelector('.page-wrap[data-page="' + num + '"]');
+      if (!target) return;
+      viewer.scrollTop = target.offsetTop - 8;
+      pageNum = num;
+      postProgress(true);
+    }
 
-  function nextPage() {
-    if (pageNum >= pageCount) return;
-    pageNum++;
-    renderPage(pageNum);
-  }
+    function renderPage(num) {
+      return pdfDoc.getPage(num).then(function(page) {
+        var viewport = page.getViewport({ scale: pageScale(page) });
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
 
-  pdfjsLib.getDocument('$safeUrl').promise.then(function(pdf) {
-    pdfDoc = pdf;
-    pageCount = pdf.numPages;
-    if (pageNum > pageCount) pageNum = pageCount;
-    if (pageNum < 1) pageNum = 1;
-    renderPage(pageNum);
-  }).catch(function(err) {
-    document.getElementById('status').textContent = 'Failed to load PDF: ' + err;
-  });
+        var wrap = document.createElement('div');
+        wrap.className = 'page-wrap';
+        wrap.setAttribute('data-page', String(num));
+        wrap.appendChild(canvas);
+        viewer.appendChild(wrap);
+
+        return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
+          if (num === scrollTargetPage) {
+            scrollToPage(scrollTargetPage);
+          }
+        });
+      });
+    }
+
+    function renderRange(from, to) {
+      var chain = Promise.resolve();
+      for (var i = from; i <= to; i++) {
+        (function(n) {
+          chain = chain.then(function() { return renderPage(n); });
+        })(i);
+      }
+      return chain;
+    }
+
+    function openPdf() {
+      return $loadDocumentJs.promise.then(function(pdf) {
+        pdfDoc = pdf;
+        pageCount = pdf.numPages;
+        if (scrollTargetPage > pageCount) scrollTargetPage = pageCount;
+        if (scrollTargetPage < 1) scrollTargetPage = 1;
+        pageNum = scrollTargetPage;
+        document.getElementById('status').textContent = '';
+        return renderRange(1, scrollTargetPage).then(function() {
+          scrollToPage(scrollTargetPage);
+          if (scrollTargetPage < pageCount) {
+            return renderRange(scrollTargetPage + 1, pageCount);
+          }
+        });
+      }).then(function() {
+        updateCurrentPageFromScroll();
+      });
+    }
+
+    function waitForPdfJs(retries) {
+      if (typeof pdfjsLib !== 'undefined') {
+        openPdf().catch(notifyError);
+        return;
+      }
+      if (retries <= 0) {
+        notifyError('PDF.js failed to load');
+        return;
+      }
+      setTimeout(function() { waitForPdfJs(retries - 1); }, 200);
+    }
+
+    waitForPdfJs(25);
   </script>
 </body>
 </html>
+''';
+}
+
+String _jsLoadDocumentFromBase64(String base64) {
+  final safeB64 = base64.replaceAll("'", r"\'").replaceAll('\n', '').replaceAll('\r', '');
+  return '''
+(function() {
+  var raw = atob('$safeB64');
+  var arr = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return pdfjsLib.getDocument({ data: arr });
+})()
 ''';
 }
 

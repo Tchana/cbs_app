@@ -105,6 +105,7 @@ class AppLocalizations {
       'private': 'Private',
       'unnamed_group': 'Unnamed',
       'loading': 'Loading...',
+      'saving_book_offline': 'Saving book on your device…',
       // Dashboard / Home
       'dashboard_greeting': 'Hello',
       'dashboard_subtitle': 'Continue your studies',
@@ -344,6 +345,7 @@ class AppLocalizations {
       'private': 'Privé',
       'unnamed_group': 'Sans nom',
       'loading': 'Chargement...',
+      'saving_book_offline': 'Enregistrement du livre sur votre appareil…',
       // Dashboard / Home
       'dashboard_greeting': 'Bonjour',
       'dashboard_subtitle': 'Poursuivez vos études',
@@ -597,6 +599,7 @@ class AppLocalizations {
   String get private => translate('private');
   String get unnamedGroup => translate('unnamed_group');
   String get loading => translate('loading');
+  String get savingBookOffline => translate('saving_book_offline');
   // Dashboard
   String get dashboardGreeting => translate('dashboard_greeting');
   String get dashboardSubtitle => translate('dashboard_subtitle');

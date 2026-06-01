@@ -9,6 +9,7 @@ import 'package:center_for_biblical_studies/features/courses/lesson_page.dart';
 import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
+import 'package:center_for_biblical_studies/services/book_reading_progress_service.dart';
 import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
@@ -43,6 +44,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final DataController dataController = Get.find<DataController>();
+  final BookReadingProgressService _readingProgressService =
+      BookReadingProgressService();
   bool _loading = false;
   _DailyVerse? _dailyVerse;
   bool _loadingVerse = false;
@@ -51,8 +54,7 @@ class _DashboardPageState extends State<DashboardPage> {
   List<Map<String, dynamic>> _announcements = const <Map<String, dynamic>>[];
   int _announcementIndex = 0;
   Timer? _announcementTimer;
-  List<String> _recentCourseIds = const <String>[];
-  List<String> _recentBookIds = const <String>[];
+  List<RecentAccessItem> _recentAccess = const <RecentAccessItem>[];
   static const _verseCacheDateKey = 'daily_verse_cache_date';
   static const _verseCacheTextKey = 'daily_verse_cache_text';
   static const _verseCacheRefKey = 'daily_verse_cache_ref';
@@ -112,13 +114,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _loadRecentAccess() async {
-    final courseIds = await RecentAccessService.getRecentCourseIds();
-    final bookIds = await RecentAccessService.getRecentBookIds();
+    final entries = await RecentAccessService.getRecentEntries();
     if (!mounted) return;
-    setState(() {
-      _recentCourseIds = courseIds;
-      _recentBookIds = bookIds;
-    });
+    setState(() => _recentAccess = entries);
   }
 
   Future<void> _openCourseDetails(CourseData course) async {
@@ -141,6 +139,7 @@ class _DashboardPageState extends State<DashboardPage> {
       return;
     }
     await RecentAccessService.markBookAccessed(book.id);
+    await _readingProgressService.markLastOpened(book.id);
     await _loadRecentAccess();
     if (!mounted) return;
     await openRemoteFile(url, title: book.title, bookId: book.id);
@@ -695,52 +694,23 @@ class _DashboardPageState extends State<DashboardPage> {
         if ((b.id ?? '').trim().isNotEmpty) b.id!.trim(): b,
     };
 
-    final recentCourses = _recentCourseIds
-        .map((id) => byCourseId[id])
-        .whereType<CourseData>()
-        .take(4)
-        .toList();
-    final recentBooks = _recentBookIds
-        .map((id) => byBookId[id])
-        .whereType<LibraryData>()
-        .take(4)
-        .toList();
-
-    if (recentCourses.isEmpty && recentBooks.isEmpty) {
-      return _emptyBlock(l10n.noRecentAccessYet);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (recentCourses.isNotEmpty) ...[
-          Text(
-            l10n.recentCourses,
-            style: smallStyle18.copyWith(
-              fontWeight: FontWeight.w700,
-              color: CbsColors.primaryBrown,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...recentCourses.map(
-            (course) => CourseCard(
+    final children = <Widget>[];
+    for (final entry in _recentAccess) {
+      switch (entry.kind) {
+        case RecentAccessKind.course:
+          final course = byCourseId[entry.id];
+          if (course == null) continue;
+          children.add(
+            CourseCard(
               courseData: course,
               onPressed: () => _openCourseDetails(course),
             ),
-          ),
-          const SizedBox(height: 10),
-        ],
-        if (recentBooks.isNotEmpty) ...[
-          Text(
-            l10n.recentBooks,
-            style: smallStyle18.copyWith(
-              fontWeight: FontWeight.w700,
-              color: CbsColors.primaryBrown,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...recentBooks.map(
-            (book) => ListTile(
+          );
+        case RecentAccessKind.book:
+          final book = byBookId[entry.id];
+          if (book == null) continue;
+          children.add(
+            ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               leading: const Icon(Icons.menu_book_rounded),
               title: Text(book.title ?? l10n.dash),
@@ -750,9 +720,17 @@ class _DashboardPageState extends State<DashboardPage> {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => _openBookQuick(book, l10n),
             ),
-          ),
-        ],
-      ],
+          );
+      }
+    }
+
+    if (children.isEmpty) {
+      return _emptyBlock(l10n.noRecentAccessYet);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
     );
   }
 

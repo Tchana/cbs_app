@@ -96,6 +96,12 @@ String extensionFromFileName(String name) {
   return name.substring(dot + 1).toLowerCase();
 }
 
+/// Word formats we can render with Mammoth and track scroll progress (.docx family).
+bool remoteFileUrlIsTrackableWord(String url) {
+  final ext = extensionFromFileName(fileNameFromUrl(url));
+  return const {'docx', 'docm', 'dotx'}.contains(ext);
+}
+
 /// Office formats that should use the embedded Google Docs viewer in WebView.
 bool remoteFileUrlNeedsDocsViewer(String url) {
   final ext = extensionFromFileName(fileNameFromUrl(url));

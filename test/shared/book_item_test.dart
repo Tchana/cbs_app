@@ -37,6 +37,36 @@ void main() {
     expect(find.text('Author: Paul'), findsOneWidget);
   });
 
+  testWidgets('BookItem shows FR language badge', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('fr')],
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SizedBox(
+            width: 200,
+            height: 300,
+            child: BookItem(
+              book: const LibraryData(
+                title: 'Genèse',
+                language: 'Français',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('FR'), findsOneWidget);
+  });
+
   testWidgets('BookItem calls callback on tap', (tester) async {
     var tapped = false;
 

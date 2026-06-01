@@ -71,10 +71,9 @@ void main() {
       ),
     ]);
 
-    // Dashboard shows courses inside the "Recently accessed" block, sourced from RecentAccessService.
-    // Seed shared_preferences so the recent list includes our course id.
     SharedPreferences.setMockInitialValues({
-      'recent_course_ids': ['c1'],
+      'recent_access_entries_v2':
+          '[{"k":"c","id":"c1","at":1700000000000}]',
     });
 
     await tester.pumpWidget(
