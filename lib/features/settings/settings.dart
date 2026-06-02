@@ -87,33 +87,105 @@ class _SettingsState extends State<Settings> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
+        final dialogDark =
+            Theme.of(dialogContext).brightness == Brightness.dark;
+        final surface = dialogDark ? CbsColors.darkSurface : CbsColors.white;
+        final border =
+            dialogDark ? CbsColors.darkBorder : CbsColors.creamDark;
+        final titleColor = dialogDark
+            ? CbsColors.darkTextPrimary
+            : CbsColors.primaryBrown;
+        final bodyColor = dialogDark
+            ? CbsColors.darkTextSecondary
+            : (CbsColors.primaryDark[800] ?? CbsColors.primaryBrown);
+        final primaryBg =
+            dialogDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+        final primaryFg =
+            dialogDark ? CbsColors.brownNight : CbsColors.white;
+        final danger = CbsColors.errorColor;
         return AlertDialog(
-          title: Text(
-            localizations.logout,
-            style: largeStyle32Bold.copyWith(color: CbsColors.primaryBrown),
+          backgroundColor: surface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: border.withValues(alpha: 0.9)),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: danger.withValues(alpha: dialogDark ? 0.18 : 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: danger.withValues(alpha: dialogDark ? 0.45 : 0.30),
+                  ),
+                ),
+                child: Icon(
+                  Icons.logout_rounded,
+                  color: danger,
+                  size: 20,
+                ),
+              ),
+              gapW12,
+              Expanded(
+                child: Text(
+                  localizations.logout,
+                  style: smallStyle18.copyWith(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    color: titleColor,
+                  ),
+                ),
+              ),
+            ],
           ),
           content: Text(
             localizations.logoutConfirmation,
-            style: smallStyle18,
+            style: smallStyle18.copyWith(
+              color: bodyColor,
+              fontSize: 14,
+              height: 1.35,
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                localizations.cancel,
-                style: smallStyle18.copyWith(color: CbsColors.primaryBrown),
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: dialogDark
+                    ? CbsColors.darkTextSecondary
+                    : CbsColors.primaryBrown,
+                side: BorderSide(color: border.withValues(alpha: 0.9)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
+              child: Text(localizations.cancel),
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: CbsColors.primaryBrown,
-                foregroundColor: CbsColors.white,
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryBg,
+                foregroundColor: primaryFg,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
               child: Text(
                 localizations.confirm,
-                style: smallStyle18.copyWith(color: CbsColors.white),
+                style: smallStyle18.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],
@@ -138,11 +210,16 @@ class _SettingsState extends State<Settings> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface = isDark ? CbsColors.darkSurface : CbsColors.white;
-    final muted = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    final muted =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryBrown;
+    final accentIcon =
+        isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
 
     return Scaffold(
       backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+          isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           localizations.settings,
@@ -166,21 +243,30 @@ class _SettingsState extends State<Settings> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      CbsColors.primaryBrown.withValues(alpha: 0.95),
-                      CbsColors.brandDeepBlue.withValues(alpha: 0.95),
-                    ],
+                    colors: isDark
+                        ? [CbsColors.darkSurface, CbsColors.darkElevated]
+                        : [
+                            CbsColors.primaryBrown.withValues(alpha: 0.95),
+                            CbsColors.brandDeepBlue.withValues(alpha: 0.95),
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: isDark
+                      ? Border.all(
+                          color: CbsColors.goldDeep.withValues(alpha: 0.45),
+                        )
+                      : null,
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                 ),
                 child: Row(
                   children: [
@@ -188,12 +274,14 @@ class _SettingsState extends State<Settings> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: CbsColors.white.withValues(alpha: 0.2),
+                        color: isDark
+                            ? CbsColors.brandGold.withValues(alpha: 0.15)
+                            : CbsColors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.tune_rounded,
-                        color: CbsColors.white,
+                        color: isDark ? CbsColors.brandGold : CbsColors.white,
                       ),
                     ),
                     gapW12,
@@ -202,7 +290,9 @@ class _SettingsState extends State<Settings> {
                         localizations.settingsSubtitle,
                         style: smallStyle18.copyWith(
                           fontSize: 14,
-                          color: CbsColors.white,
+                          color: isDark
+                              ? CbsColors.darkTextPrimary
+                              : CbsColors.white,
                         ),
                       ),
                     ),
@@ -214,10 +304,15 @@ class _SettingsState extends State<Settings> {
                 title: localizations.language,
                 subtitle: localizations.languageDescription,
                 icon: Icons.language,
+                isDark: isDark,
+                titleColor: titleColor,
+                muted: muted,
+                accentIcon: accentIcon,
               ),
               gapH8,
               _buildCard(
                 surface: surface,
+                isDark: isDark,
                 child: Wrap(
                   spacing: 10,
                   runSpacing: 10,
@@ -225,11 +320,13 @@ class _SettingsState extends State<Settings> {
                     _buildChoiceChip(
                       label: localizations.french,
                       selected: _currentLanguage == 'fr',
+                      isDark: isDark,
                       onTap: () => _handleLanguageChange('fr'),
                     ),
                     _buildChoiceChip(
                       label: localizations.english,
                       selected: _currentLanguage == 'en',
+                      isDark: isDark,
                       onTap: () => _handleLanguageChange('en'),
                     ),
                   ],
@@ -240,10 +337,15 @@ class _SettingsState extends State<Settings> {
                 title: localizations.theme,
                 subtitle: localizations.themeDescription,
                 icon: Icons.palette_rounded,
+                isDark: isDark,
+                titleColor: titleColor,
+                muted: muted,
+                accentIcon: accentIcon,
               ),
               gapH8,
               _buildCard(
                 surface: surface,
+                isDark: isDark,
                 child: Wrap(
                   spacing: 10,
                   runSpacing: 10,
@@ -251,16 +353,19 @@ class _SettingsState extends State<Settings> {
                     _buildChoiceChip(
                       label: localizations.lightTheme,
                       selected: _currentTheme == 'light',
+                      isDark: isDark,
                       onTap: () => _handleThemeChange('light'),
                     ),
                     _buildChoiceChip(
                       label: localizations.darkTheme,
                       selected: _currentTheme == 'dark',
+                      isDark: isDark,
                       onTap: () => _handleThemeChange('dark'),
                     ),
                     _buildChoiceChip(
                       label: localizations.systemTheme,
                       selected: _currentTheme == 'system',
+                      isDark: isDark,
                       onTap: () => _handleThemeChange('system'),
                     ),
                   ],
@@ -271,10 +376,15 @@ class _SettingsState extends State<Settings> {
                 title: localizations.appPreferences,
                 subtitle: localizations.notificationsDescription,
                 icon: Icons.notifications_active_outlined,
+                isDark: isDark,
+                titleColor: titleColor,
+                muted: muted,
+                accentIcon: accentIcon,
               ),
               gapH8,
               _buildCard(
                 surface: surface,
+                isDark: isDark,
                 child: Column(
                   children: [
                     _buildSwitchTile(
@@ -283,6 +393,8 @@ class _SettingsState extends State<Settings> {
                       value: _notificationsEnabled,
                       icon: Icons.notifications_active,
                       muted: muted,
+                      isDark: isDark,
+                      accentIcon: accentIcon,
                       onChanged: (value) async {
                         await SettingsService.setNotificationsEnabled(value);
                         if (mounted) {
@@ -299,6 +411,8 @@ class _SettingsState extends State<Settings> {
                       value: _soundEnabled,
                       icon: Icons.volume_up,
                       muted: muted,
+                      isDark: isDark,
+                      accentIcon: accentIcon,
                       onChanged: (value) async {
                         await SettingsService.setSoundEnabled(value);
                         if (mounted) {
@@ -315,6 +429,8 @@ class _SettingsState extends State<Settings> {
                       value: _vibrationEnabled,
                       icon: Icons.vibration,
                       muted: muted,
+                      isDark: isDark,
+                      accentIcon: accentIcon,
                       onChanged: (value) async {
                         await SettingsService.setVibrationEnabled(value);
                         if (mounted) {
@@ -332,19 +448,27 @@ class _SettingsState extends State<Settings> {
                 title: localizations.about,
                 subtitle: localizations.appName,
                 icon: Icons.info_outline_rounded,
+                isDark: isDark,
+                titleColor: titleColor,
+                muted: muted,
+                accentIcon: accentIcon,
               ),
               gapH8,
               _buildCard(
                 surface: surface,
+                isDark: isDark,
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.info_outline,
-                    color: CbsColors.primaryBrown,
+                    color: accentIcon,
                   ),
                   title: Text(
                     localizations.appName,
-                    style: smallStyle18.copyWith(fontWeight: FontWeight.bold),
+                    style: smallStyle18.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? CbsColors.darkTextPrimary : null,
+                    ),
                   ),
                   subtitle: Text(
                     '${localizations.version} 1.0.0',
@@ -357,22 +481,28 @@ class _SettingsState extends State<Settings> {
                 title: localizations.accountActions,
                 subtitle: localizations.logoutDescription,
                 icon: Icons.manage_accounts_outlined,
+                isDark: isDark,
+                titleColor: titleColor,
+                muted: muted,
+                accentIcon: accentIcon,
               ),
               gapH8,
               _buildCard(
                 surface: surface,
+                isDark: isDark,
                 child: Column(
                   children: [
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: const Icon(
+                      leading: Icon(
                         Icons.workspace_premium_rounded,
-                        color: CbsColors.primaryBrown,
+                        color: accentIcon,
                       ),
                       title: Text(
                         localizations.subscriptionStatusTitle,
                         style: smallStyle18.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: isDark ? CbsColors.darkTextPrimary : null,
                         ),
                       ),
                       subtitle: Text(
@@ -382,9 +512,9 @@ class _SettingsState extends State<Settings> {
                           color: muted,
                         ),
                       ),
-                      trailing: const Icon(
+                      trailing: Icon(
                         Icons.chevron_right,
-                        color: CbsColors.hintColor,
+                        color: muted,
                       ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
@@ -411,8 +541,10 @@ class _SettingsState extends State<Settings> {
                           color: muted,
                         ),
                       ),
-                      trailing: const Icon(Icons.chevron_right,
-                          color: CbsColors.hintColor),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: muted,
+                      ),
                       onTap: _handleLogout,
                     ),
                   ],
@@ -427,6 +559,7 @@ class _SettingsState extends State<Settings> {
 
   Widget _buildCard({
     required Color surface,
+    required bool isDark,
     required Widget child,
   }) {
     return Container(
@@ -435,15 +568,19 @@ class _SettingsState extends State<Settings> {
         color: surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+          color: isDark
+              ? CbsColors.darkBorder.withValues(alpha: 0.9)
+              : CbsColors.primaryBrown.withValues(alpha: 0.12),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: child,
     );
@@ -453,6 +590,10 @@ class _SettingsState extends State<Settings> {
     required String title,
     required IconData icon,
     required String subtitle,
+    required bool isDark,
+    required Color titleColor,
+    required Color muted,
+    required Color accentIcon,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,10 +602,17 @@ class _SettingsState extends State<Settings> {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: CbsColors.primaryBrown.withValues(alpha: 0.1),
+            color: isDark
+                ? CbsColors.darkElevated
+                : CbsColors.primaryBrown.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
+            border: isDark
+                ? Border.all(
+                    color: CbsColors.goldDeep.withValues(alpha: 0.35),
+                  )
+                : null,
           ),
-          child: Icon(icon, color: CbsColors.primaryBrown, size: 18),
+          child: Icon(icon, color: accentIcon, size: 18),
         ),
         gapW10,
         Expanded(
@@ -475,7 +623,7 @@ class _SettingsState extends State<Settings> {
                 title,
                 style: smallStyle18.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: CbsColors.primaryBrown,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 2),
@@ -483,7 +631,7 @@ class _SettingsState extends State<Settings> {
                 subtitle,
                 style: smallStyle18.copyWith(
                   fontSize: 12,
-                  color: CbsColors.hintColor,
+                  color: muted,
                 ),
               ),
             ],
@@ -496,24 +644,36 @@ class _SettingsState extends State<Settings> {
   Widget _buildChoiceChip({
     required String label,
     required bool selected,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
+    final selectedBg =
+        isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final selectedFg =
+        isDark ? CbsColors.brownNight : CbsColors.white;
+    final unselectedFg =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.primaryBrown;
+    final unselectedBg = isDark
+        ? CbsColors.darkElevated
+        : CbsColors.primaryBrown.withValues(alpha: 0.08);
+    final borderColor = isDark
+        ? (selected ? CbsColors.brandGold : CbsColors.darkBorder)
+        : CbsColors.primaryBrown.withValues(alpha: 0.2);
+
     return ChoiceChip(
       label: Text(
         label,
         style: smallStyle18.copyWith(
           fontSize: 13,
-          color: selected ? CbsColors.white : CbsColors.primaryBrown,
+          color: selected ? selectedFg : unselectedFg,
           fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
         ),
       ),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: CbsColors.primaryBrown,
-      backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.08),
-      side: BorderSide(
-        color: CbsColors.primaryBrown.withValues(alpha: 0.2),
-      ),
+      selectedColor: selectedBg,
+      backgroundColor: unselectedBg,
+      side: BorderSide(color: borderColor),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
@@ -525,7 +685,7 @@ class _SettingsState extends State<Settings> {
     return Divider(
       height: 1,
       color: isDark
-          ? CbsColors.darkHint.withValues(alpha: 0.35)
+          ? CbsColors.darkDivider
           : CbsColors.primaryBrown.withValues(alpha: 0.1),
     );
   }
@@ -536,14 +696,19 @@ class _SettingsState extends State<Settings> {
     required bool value,
     required IconData icon,
     required Color muted,
+    required bool isDark,
+    required Color accentIcon,
     required ValueChanged<bool> onChanged,
   }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: CbsColors.primaryBrown),
+      leading: Icon(icon, color: accentIcon),
       title: Text(
         title,
-        style: smallStyle18.copyWith(fontSize: 15),
+        style: smallStyle18.copyWith(
+          fontSize: 15,
+          color: isDark ? CbsColors.darkTextPrimary : null,
+        ),
       ),
       subtitle: Text(
         subtitle,
@@ -555,7 +720,11 @@ class _SettingsState extends State<Settings> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeThumbColor: CbsColors.primaryBrown,
+        activeThumbColor:
+            isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+        activeTrackColor: isDark
+            ? CbsColors.brandGold.withValues(alpha: 0.35)
+            : CbsColors.primaryBrown.withValues(alpha: 0.35),
       ),
     );
   }

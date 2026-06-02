@@ -145,7 +145,8 @@ class BookFileCacheService {
 
   CachedBookView _viewForFile(File file, String remoteUrl) {
     final ext = extensionFromFileName(fileNameFromUrl(remoteUrl));
-    final isPdf = ext == 'pdf' || remoteFileKindFromUrl(remoteUrl) == RemoteFileKind.pdf;
+    final isPdf =
+        ext == 'pdf' || remoteFileKindFromUrl(remoteUrl) == RemoteFileKind.pdf;
 
     if (isPdf) {
       final dir = file.parent;
@@ -190,7 +191,8 @@ class BookFileCacheService {
     final candidate = File('${dir.path}/book.$ext');
     if (await candidate.exists()) return candidate;
 
-    final entries = await dir.list().where((e) => e is File).cast<File>().toList();
+    final entries =
+        await dir.list().where((e) => e is File).cast<File>().toList();
     return entries.isEmpty ? null : entries.first;
   }
 

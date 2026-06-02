@@ -9,25 +9,44 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title!,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryBrown[800];
+    final moreColor =
+        isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final showMore =
+        moreText != null && moreText!.trim().isNotEmpty && onTap != null;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            title ?? '',
             style: smallStyle18.copyWith(
-                fontWeight: FontWeight.bold, color: CbsColors.primaryDark[800]),
-          ),
-          TextButton(
-            onPressed: onTap,
-            child: Text(
-              moreText!,
-              style: smallStyle18.copyWith(color: CbsColors.primaryBrown),
+              fontWeight: FontWeight.bold,
+              color: titleColor,
             ),
           ),
-        ],
-      ),
+        ),
+        if (showMore)
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: moreColor,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              moreText!,
+              style: smallStyle18.copyWith(
+                color: moreColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

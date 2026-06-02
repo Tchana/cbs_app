@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? CbsColors.darkSurface : CbsColors.brandBrown,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandBrown,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -119,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final texts = [l10n.onboarding1, l10n.onboarding2, l10n.onboarding3];
 
     return Scaffold(
-      backgroundColor: isDark ? CbsColors.darkSurface : CbsColors.brandWhite,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandWhite,
       body: SafeArea(
         child: Column(
           children: [

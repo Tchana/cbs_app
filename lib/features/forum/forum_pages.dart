@@ -88,125 +88,360 @@ class _ForumPageState extends State<ForumPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          l10n.forum,
-          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
-        ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: fetchGroups,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: l10n.refresh,
-          ),
-        ],
-      ),
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
       body: RefreshIndicator(
+        color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
         onRefresh: fetchGroups,
-        child: Column(
-          children: [
-            if (errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: CbsColors.errorColor[100],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: CbsColors.errorColor),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: CbsColors.errorColor),
-                      gapW8,
-                      Expanded(
-                        child: Text(
-                          errorMessage!,
-                          style: smallStyle18.copyWith(
-                            color: CbsColors.errorColor,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              floating: true,
+              snap: true,
+              backgroundColor:
+                  isDark ? CbsColors.darkBg : CbsColors.brandIvory,
+              surfaceTintColor: Colors.transparent,
+              title: Text(
+                l10n.forum,
+                style: smallStyle18.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                  color: isDark
+                      ? CbsColors.darkTextPrimary
+                      : CbsColors.primaryBrown,
                 ),
               ),
-            Expanded(
-              child: isLoading && dataController.groups.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : dataController.groups.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.group_outlined,
-                                  size: 64,
-                                  color: CbsColors.primaryBrown
-                                      .withValues(alpha: 0.5),
-                                ),
-                                gapH16,
-                                Text(
-                                  l10n.noGroups,
-                                  style: smallStyle18.copyWith(
-                                    color: CbsColors.primaryBrown,
-                                  ),
-                                ),
-                                gapH8,
-                                Text(
-                                  l10n.createFirst,
-                                  style: smallStyle18.copyWith(
-                                    color: CbsColors.hintColor,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Obx(
-                          () => ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-                            itemCount: dataController.groups.length,
-                            separatorBuilder: (_, __) => Divider(
-                              height: 10,
-                              thickness: 1,
-                              color: CbsColors.primaryBrown
-                                  .withValues(alpha: 0.10),
-                            ),
-                            itemBuilder: (context, index) {
-                              final group = dataController.groups[index];
-                              if (group.is_deleted == true) {
-                                return const SizedBox.shrink();
-                              }
-                              return _GroupCard(
-                                group: group,
-                                apiService: widget.apiService,
-                              );
-                            },
-                          ),
-                        ),
+              actions: [
+                IconButton(
+                  onPressed: fetchGroups,
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: l10n.refresh,
+                ),
+              ],
             ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: _ForumHeroBanner(l10n: l10n, isDark: isDark),
+              ),
+            ),
+            if (errorMessage != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: _ForumErrorBanner(message: errorMessage!),
+                ),
+              ),
+            Obx(() {
+              final groups = dataController.groups
+                  .where((g) => g.is_deleted != true)
+                  .toList();
+
+              if (isLoading && groups.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (groups.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _ForumEmptyState(
+                    l10n: l10n,
+                    isDark: isDark,
+                    onCreate: _showCreateGroupDialog,
+                  ),
+                );
+              }
+
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _GroupCard(
+                          group: groups[index],
+                          apiService: widget.apiService,
+                        ),
+                      );
+                    },
+                    childCount: groups.length,
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _showCreateGroupDialog,
-        backgroundColor: CbsColors.primaryBrown,
-        icon: const Icon(Icons.add, color: CbsColors.white),
-        label: Text(
-          l10n.createGroup,
-          style: smallStyle18.copyWith(color: CbsColors.white),
+        elevation: 3,
+        backgroundColor: CbsColors.brandGold,
+        foregroundColor: CbsColors.brownNight,
+        child: const Icon(Icons.add_rounded, size: 26),
+      ),
+    );
+  }
+}
+
+class _ForumHeroBanner extends StatelessWidget {
+  const _ForumHeroBanner({required this.l10n, required this.isDark});
+
+  final AppLocalizations l10n;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [CbsColors.darkSurface, CbsColors.darkElevated]
+              : [CbsColors.white, CbsColors.sandLight],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? CbsColors.goldDeep.withValues(alpha: 0.45)
+              : CbsColors.creamDark,
         ),
       ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? CbsColors.brandGold.withValues(alpha: 0.15)
+                  : CbsColors.primaryBrown.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.forum_rounded,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          ),
+          gapW12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.forum,
+                  style: smallStyle18.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: isDark
+                        ? CbsColors.darkTextPrimary
+                        : CbsColors.primaryBrown,
+                  ),
+                ),
+                gapH4,
+                Text(
+                  l10n.createFirst,
+                  style: smallStyle18.copyWith(
+                    fontSize: 13,
+                    height: 1.3,
+                    color: isDark
+                        ? CbsColors.darkTextSecondary
+                        : CbsColors.caramel,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForumErrorBanner extends StatelessWidget {
+  const _ForumErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: CbsColors.errorColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: CbsColors.errorColor.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: CbsColors.errorColor, size: 20),
+          gapW8,
+          Expanded(
+            child: Text(
+              message,
+              style: smallStyle18.copyWith(
+                color: CbsColors.errorColor,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForumEmptyState extends StatelessWidget {
+  const _ForumEmptyState({
+    required this.l10n,
+    required this.isDark,
+    required this.onCreate,
+  });
+
+  final AppLocalizations l10n;
+  final bool isDark;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: isDark ? CbsColors.darkSurface : CbsColors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isDark ? CbsColors.darkBorder : CbsColors.creamDark,
+              ),
+            ),
+            child: Icon(
+              Icons.groups_rounded,
+              size: 48,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          ),
+          gapH20,
+          Text(
+            l10n.noGroups,
+            textAlign: TextAlign.center,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              color: isDark
+                  ? CbsColors.darkTextPrimary
+                  : CbsColors.primaryBrown,
+            ),
+          ),
+          gapH8,
+          Text(
+            l10n.createFirst,
+            textAlign: TextAlign.center,
+            style: smallStyle18.copyWith(
+              fontSize: 14,
+              color: isDark
+                  ? CbsColors.darkTextSecondary
+                  : CbsColors.hintColor,
+            ),
+          ),
+          gapH24,
+          FilledButton.icon(
+            onPressed: onCreate,
+            icon: const Icon(Icons.add_rounded, size: 20),
+            label: Text(l10n.createGroup),
+            style: FilledButton.styleFrom(
+              backgroundColor:
+                  isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+              foregroundColor:
+                  isDark ? CbsColors.brownNight : CbsColors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ForumGroupAvatar extends StatelessWidget {
+  const _ForumGroupAvatar({
+    required this.name,
+    required this.isDark,
+    this.isPrivate = false,
+  });
+
+  final String name;
+  final bool isDark;
+  final bool isPrivate;
+
+  String get _initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.length == 1) {
+      final s = parts.first;
+      return (s.length >= 2 ? s.substring(0, 2) : s).toUpperCase();
+    }
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          decoration: BoxDecoration(
+            color: isDark ? CbsColors.darkElevated : CbsColors.sandLight,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? CbsColors.goldDeep.withValues(alpha: 0.5)
+                  : CbsColors.creamDark,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            _initials,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          ),
+        ),
+        if (isPrivate)
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: isDark ? CbsColors.darkSurface : CbsColors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? CbsColors.darkBorder : CbsColors.creamDark,
+                ),
+              ),
+              child: Icon(
+                Icons.lock_rounded,
+                size: 12,
+                color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -240,9 +475,7 @@ class _GroupCardState extends State<_GroupCard> {
   Future<void> _fetchLastMessage() async {
     if (widget.group.uuid == null) return;
 
-    setState(() {
-      _isLoadingLastMessage = true;
-    });
+    setState(() => _isLoadingLastMessage = true);
 
     try {
       final messages = await _apiService.fetchMessages(widget.group.uuid!);
@@ -255,7 +488,7 @@ class _GroupCardState extends State<_GroupCard> {
             .toList();
         visibleMessages.sort((a, b) {
           if (a.timestamp == null || b.timestamp == null) return 0;
-          return b.timestamp!.compareTo(a.timestamp!); // newest first
+          return b.timestamp!.compareTo(a.timestamp!);
         });
         setState(() {
           _hasVisibleMessages = visibleMessages.isNotEmpty;
@@ -265,11 +498,7 @@ class _GroupCardState extends State<_GroupCard> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingLastMessage = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingLastMessage = false);
     }
   }
 
@@ -281,13 +510,13 @@ class _GroupCardState extends State<_GroupCard> {
       final difference = now.difference(date);
 
       if (difference.inDays == 0) {
-        return "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+        return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
       } else if (difference.inDays == 1) {
         return l10n.timeYesterdayShort;
       } else if (difference.inDays < 7) {
         return l10n.daysAgo(difference.inDays);
       } else {
-        return "${date.day}/${date.month}";
+        return '${date.day}/${date.month}';
       }
     } catch (e) {
       return '';
@@ -299,42 +528,46 @@ class _GroupCardState extends State<_GroupCard> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
-    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryBrown;
-    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    final groupName = widget.group.name ?? l10n.unnamedGroup;
+    final preview = _isLoadingLastMessage
+        ? l10n.loading
+        : (_hasVisibleMessages
+            ? (_lastMessage?.content ?? l10n.noMessage)
+            : l10n.noMessage);
+
     return Material(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(14),
+      color: isDark ? CbsColors.darkSurface : CbsColors.white,
+      elevation: isDark ? 0 : 1,
+      shadowColor: Colors.black.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => GroupChatPage(group: widget.group),
             ),
           );
-          if (mounted) {
-            await _fetchLastMessage();
-          }
+          if (mounted) await _fetchLastMessage();
         },
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? CbsColors.darkBorder.withValues(alpha: 0.85)
+                  : CbsColors.creamDark,
+            ),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.group,
-                  color: CbsColors.primaryBrown,
-                  size: 26,
-                ),
+              _ForumGroupAvatar(
+                name: groupName,
+                isDark: isDark,
+                isPrivate: widget.group.is_private == true,
               ),
-              const SizedBox(width: 12),
+              gapW12,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,73 +576,65 @@ class _GroupCardState extends State<_GroupCard> {
                       children: [
                         Expanded(
                           child: Text(
-                            widget.group.name ?? l10n.unnamedGroup,
-                            style: largeStyle32Bold.copyWith(
-                              fontSize: 17,
-                              color: titleColor,
+                            groupName,
+                            style: smallStyle18.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: isDark
+                                  ? CbsColors.darkTextPrimary
+                                  : CbsColors.primaryBrown,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (widget.group.is_private == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  CbsColors.primaryBrown.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.lock,
-                                  size: 12,
-                                  color: CbsColors.primaryBrown,
-                                ),
-                                gapW4,
-                                Text(
-                                  l10n.private,
-                                  style: smallStyle18.copyWith(
-                                    fontSize: 10,
-                                    color: CbsColors.primaryBrown,
-                                  ),
-                                ),
-                              ],
+                        if (_lastMessage?.timestamp != null)
+                          Text(
+                            _formatTime(l10n, _lastMessage!.timestamp),
+                            style: verySmallStyle12.copyWith(
+                              color: isDark
+                                  ? CbsColors.darkTextMetadata
+                                  : CbsColors.hintColor,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    gapH4,
                     Text(
-                      _isLoadingLastMessage
-                          ? l10n.loading
-                          : (_hasVisibleMessages
-                              ? (_lastMessage?.content ?? l10n.noMessage)
-                              : l10n.noMessage),
+                      preview,
                       style: smallStyle18.copyWith(
                         fontSize: 13,
-                        color: subtitleColor,
+                        color: isDark
+                            ? CbsColors.darkTextSecondary
+                            : CbsColors.caramel,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if ((widget.group.description ?? '').trim().isNotEmpty) ...[
+                      gapH4,
+                      Text(
+                        widget.group.description!.trim(),
+                        style: verySmallStyle12.copyWith(
+                          color: isDark
+                              ? CbsColors.darkTextMetadata
+                              : CbsColors.hintColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              if (_lastMessage?.timestamp != null)
-                Text(
-                  _formatTime(l10n, _lastMessage!.timestamp),
-                  style: smallStyle18.copyWith(
-                    fontSize: 11,
-                    color: subtitleColor,
-                  ),
-                ),
+              gapW4,
+              Icon(
+                Icons.chevron_right_rounded,
+                color: isDark
+                    ? CbsColors.darkTextMetadata
+                    : CbsColors.hintColor,
+              ),
             ],
           ),
         ),
@@ -437,6 +662,43 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  InputDecoration _fieldDecoration({
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    int maxLines = 1,
+  }) {
+    final fill = isDark ? CbsColors.darkElevated : CbsColors.white;
+    final borderColor =
+        isDark ? CbsColors.darkBorder : CbsColors.creamDark;
+    final labelColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.caramel;
+
+    return InputDecoration(
+      labelText: label,
+      labelStyle: smallStyle18.copyWith(color: labelColor),
+      prefixIcon: Icon(
+        icon,
+        color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+      ),
+      filled: true,
+      fillColor: fill,
+      alignLabelWithHint: maxLines > 1,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+          width: 1.5,
+        ),
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -490,105 +752,146 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
       appBar: AppBar(
         title: Text(
           l10n.createGroup,
-          style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
+          style: smallStyle18.copyWith(fontWeight: FontWeight.w700),
         ),
-        centerTitle: false,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
+                color: isDark ? CbsColors.darkSurface : CbsColors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? CbsColors.goldDeep.withValues(alpha: 0.4)
+                      : CbsColors.creamDark,
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.groups_rounded,
-                      color: CbsColors.primaryBrown),
-                  gapW8,
+                  Icon(
+                    Icons.groups_rounded,
+                    color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                  ),
+                  gapW12,
                   Expanded(
                     child: Text(
                       l10n.createFirst,
                       style: smallStyle18.copyWith(
                         fontSize: 13,
-                        color: CbsColors.primaryBrown,
+                        height: 1.35,
+                        color: isDark
+                            ? CbsColors.darkTextSecondary
+                            : CbsColors.caramel,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            gapH16,
+            gapH20,
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
-                labelText: l10n.groupName,
-                prefixIcon: const Icon(Icons.title_rounded),
-                filled: true,
-                fillColor: CbsColors.primaryBrown.withValues(alpha: 0.05),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              style: smallStyle18.copyWith(
+                color: isDark
+                    ? CbsColors.darkTextPrimary
+                    : CbsColors.primaryDark[800],
+              ),
+              decoration: _fieldDecoration(
+                label: l10n.groupName,
+                icon: Icons.title_rounded,
+                isDark: isDark,
               ),
             ),
-            const SizedBox(height: 14),
+            gapH16,
             TextField(
               controller: _descriptionController,
               maxLines: 4,
-              decoration: InputDecoration(
-                labelText: l10n.description,
-                prefixIcon: const Icon(Icons.description_outlined),
-                alignLabelWithHint: true,
-                filled: true,
-                fillColor: CbsColors.primaryBrown.withValues(alpha: 0.05),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+              style: smallStyle18.copyWith(
+                color: isDark
+                    ? CbsColors.darkTextPrimary
+                    : CbsColors.primaryDark[800],
+              ),
+              decoration: _fieldDecoration(
+                label: l10n.description,
+                icon: Icons.description_outlined,
+                isDark: isDark,
+                maxLines: 4,
+              ),
+            ),
+            gapH16,
+            Material(
+              color: isDark ? CbsColors.darkSurface : CbsColors.white,
+              borderRadius: BorderRadius.circular(14),
+              child: SwitchListTile(
+                value: _isPrivate,
+                onChanged: (v) => setState(() => _isPrivate = v),
+                activeThumbColor:
+                    isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                title: Text(
+                  l10n.privateGroup,
+                  style: smallStyle18.copyWith(
+                    fontSize: 14,
+                    color: isDark
+                        ? CbsColors.darkTextPrimary
+                        : CbsColors.primaryBrown,
+                  ),
+                ),
+                subtitle: Text(
+                  l10n.private,
+                  style: verySmallStyle12.copyWith(
+                    color: isDark
+                        ? CbsColors.darkTextSecondary
+                        : CbsColors.hintColor,
+                  ),
+                ),
+                secondary: Icon(
+                  Icons.lock_outline_rounded,
+                  color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: isDark
+                        ? CbsColors.darkBorder
+                        : CbsColors.creamDark,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
-            SwitchListTile(
-              value: _isPrivate,
-              onChanged: (v) => setState(() => _isPrivate = v),
-              activeThumbColor: CbsColors.primaryBrown,
-              title: Text(
-                l10n.privateGroup,
-                style: smallStyle18.copyWith(fontSize: 14),
-              ),
-              secondary: const Icon(Icons.lock_outline_rounded,
-                  color: CbsColors.primaryBrown),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.20),
-                ),
-              ),
-            ),
-            gapH20,
+            gapH24,
             FilledButton.icon(
               onPressed: _isSubmitting ? null : _submit,
               icon: _isSubmitting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  ? SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark
+                            ? CbsColors.brownNight
+                            : CbsColors.white,
+                      ),
                     )
-                  : const Icon(Icons.add_rounded),
+                  : const Icon(Icons.check_rounded),
               label: Text(_isSubmitting ? l10n.loading : l10n.create),
               style: FilledButton.styleFrom(
-                backgroundColor: CbsColors.primaryBrown,
-                foregroundColor: CbsColors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                backgroundColor:
+                    isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                foregroundColor:
+                    isDark ? CbsColors.brownNight : CbsColors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
           ],

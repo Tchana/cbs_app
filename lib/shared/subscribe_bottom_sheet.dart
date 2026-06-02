@@ -346,7 +346,7 @@ class _PlanCard extends StatelessWidget {
     final border = CbsColors.primaryBrown.withValues(alpha: primary ? 0.25 : 0.12);
     final bg = primary
         ? CbsColors.primaryBrown.withValues(alpha: isDark ? 0.22 : 0.10)
-        : (isDark ? CbsColors.darkCard : CbsColors.white);
+        : (isDark ? CbsColors.darkSurface : CbsColors.white);
 
     return Material(
       color: Colors.transparent,

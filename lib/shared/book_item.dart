@@ -47,8 +47,13 @@ class BookItem extends StatelessWidget {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
-    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
-    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.14);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subtitleColor =
+        isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
     final languageLabel = bookLanguageBadgeLabel(book.language);
 
     final radius = compact ? 10.0 : 14.0;
@@ -69,7 +74,7 @@ class BookItem extends StatelessWidget {
             color: cardColor,
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(
-              color: CbsColors.primaryBrown.withValues(alpha: 0.14),
+              color: borderColor,
             ),
           ),
           child: Column(
@@ -80,7 +85,9 @@ class BookItem extends StatelessWidget {
                   width: double.infinity,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.10),
+                      color: isDark
+                          ? CbsColors.darkElevated
+                          : CbsColors.primaryBrown.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(coverRadius),
                     ),
                     child: Stack(
@@ -166,7 +173,7 @@ class BookItem extends StatelessWidget {
       child: Icon(
         Icons.menu_book_rounded,
         size: compact ? 18 : 24,
-        color: CbsColors.primaryBrown.withValues(alpha: 0.55),
+        color: CbsColors.brandGold.withValues(alpha: compact ? 0.85 : 0.75),
       ),
     );
   }
@@ -186,7 +193,7 @@ class _LanguageBadge extends StatelessWidget {
         vertical: compact ? 2 : 3,
       ),
       decoration: BoxDecoration(
-        color: CbsColors.primaryBrown.withValues(alpha: 0.92),
+        color: CbsColors.brandGold,
         borderRadius: BorderRadius.circular(compact ? 4 : 6),
         boxShadow: [
           BoxShadow(
@@ -199,7 +206,7 @@ class _LanguageBadge extends StatelessWidget {
       child: Text(
         label,
         style: verySmallStyle12.copyWith(
-          color: CbsColors.white,
+          color: CbsColors.brownNight,
           fontWeight: FontWeight.w800,
           fontSize: compact ? 8 : 10,
           letterSpacing: 0.5,

@@ -5,6 +5,7 @@ import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class SubscriptionStatusPage extends StatefulWidget {
   const SubscriptionStatusPage({super.key});
@@ -93,18 +94,30 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface = isDark ? CbsColors.darkSurface : CbsColors.white;
-    final muted = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    final muted = isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.12);
+    final accent = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
 
     final planName = (_status?['plan_name'] ?? l10n.dash).toString();
     final planCode = (_status?['plan_code'] ?? '').toString().trim();
     final endsAt = (_status?['ends_at'] ?? '').toString();
+    final localeName = Localizations.localeOf(context).toString();
+    final endsAtLabel = () {
+      final raw = endsAt.trim();
+      if (raw.isEmpty) return '—';
+      final parsed = DateTime.tryParse(raw);
+      if (parsed == null) return raw;
+      return DateFormat.yMMMd(localeName).add_Hm().format(parsed.toLocal());
+    }();
     final daysRemaining = int.tryParse((_status?['days_remaining'] ?? '').toString()) ?? 0;
     final subStatus = (_status?['subscription_status'] ?? '').toString();
 
     final canRenew = planCode.isNotEmpty && _paymentsEnabled;
 
     return Scaffold(
-      backgroundColor: isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           l10n.subscriptionStatusTitle,
@@ -114,8 +127,10 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(color: CbsColors.primaryBrown),
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                ),
               )
             : Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -148,7 +163,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                         color: surface,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                          color: border,
                         ),
                       ),
                       child: Column(
@@ -158,12 +173,12 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                             planName,
                             style: largeStyle32Bold.copyWith(
                               fontSize: 18,
-                              color: CbsColors.primaryBrown,
+                              color: accent,
                             ),
                           ),
                           gapH8,
                           _kv(l10n.statusLabel, subStatus.isEmpty ? '—' : subStatus, muted),
-                          _kv(l10n.expiryLabel, endsAt.isEmpty ? '—' : endsAt, muted),
+                          _kv(l10n.expiryLabel, endsAtLabel, muted),
                           _kv(l10n.daysRemainingLabel, '$daysRemaining', muted),
                           gapH10,
                           const SizedBox.shrink(),
@@ -184,8 +199,10 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                           child: FilledButton(
                             onPressed: (!canRenew || _renewing) ? null : _renew,
                             style: FilledButton.styleFrom(
-                              backgroundColor: CbsColors.primaryBrown,
-                              foregroundColor: CbsColors.white,
+                              backgroundColor:
+                                  isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                              foregroundColor:
+                                  isDark ? CbsColors.brownNight : CbsColors.white,
                             ),
                             child: _renewing
                                 ? const SizedBox(
@@ -221,7 +238,13 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
           ),
           Text(
             v,
-            style: smallStyle18.copyWith(fontSize: 13),
+            style: smallStyle18.copyWith(
+              fontSize: 13,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? CbsColors.darkTextPrimary
+                  : null,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

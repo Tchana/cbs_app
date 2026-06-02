@@ -37,7 +37,7 @@ class LessonPage extends StatefulWidget {
 
 class _LessonPageState extends State<LessonPage> {
   final SupabaseService _apiService = SupabaseService();
-  late CourseData? _courseData = widget.courseData;
+  late final CourseData? _courseData = widget.courseData;
 
   Future<void> _showSubscribeDialog() async {
     await showSubscribeBottomSheet(
@@ -56,9 +56,14 @@ class _LessonPageState extends State<LessonPage> {
     final description = (_courseData?.description ?? '').trim();
     final lessonCount = _courseData?.lessons?.length ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? CbsColors.darkCard : CbsColors.white;
-    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
-    final bodyColor = isDark ? CbsColors.darkHint : CbsColors.primaryDark[500];
+    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.2);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final bodyColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.primaryDark[500];
     final dc = Get.find<DataController>();
     final canAccessLessons = dc.canAccessCourseLevel(_courseData?.level);
     final canSubmitAssignments = dc.canSubmitAssignments;
@@ -76,16 +81,18 @@ class _LessonPageState extends State<LessonPage> {
               color: cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+                color: borderColor,
                 width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: isDark
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,13 +154,17 @@ class _LessonPageState extends State<LessonPage> {
                     Icon(
                       Icons.menu_book_rounded,
                       size: 48,
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.4),
+                      color: isDark
+                          ? CbsColors.brandGold.withValues(alpha: 0.65)
+                          : CbsColors.primaryBrown.withValues(alpha: 0.4),
                     ),
                     gapH12,
                     Text(
                       l10n.noLessonsYet,
                       style: verySmallStyle14.copyWith(
-                        color: CbsColors.hintColor,
+                        color: isDark
+                            ? CbsColors.darkTextSecondary
+                            : CbsColors.hintColor,
                       ),
                     ),
                   ],
@@ -197,8 +208,9 @@ class _LessonPageState extends State<LessonPage> {
             CbsButton(
               width: double.infinity,
               height: 50,
-              bgColor: CbsColors.primaryBrown,
-              borderColor: CbsColors.primaryBrown,
+              bgColor: isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
+              borderColor:
+                  isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
               onPressed: () {
                 final courseId = _courseData?.id;
                 if (courseId == null) return;
@@ -207,7 +219,7 @@ class _LessonPageState extends State<LessonPage> {
               child: Text(
                 l10n.viewAssignments,
                 style: verySmallStyle12.copyWith(
-                  color: Colors.white,
+                  color: isDark ? CbsColors.brownNight : Colors.white,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -216,7 +228,8 @@ class _LessonPageState extends State<LessonPage> {
             Text(
               l10n.locked,
               style: verySmallStyle12.copyWith(
-                color: CbsColors.hintColor,
+                color:
+                    isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -225,7 +238,8 @@ class _LessonPageState extends State<LessonPage> {
             Text(
               l10n.subscriptionRequiredNoAccess,
               style: verySmallStyle12.copyWith(
-                color: CbsColors.hintColor,
+                color:
+                    isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -249,16 +263,26 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: CbsColors.primaryBrown.withValues(alpha: 0.06),
+          color: isDark ? CbsColors.darkElevated : CbsColors.primaryBrown.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(10),
+          border: isDark
+              ? Border.all(
+                  color: CbsColors.darkBorder.withValues(alpha: 0.9),
+                )
+              : null,
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: CbsColors.primaryBrown),
+            Icon(
+              icon,
+              size: 20,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -268,7 +292,9 @@ class _InfoChip extends StatelessWidget {
                   Text(
                     label,
                     style: verySmallStyle10.copyWith(
-                      color: CbsColors.hintColor,
+                      color: isDark
+                          ? CbsColors.darkTextMetadata
+                          : CbsColors.hintColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -279,7 +305,9 @@ class _InfoChip extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: verySmallStyle12.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: CbsColors.primaryDark[800],
+                      color: isDark
+                          ? CbsColors.darkTextPrimary
+                          : CbsColors.primaryDark[800],
                     ),
                   ),
                 ],
@@ -309,6 +337,7 @@ class _LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final fileUrl = (lesson.file ?? '').trim();
     final hasFile = fileUrl.isNotEmpty && !isLockedByAccess;
     final fileKind = hasFile ? remoteFileKindFromUrl(fileUrl) : RemoteFileKind.external;
@@ -327,19 +356,23 @@ class _LessonCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: CbsColors.white,
+              color: isDark ? CbsColors.darkSurface : CbsColors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                color: isDark
+                    ? CbsColors.darkBorder.withValues(alpha: 0.9)
+                    : CbsColors.primaryBrown.withValues(alpha: 0.18),
                 width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+              boxShadow: isDark
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
             ),
             child: Row(
               children: [
@@ -347,20 +380,30 @@ class _LessonCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                    color: isDark
+                        ? CbsColors.darkElevated
+                        : CbsColors.primaryBrown.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
+                    border: isDark
+                        ? Border.all(
+                            color: CbsColors.darkBorder.withValues(alpha: 0.9),
+                          )
+                        : null,
                   ),
                   child: Center(
                     child: hasFile
                         ? Icon(
                             iconForRemoteFileKind(fileKind),
                             size: 22,
-                            color: CbsColors.primaryBrown,
+                            color:
+                                isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
                           )
                         : Icon(
                             Icons.lock_outline_rounded,
                             size: 20,
-                            color: CbsColors.hintColor,
+                            color: isDark
+                                ? CbsColors.darkTextMetadata
+                                : CbsColors.hintColor,
                           ),
                   ),
                 ),
@@ -376,7 +419,9 @@ class _LessonCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: verySmallStyle14.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: CbsColors.primaryDark[800],
+                          color: isDark
+                              ? CbsColors.darkTextPrimary
+                              : CbsColors.primaryDark[800],
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -386,8 +431,10 @@ class _LessonCard extends StatelessWidget {
                             : (isLockedByAccess ? l10n.locked : l10n.notAvailable),
                         style: verySmallStyle12.copyWith(
                           color: hasFile
-                              ? CbsColors.primaryBrown
-                              : CbsColors.hintColor,
+                              ? (isDark ? CbsColors.brandGold : CbsColors.primaryBrown)
+                              : (isDark
+                                  ? CbsColors.darkTextMetadata
+                                  : CbsColors.hintColor),
                         ),
                       ),
                     ],
@@ -396,7 +443,11 @@ class _LessonCard extends StatelessWidget {
                 Icon(
                   hasFile ? Icons.chevron_right_rounded : Icons.lock_rounded,
                   size: 22,
-                  color: hasFile ? CbsColors.primaryBrown : CbsColors.hintColor,
+                  color: hasFile
+                      ? (isDark ? CbsColors.brandGold : CbsColors.primaryBrown)
+                      : (isDark
+                          ? CbsColors.darkTextMetadata
+                          : CbsColors.hintColor),
                 ),
               ],
             ),

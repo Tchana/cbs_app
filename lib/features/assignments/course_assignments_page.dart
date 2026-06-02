@@ -39,7 +39,17 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final localeName = Localizations.localeOf(context).toString();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.18);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final metaColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
     return Scaffold(
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(l10n.assignmentsTitle),
         centerTitle: false,
@@ -56,15 +66,24 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
 
             if (items.isEmpty) {
               return Center(
-                child: Text(
-                  l10n.assignmentsEmpty,
-                  style: TextStyle(color: Colors.grey),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    l10n.assignmentsEmpty,
+                    textAlign: TextAlign.center,
+                    style: smallStyle18.copyWith(
+                      color: isDark
+                          ? CbsColors.darkTextSecondary
+                          : Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               );
             }
 
             return RefreshIndicator(
-              color: CbsColors.primaryBrown,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
               onRefresh: _reload,
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -97,10 +116,10 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                       child: Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: cardBg,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                            color: borderColor,
                           ),
                         ),
                         child: Column(
@@ -110,7 +129,7 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                               title,
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: CbsColors.primaryDark[800],
+                                color: titleColor,
                               ),
                             ),
                             if (lessonTitle != null && lessonTitle.trim().isNotEmpty) ...[
@@ -119,7 +138,7 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                                 l10n.lessonPrefix(lessonTitle.trim()),
                                 style: smallStyle18.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: CbsColors.hintColor,
+                                  color: metaColor,
                                   fontSize: 12,
                                 ),
                               ),
@@ -130,7 +149,7 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                                 l10n.duePrefix(dueLabel),
                                 style: smallStyle18.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: CbsColors.hintColor,
+                                  color: metaColor,
                                   fontSize: 12,
                                 ),
                               ),

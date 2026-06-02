@@ -52,7 +52,21 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? CbsColors.darkBg : CbsColors.backgroundColor;
+    final cardBg = isDark ? CbsColors.darkSurface : Colors.white;
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.16);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final bodyColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+    final metaColor =
+        isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
+    final accent = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+
     return Scaffold(
+      backgroundColor: bg,
       appBar: AppBar(
         title: Text(l10n.notificationsTitle),
         centerTitle: false,
@@ -62,23 +76,34 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: CircularProgressIndicator(
+                  color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                ),
+              );
             }
 
             final items = snapshot.data ?? const <Map<String, dynamic>>[];
             if (items.isEmpty) {
               return RefreshIndicator(
+                color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
                 onRefresh: _reload,
                 child: ListView(
                   children: [
                     const SizedBox(height: 180),
-                    Center(child: Text(l10n.noAnnouncementsYet)),
+                    Center(
+                      child: Text(
+                        l10n.noAnnouncementsYet,
+                        style: smallStyle18.copyWith(color: bodyColor),
+                      ),
+                    ),
                   ],
                 ),
               );
             }
 
             return RefreshIndicator(
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
               onRefresh: _reload,
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -99,69 +124,134 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                                 DateTime.now(),
                           );
 
+                  final displayTitle =
+                      title.isEmpty ? l10n.announcementFallback : title;
+
                   return Container(
-                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isDark ? CbsColors.darkCard : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.16),
-                      ),
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title.isEmpty ? l10n.announcementFallback : title,
-                          style: smallStyle18.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? CbsColors.darkText
-                                : CbsColors.primaryDark[800],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          body,
-                          style: smallStyle18.copyWith(
-                            height: 1.35,
-                            color: isDark
-                                ? CbsColors.darkHint
-                                : CbsColors.hintColor,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            if (courseTitle.isNotEmpty)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: CbsColors.primaryBrown
-                                      .withValues(alpha: 0.10),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  courseTitle,
-                                  style: verySmallStyle12.copyWith(
-                                    color: CbsColors.primaryBrown,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            const Spacer(),
-                            Text(
-                              when,
-                              style: verySmallStyle12.copyWith(
-                                color: CbsColors.hintColor,
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Accent rail
+                          Container(
+                            width: 4,
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: const BorderRadius.horizontal(
+                                left: Radius.circular(16),
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 34,
+                                        height: 34,
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? CbsColors.darkElevated
+                                              : CbsColors.primaryBrown
+                                                  .withValues(alpha: 0.08),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: isDark
+                                              ? Border.all(
+                                                  color: CbsColors.darkBorder
+                                                      .withValues(alpha: 0.9),
+                                                )
+                                              : null,
+                                        ),
+                                        child: Icon(
+                                          Icons.notifications_rounded,
+                                          size: 18,
+                                          color: accent,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          displayTitle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: smallStyle18.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            color: titleColor,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        when,
+                                        style: verySmallStyle12.copyWith(
+                                          color: metaColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    body,
+                                    style: smallStyle18.copyWith(
+                                      height: 1.35,
+                                      color: bodyColor,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  if (courseTitle.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: isDark
+                                              ? CbsColors.darkElevated
+                                              : CbsColors.primaryBrown
+                                                  .withValues(alpha: 0.10),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                          border: isDark
+                                              ? Border.all(
+                                                  color: CbsColors.darkBorder
+                                                      .withValues(alpha: 0.9),
+                                                )
+                                              : null,
+                                        ),
+                                        child: Text(
+                                          courseTitle,
+                                          style: verySmallStyle12.copyWith(
+                                            color: isDark
+                                                ? CbsColors.darkTextSecondary
+                                                : CbsColors.primaryBrown,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },

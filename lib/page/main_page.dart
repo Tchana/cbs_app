@@ -63,37 +63,178 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navTheme = Theme.of(context).bottomNavigationBarTheme;
     return Scaffold(
       body: pages[currentStep],
-      bottomNavigationBar: BottomNavigationBar(
-        onTap: onTap,
-        currentIndex: currentStep,
-        selectedItemColor: CbsColors.primaryBrown,
-        unselectedItemColor: CbsColors.primaryBrown.withValues(alpha: 0.5),
-        showUnselectedLabels: true,
-        items: [
-          BottomNavigationBarItem(
-            label: l10n.navHome,
-            icon: const Icon(Icons.home),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: Container(
+            height: 72,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? CbsColors.darkNavBg
+                  : (navTheme.backgroundColor ?? CbsColors.lightCardBg),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: isDark
+                    ? CbsColors.darkBorder.withValues(alpha: 0.9)
+                    : CbsColors.creamDark,
+              ),
+              boxShadow: [
+                if (!isDark)
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Row(
+                children: [
+                  _NavItem(
+                    index: 0,
+                    currentIndex: currentStep,
+                    label: l10n.navHome,
+                    icon: Icons.home,
+                    isDark: isDark,
+                    selectedColor: CbsColors.brandGold,
+                    unselectedColor:
+                        isDark ? CbsColors.brandIvory : navTheme.unselectedItemColor ?? CbsColors.warmGrey,
+                    onTap: onTap,
+                  ),
+                  _NavItem(
+                    index: 1,
+                    currentIndex: currentStep,
+                    label: l10n.navLibrary,
+                    icon: Icons.my_library_books_rounded,
+                    isDark: isDark,
+                    selectedColor: CbsColors.brandGold,
+                    unselectedColor:
+                        isDark ? CbsColors.brandIvory : navTheme.unselectedItemColor ?? CbsColors.warmGrey,
+                    onTap: onTap,
+                  ),
+                  _NavItem(
+                    index: 2,
+                    currentIndex: currentStep,
+                    label: l10n.navCourses,
+                    icon: Icons.school,
+                    isDark: isDark,
+                    selectedColor: CbsColors.brandGold,
+                    unselectedColor:
+                        isDark ? CbsColors.brandIvory : navTheme.unselectedItemColor ?? CbsColors.warmGrey,
+                    onTap: onTap,
+                  ),
+                  _NavItem(
+                    index: 3,
+                    currentIndex: currentStep,
+                    label: l10n.navForum,
+                    icon: Icons.message,
+                    isDark: isDark,
+                    selectedColor: CbsColors.brandGold,
+                    unselectedColor:
+                        isDark ? CbsColors.brandIvory : navTheme.unselectedItemColor ?? CbsColors.warmGrey,
+                    onTap: onTap,
+                  ),
+                  _NavItem(
+                    index: 4,
+                    currentIndex: currentStep,
+                    label: l10n.settings,
+                    icon: Icons.settings,
+                    isDark: isDark,
+                    selectedColor: CbsColors.brandGold,
+                    unselectedColor:
+                        isDark ? CbsColors.brandIvory : navTheme.unselectedItemColor ?? CbsColors.warmGrey,
+                    onTap: onTap,
+                  ),
+                ],
+              ),
+            ),
           ),
-          BottomNavigationBarItem(
-            label: l10n.navLibrary,
-            icon: const Icon(Icons.my_library_books_rounded),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.index,
+    required this.currentIndex,
+    required this.label,
+    required this.icon,
+    required this.isDark,
+    required this.selectedColor,
+    required this.unselectedColor,
+    required this.onTap,
+  });
+
+  final int index;
+  final int currentIndex;
+  final String label;
+  final IconData icon;
+  final bool isDark;
+  final Color selectedColor;
+  final Color unselectedColor;
+  final void Function(int) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = index == currentIndex;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.zero,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            decoration: BoxDecoration(
+              color: selected
+                  ? selectedColor.withValues(alpha: isDark ? 0.16 : 0.12)
+                  : Colors.transparent,
+              border: Border.all(
+                color: selected
+                    ? (isDark ? CbsColors.goldDeep : selectedColor)
+                        .withValues(alpha: isDark ? 0.7 : 0.45)
+                    : Colors.transparent,
+                width: 1,
+              ),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: selected ? selectedColor : unselectedColor,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? selectedColor : unselectedColor,
+                    height: 1.0,
+                  ),
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            label: l10n.navCourses,
-            icon: const Icon(Icons.school),
-          ),
-          BottomNavigationBarItem(
-            label: l10n.navForum,
-            icon: const Icon(Icons.message),
-          ),
-          BottomNavigationBarItem(
-            label: l10n.settings,
-            icon: const Icon(Icons.settings),
-          ),
-        ],
+        ),
       ),
     );
   }

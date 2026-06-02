@@ -57,7 +57,8 @@ class RecentAccessService {
     await _markAccessed(RecentAccessKind.book, bookId);
   }
 
-  static Future<void> _markAccessed(RecentAccessKind kind, String? rawId) async {
+  static Future<void> _markAccessed(
+      RecentAccessKind kind, String? rawId) async {
     final id = (rawId ?? '').trim();
     if (id.isEmpty) return;
 

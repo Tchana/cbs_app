@@ -70,7 +70,7 @@ class _CoursesPageState extends State<CoursesPage>
       if (!hasCourses) {
         return Scaffold(
           backgroundColor:
-              isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+              isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
           appBar: AppBar(
             title: Text(
               l10n.navCourses,
@@ -139,7 +139,7 @@ class _CoursesPageState extends State<CoursesPage>
 
       return Scaffold(
       backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+          isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           _widgetIndex == 0
@@ -180,10 +180,14 @@ class _CoursesPageState extends State<CoursesPage>
                   Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                      color: isDark
+                          ? CbsColors.darkElevated
+                          : CbsColors.primaryBrown.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                        color: isDark
+                            ? CbsColors.darkBorder.withValues(alpha: 0.9)
+                            : CbsColors.primaryBrown.withValues(alpha: 0.18),
                         width: 1,
                       ),
                     ),
@@ -193,20 +197,25 @@ class _CoursesPageState extends State<CoursesPage>
                       controller: _tabController,
                       indicatorSize: TabBarIndicatorSize.tab,
                       indicator: BoxDecoration(
-                        color: CbsColors.primaryBrown,
+                        color:
+                            isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
                         borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                CbsColors.primaryBrown.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
+                        boxShadow: isDark
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: CbsColors.primaryBrown
+                                      .withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                       ),
-                      labelColor: CbsColors.white,
-                      unselectedLabelColor:
-                          CbsColors.primaryBrown.withValues(alpha: 0.85),
+                      labelColor:
+                          isDark ? CbsColors.brownNight : CbsColors.white,
+                      unselectedLabelColor: isDark
+                          ? CbsColors.caramel
+                          : CbsColors.primaryBrown.withValues(alpha: 0.85),
                       labelStyle: smallStyle18.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -214,7 +223,9 @@ class _CoursesPageState extends State<CoursesPage>
                       unselectedLabelStyle: smallStyle18.copyWith(
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.85),
+                        color: isDark
+                            ? CbsColors.caramel
+                            : CbsColors.primaryBrown.withValues(alpha: 0.85),
                       ),
                       overlayColor: WidgetStateProperty.all(Colors.transparent),
                       labelPadding: const EdgeInsets.symmetric(
@@ -309,7 +320,7 @@ class _CourseDetailsPage extends StatelessWidget {
     final title = (course.title ?? '').trim();
     return Scaffold(
       backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+          isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           title.isNotEmpty ? title : l10n.courseDefault,

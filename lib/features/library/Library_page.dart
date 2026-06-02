@@ -166,7 +166,7 @@ class _LibraryPageState extends State<LibraryPage>
       if (!hasLibrary) {
         return Scaffold(
           backgroundColor:
-              isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+              isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
           appBar: AppBar(
             title: Text(
               l10n.library,
@@ -228,7 +228,7 @@ class _LibraryPageState extends State<LibraryPage>
 
       return Scaffold(
         backgroundColor:
-            isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+            isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
         appBar: AppBar(
           title: Text(
             l10n.library,
@@ -255,10 +255,14 @@ class _LibraryPageState extends State<LibraryPage>
                 child: Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                    color: isDark
+                        ? CbsColors.darkElevated
+                        : CbsColors.primaryBrown.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                      color: isDark
+                          ? CbsColors.darkBorder.withValues(alpha: 0.9)
+                          : CbsColors.primaryBrown.withValues(alpha: 0.18),
                       width: 1,
                     ),
                   ),
@@ -269,20 +273,24 @@ class _LibraryPageState extends State<LibraryPage>
                     controller: tabController,
                     indicatorSize: TabBarIndicatorSize.tab,
                     indicator: BoxDecoration(
-                      color: CbsColors.primaryBrown,
+                      color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
                       borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color:
-                              CbsColors.primaryBrown.withValues(alpha: 0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
+                      boxShadow: isDark
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: CbsColors.primaryBrown
+                                    .withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
                     ),
-                    labelColor: CbsColors.white,
-                    unselectedLabelColor:
-                        CbsColors.primaryBrown.withValues(alpha: 0.85),
+                    labelColor:
+                        isDark ? CbsColors.brownNight : CbsColors.white,
+                    unselectedLabelColor: isDark
+                        ? CbsColors.caramel
+                        : CbsColors.primaryBrown.withValues(alpha: 0.85),
                     labelStyle: smallStyle18.copyWith(
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
@@ -290,7 +298,9 @@ class _LibraryPageState extends State<LibraryPage>
                     unselectedLabelStyle: smallStyle18.copyWith(
                       fontWeight: FontWeight.w500,
                       fontSize: 12,
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.85),
+                      color: isDark
+                          ? CbsColors.caramel
+                          : CbsColors.primaryBrown.withValues(alpha: 0.85),
                     ),
                     overlayColor:
                         WidgetStateProperty.all(Colors.transparent),
@@ -385,9 +395,14 @@ class _LibraryPageState extends State<LibraryPage>
     final progress = entry.progress.clamp(0.0, 1.0);
     final hasCover = (book.bookCover ?? '').trim().isNotEmpty;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? CbsColors.darkSurface : CbsColors.white;
-    final titleColor = isDark ? CbsColors.darkText : CbsColors.primaryDark[800];
-    final subtitleColor = isDark ? CbsColors.darkHint : CbsColors.hintColor;
+    final cardColor = isDark ? CbsColors.darkElevated : CbsColors.white;
+    final borderColor = isDark
+        ? CbsColors.goldDeep.withValues(alpha: 0.7)
+        : CbsColors.primaryBrown.withValues(alpha: 0.14);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subtitleColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -412,7 +427,7 @@ class _LibraryPageState extends State<LibraryPage>
                   color: cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: CbsColors.primaryBrown.withValues(alpha: 0.14),
+                    color: borderColor,
                   ),
                 ),
                 child: Padding(
@@ -423,7 +438,9 @@ class _LibraryPageState extends State<LibraryPage>
                         height: 64,
                         width: 46,
                         decoration: BoxDecoration(
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.10),
+                          color: isDark
+                              ? CbsColors.darkSurface
+                              : CbsColors.primaryBrown.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: ClipRRect(
@@ -469,10 +486,14 @@ class _LibraryPageState extends State<LibraryPage>
                               child: LinearProgressIndicator(
                                 value: progress,
                                 minHeight: 6,
-                                backgroundColor: CbsColors.primaryBrown
-                                    .withValues(alpha: 0.15),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  CbsColors.primaryBrown,
+                                backgroundColor: isDark
+                                    ? CbsColors.darkProgressBg
+                                    : CbsColors.primaryBrown
+                                        .withValues(alpha: 0.15),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  isDark
+                                      ? CbsColors.brandGold
+                                      : CbsColors.primaryBrown,
                                 ),
                               ),
                             ),
@@ -480,7 +501,9 @@ class _LibraryPageState extends State<LibraryPage>
                             Text(
                               '${(progress * 100).round()}%',
                               style: smallStyle18.copyWith(
-                                color: CbsColors.primaryBrown,
+                                color: isDark
+                                    ? CbsColors.brandGold
+                                    : CbsColors.primaryBrown,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                               ),

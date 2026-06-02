@@ -886,21 +886,38 @@ class SupabaseService {
         .upsert(payload, onConflict: 'announcement_id,student_id');
   }
 
+  /// Course fees owed — matches backoffice Finance → Course payments `total_owed`.
   Future<int> fetchMyOutstandingBalance() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return 0;
 
+    try {
+      final rpc = await _client.rpc('get_my_course_total_owed');
+      return _parseNonNegativeInt(rpc);
+    } catch (_) {
+      // Fallback if migration 031 not applied yet.
+    }
+
     final res = await _client
-        .from('v_student_finance_summary')
-        .select('balance_due')
+        .from('v_student_course_payment_summary')
+        .select('total_owed')
         .eq('student_id', userId)
         .maybeSingle();
 
     if (res == null) return 0;
-    final raw = res['balance_due'];
-    if (raw is int) return raw;
-    if (raw is double) return raw.round();
-    return int.tryParse(raw?.toString() ?? '0') ?? 0;
+    return _parseNonNegativeInt(res['total_owed']);
+  }
+
+  int _parseNonNegativeInt(dynamic raw) {
+    int value = 0;
+    if (raw is int) {
+      value = raw;
+    } else if (raw is double) {
+      value = raw.round();
+    } else {
+      value = int.tryParse(raw?.toString() ?? '0') ?? 0;
+    }
+    return value < 0 ? 0 : value;
   }
 
   // ---------------------------------------------------------------------------
@@ -946,6 +963,72 @@ class SupabaseService {
         .toList();
   }
 
+  /// Admin WhatsApp for course-fee payments (`app_settings` or first admin profile).
+  Future<String?> fetchAdminWhatsAppNumber() async {
+    try {
+      final row = await _client
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'admin_whatsapp_number')
+          .maybeSingle();
+      if (row != null) {
+        final fromSettings = _whatsappFromJsonValue(row['value']);
+        if (fromSettings != null) return fromSettings;
+      }
+    } catch (_) {}
+
+    try {
+      final admins = await _client
+          .from('profiles')
+          .select()
+          .eq('role', 'admin')
+          .limit(1);
+      final list = List<dynamic>.from(admins as List);
+      if (list.isNotEmpty && list.first is Map) {
+        return _whatsappFromProfileRow(
+          Map<String, dynamic>.from(list.first as Map),
+        );
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  String? _whatsappFromJsonValue(dynamic value) {
+    if (value is String) {
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+    if (value is Map) {
+      const keys = ['number', 'phone', 'whatsapp', 'whatsapp_number'];
+      for (final key in keys) {
+        final raw = value[key];
+        if (raw == null) continue;
+        final trimmed = raw.toString().trim();
+        if (trimmed.isNotEmpty) return trimmed;
+      }
+    }
+    return null;
+  }
+
+  String? _whatsappFromProfileRow(Map<String, dynamic> row) {
+    const keys = <String>[
+      'whatsapp_number',
+      'whatsapp',
+      'phone_number',
+      'phone',
+      'mobile',
+      'telephone',
+    ];
+    for (final key in keys) {
+      final raw = row[key];
+      if (raw == null) continue;
+      final value = raw.toString().trim();
+      if (value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
   Future<String?> fetchTeacherWhatsAppNumber(String teacherId) async {
     final id = teacherId.trim();
     if (id.isEmpty) return null;
@@ -953,23 +1036,7 @@ class SupabaseService {
       final row =
           await _client.from('profiles').select().eq('id', id).maybeSingle();
       if (row is! Map<String, dynamic>) return null;
-      const keys = <String>[
-        'whatsapp_number',
-        'whatsapp',
-        'phone_number',
-        'phone',
-        'mobile',
-        'telephone',
-      ];
-      for (final key in keys) {
-        final raw = row[key];
-        if (raw == null) continue;
-        final value = raw.toString().trim();
-        if (value.isNotEmpty) {
-          return value;
-        }
-      }
-      return null;
+      return _whatsappFromProfileRow(row);
     } catch (_) {
       return null;
     }

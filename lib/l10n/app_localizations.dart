@@ -118,6 +118,15 @@ class AppLocalizations {
       'contact': 'Contact',
       'notifications_tooltip': 'Notifications',
       'outstanding_balance': 'You owe {amount} FCFA',
+      'payment_prompt_title': 'Make a payment?',
+      'payment_prompt_message':
+          'You owe {amount} FCFA in course fees. Would you like to contact the administration on WhatsApp to arrange a payment?',
+      'payment_prompt_confirm': 'Yes, contact on WhatsApp',
+      'payment_prompt_cancel': 'Not now',
+      'admin_whatsapp_unavailable':
+          'Admin WhatsApp is not configured yet. Please contact the school directly.',
+      'payment_whatsapp_message':
+          'Hello, I am {name}, a CBS student. I would like to make a payment for my course fees. Amount owed: {amount} FCFA. Thank you.',
       'latest_announcement': 'Latest announcement',
       'announcements_empty_hint': 'New announcements will appear here.',
       'book': 'Book',
@@ -134,7 +143,8 @@ class AppLocalizations {
       'lesson_prefix': 'Lesson: {lesson}',
       'due_prefix': 'Due: {date}',
       'view_assignments': 'View assignments',
-      'enroll_to_access_assignments': 'Your subscription level does not include this course yet',
+      'enroll_to_access_assignments':
+          'Your subscription level does not include this course yet',
       'assignment_open_pdf': 'Open PDF',
       'assignment_mcq_points': 'MCQ points: {points}',
       'assignment_pdf_selected': 'Selected: {file}',
@@ -186,11 +196,14 @@ class AppLocalizations {
       'open_pdf': 'Open PDF',
       'open_file': 'Open file',
       'document_viewer': 'Document',
-      'file_load_error': 'Could not load this file. Check your connection and try again.',
+      'file_load_error':
+          'Could not load this file. Check your connection and try again.',
       'open_with_external_app': 'Open with another app',
       'open_in_browser': 'Open in browser',
-      'external_file_hint': 'This file type opens with another app on your device (Word, Excel, etc.).',
-      'external_file_opened': 'If nothing opened, tap the button below to try again.',
+      'external_file_hint':
+          'This file type opens with another app on your device (Word, Excel, etc.).',
+      'external_file_opened':
+          'If nothing opened, tap the button below to try again.',
       'open_file_externally_failed': 'No app found to open this file.',
       'not_available': 'Not available',
       'locked': 'Locked',
@@ -203,26 +216,33 @@ class AppLocalizations {
       'retry': 'Retry',
       // Subscription / paywall
       'subscription_required_title': 'Subscription required',
-      'subscription_required_courses': 'Your subscription is inactive. Subscribe to access courses.',
-      'subscription_required_library': 'Your subscription is inactive. Subscribe to access the library.',
-      'subscription_required_no_access': 'Your subscription does not include this access.',
+      'subscription_required_courses':
+          'Your subscription is inactive. Subscribe to access courses.',
+      'subscription_required_library':
+          'Your subscription is inactive. Subscribe to access the library.',
+      'subscription_required_no_access':
+          'Your subscription does not include this access.',
       'subscribe': 'Subscribe',
       'renew': 'Renew',
       'not_now': 'Not now',
       'refresh_plans': 'Refresh plans',
       'unlock_access': 'Unlock access',
-      'choose_trimester_subscription': 'Choose a subscription plan. The first installment activates access after payment confirmation.',
+      'choose_trimester_subscription':
+          'Choose a subscription plan. The first installment activates access after payment confirmation.',
       'student_plan_subtitle': 'Courses + library',
       'library_plan_subtitle': 'Library only',
-      'payment_initiated_waiting': 'Payment initiated for {planName}. Waiting confirmation...',
+      'payment_initiated_waiting':
+          'Payment initiated for {planName}. Waiting confirmation...',
       'mobile_money_phone_title': 'Mobile money number',
       'mobile_money_phone_label': 'Phone number',
       'mobile_money_phone_hint': 'e.g. 677123456 or 237677123456',
       'mobile_money_phone_invalid': 'Enter a valid mobile money number',
-      'mobile_money_approve_on_phone': 'Approve the payment on your phone for {planName}',
+      'mobile_money_approve_on_phone':
+          'Approve the payment on your phone for {planName}',
       'mobile_money_start_failed': 'Could not start the mobile money payment',
       'mobile_money_payment_failed': 'Payment was not completed',
-      'mobile_money_payment_timeout': 'Payment is still pending. Pull to refresh in a moment.',
+      'mobile_money_payment_timeout':
+          'Payment is still pending. Pull to refresh in a moment.',
       'subscription_payments_disabled':
           'Subscription payments are currently unavailable. Please contact an administrator for access.',
       'subscription_activated_success': 'Subscription activated successfully',
@@ -358,6 +378,15 @@ class AppLocalizations {
       'contact': 'Contacter',
       'notifications_tooltip': 'Notifications',
       'outstanding_balance': 'Vous devez {amount} FCFA',
+      'payment_prompt_title': 'Effectuer un paiement ?',
+      'payment_prompt_message':
+          'Vous devez {amount} FCFA de frais de cours. Souhaitez-vous contacter l\'administration sur WhatsApp pour organiser un paiement ?',
+      'payment_prompt_confirm': 'Oui, contacter sur WhatsApp',
+      'payment_prompt_cancel': 'Pas maintenant',
+      'admin_whatsapp_unavailable':
+          'Le WhatsApp de l\'administration n\'est pas encore configuré. Veuillez contacter l\'école directement.',
+      'payment_whatsapp_message':
+          'Bonjour, je suis {name}, étudiant(e) au CBS. Je souhaite effectuer un paiement pour mes frais de cours. Montant dû : {amount} FCFA. Merci.',
       'latest_announcement': 'Dernière annonce',
       'announcements_empty_hint': 'Les nouvelles annonces apparaîtront ici.',
       'book': 'Livre',
@@ -374,7 +403,8 @@ class AppLocalizations {
       'lesson_prefix': 'Leçon : {lesson}',
       'due_prefix': 'Date limite : {date}',
       'view_assignments': 'Voir les devoirs',
-      'enroll_to_access_assignments': 'Votre niveau d’abonnement n’inclut pas encore ce cours',
+      'enroll_to_access_assignments':
+          'Votre niveau d’abonnement n’inclut pas encore ce cours',
       'assignment_open_pdf': 'Ouvrir le PDF',
       'assignment_mcq_points': 'Points QCM : {points}',
       'assignment_pdf_selected': 'Sélectionné : {file}',
@@ -427,12 +457,16 @@ class AppLocalizations {
       'open_pdf': 'Ouvrir le PDF',
       'open_file': 'Ouvrir le fichier',
       'document_viewer': 'Document',
-      'file_load_error': 'Impossible de charger ce fichier. Vérifiez votre connexion et réessayez.',
+      'file_load_error':
+          'Impossible de charger ce fichier. Vérifiez votre connexion et réessayez.',
       'open_with_external_app': 'Ouvrir avec une autre application',
       'open_in_browser': 'Ouvrir dans le navigateur',
-      'external_file_hint': 'Ce type de fichier s’ouvre avec une autre application (Word, Excel, etc.).',
-      'external_file_opened': 'Si rien ne s’est ouvert, appuyez sur le bouton ci-dessous.',
-      'open_file_externally_failed': 'Aucune application trouvée pour ouvrir ce fichier.',
+      'external_file_hint':
+          'Ce type de fichier s’ouvre avec une autre application (Word, Excel, etc.).',
+      'external_file_opened':
+          'Si rien ne s’est ouvert, appuyez sur le bouton ci-dessous.',
+      'open_file_externally_failed':
+          'Aucune application trouvée pour ouvrir ce fichier.',
       'not_available': 'Non disponible',
       'locked': 'Verrouillé',
       'good_morning': 'Bonjour',
@@ -444,26 +478,34 @@ class AppLocalizations {
       'retry': 'Reessayer',
       // Abonnements / paywall
       'subscription_required_title': 'Abonnement requis',
-      'subscription_required_courses': 'Votre abonnement est inactif. Abonnez-vous pour accéder aux cours.',
-      'subscription_required_library': 'Votre abonnement est inactif. Abonnez-vous pour accéder à la bibliothèque.',
-      'subscription_required_no_access': 'Votre abonnement ne donne pas accès à cette fonctionnalité.',
+      'subscription_required_courses':
+          'Votre abonnement est inactif. Abonnez-vous pour accéder aux cours.',
+      'subscription_required_library':
+          'Votre abonnement est inactif. Abonnez-vous pour accéder à la bibliothèque.',
+      'subscription_required_no_access':
+          'Votre abonnement ne donne pas accès à cette fonctionnalité.',
       'subscribe': 'S’abonner',
       'renew': 'Renouveler',
       'not_now': 'Pas maintenant',
       'refresh_plans': 'Actualiser les offres',
       'unlock_access': 'Débloquer l’accès',
-      'choose_trimester_subscription': 'Choisissez une offre d’abonnement. Le premier versement active l’accès après confirmation du paiement.',
+      'choose_trimester_subscription':
+          'Choisissez une offre d’abonnement. Le premier versement active l’accès après confirmation du paiement.',
       'student_plan_subtitle': 'Cours + bibliothèque',
       'library_plan_subtitle': 'Bibliothèque uniquement',
-      'payment_initiated_waiting': 'Paiement lancé pour {planName}. En attente de confirmation...',
+      'payment_initiated_waiting':
+          'Paiement lancé pour {planName}. En attente de confirmation...',
       'mobile_money_phone_title': 'Numéro Mobile Money',
       'mobile_money_phone_label': 'Numéro de téléphone',
       'mobile_money_phone_hint': 'ex. 677123456 ou 237677123456',
       'mobile_money_phone_invalid': 'Entrez un numéro Mobile Money valide',
-      'mobile_money_approve_on_phone': 'Validez le paiement sur votre téléphone pour {planName}',
-      'mobile_money_start_failed': 'Impossible de lancer le paiement Mobile Money',
+      'mobile_money_approve_on_phone':
+          'Validez le paiement sur votre téléphone pour {planName}',
+      'mobile_money_start_failed':
+          'Impossible de lancer le paiement Mobile Money',
       'mobile_money_payment_failed': 'Le paiement n’a pas abouti',
-      'mobile_money_payment_timeout': 'Paiement toujours en attente. Actualisez dans un instant.',
+      'mobile_money_payment_timeout':
+          'Paiement toujours en attente. Actualisez dans un instant.',
       'subscription_payments_disabled':
           'Les paiements d’abonnement ne sont pas disponibles pour le moment. Contactez un administrateur pour obtenir l’accès.',
       'subscription_activated_success': 'Abonnement activé avec succès',
@@ -488,7 +530,8 @@ class AppLocalizations {
       'enroll': 'S’inscrire',
       'assignment_title_fallback': 'Devoir',
       'assignment_not_found': 'Devoir introuvable.',
-      'assignment_answer_all_mcq': 'Veuillez répondre à toutes les questions QCM.',
+      'assignment_answer_all_mcq':
+          'Veuillez répondre à toutes les questions QCM.',
       'assignment_pdf_label': 'PDF du devoir',
       'upload_pdf': 'Téléverser un PDF',
       'open_submitted_pdf': 'Ouvrir le PDF soumis',
@@ -614,11 +657,25 @@ class AppLocalizations {
   String get notificationsTooltip => translate('notifications_tooltip');
   String outstandingBalance(String amount) =>
       translateWithParams('outstanding_balance', {'amount': amount});
+  String get paymentPromptTitle => translate('payment_prompt_title');
+  String paymentPromptMessage(String amount) =>
+      translateWithParams('payment_prompt_message', {'amount': amount});
+  String get paymentPromptConfirm => translate('payment_prompt_confirm');
+  String get paymentPromptCancel => translate('payment_prompt_cancel');
+  String get adminWhatsAppUnavailable =>
+      translate('admin_whatsapp_unavailable');
+  String paymentWhatsAppMessage(
+          {required String name, required String amount}) =>
+      translateWithParams('payment_whatsapp_message', {
+        'name': name,
+        'amount': amount,
+      });
   String get latestAnnouncement => translate('latest_announcement');
   String get announcementsEmptyHint => translate('announcements_empty_hint');
   String get book => translate('book');
   String get dash => translate('dash');
-  String get teacherWhatsAppUnavailable => translate('teacher_whatsapp_unavailable');
+  String get teacherWhatsAppUnavailable =>
+      translate('teacher_whatsapp_unavailable');
   String get today => translate('today');
   String get groupUuidMissing => translate('group_uuid_missing');
   String get timeYesterdayShort => translate('time_yesterday_short');
@@ -641,7 +698,8 @@ class AppLocalizations {
       translateWithParams('assignment_pdf_selected', {'file': file});
   String get assignmentNoPdfSelectedOptional =>
       translate('assignment_no_pdf_selected_optional');
-  String get assignmentNoPdfSubmitted => translate('assignment_no_pdf_submitted');
+  String get assignmentNoPdfSubmitted =>
+      translate('assignment_no_pdf_submitted');
   String assignmentTeacherPoints(String points) =>
       translateWithParams('assignment_teacher_points', {'points': points});
   String assignmentFeedbackPrefix(String feedback) =>
@@ -656,8 +714,7 @@ class AppLocalizations {
   String get assignmentSubmissionSuspended =>
       translate('assignment_submission_suspended');
   String get planDefaultStudent => translate('plan_default_student');
-  String get planDefaultLibraryUser =>
-      translate('plan_default_library_user');
+  String get planDefaultLibraryUser => translate('plan_default_library_user');
   String get settingsSubtitle => translate('settings_subtitle');
   String get languageDescription => translate('language_description');
   String get themeDescription => translate('theme_description');
@@ -700,7 +757,8 @@ class AppLocalizations {
   String get openInBrowser => translate('open_in_browser');
   String get externalFileHint => translate('external_file_hint');
   String get externalFileOpened => translate('external_file_opened');
-  String get openFileExternallyFailed => translate('open_file_externally_failed');
+  String get openFileExternallyFailed =>
+      translate('open_file_externally_failed');
   String get notAvailable => translate('not_available');
   String get locked => translate('locked');
   String get goodMorning => translate('good_morning');
@@ -712,16 +770,21 @@ class AppLocalizations {
   String get retry => translate('retry');
 
   // Subscription / paywall
-  String get subscriptionRequiredTitle => translate('subscription_required_title');
-  String get subscriptionRequiredCourses => translate('subscription_required_courses');
-  String get subscriptionRequiredLibrary => translate('subscription_required_library');
-  String get subscriptionRequiredNoAccess => translate('subscription_required_no_access');
+  String get subscriptionRequiredTitle =>
+      translate('subscription_required_title');
+  String get subscriptionRequiredCourses =>
+      translate('subscription_required_courses');
+  String get subscriptionRequiredLibrary =>
+      translate('subscription_required_library');
+  String get subscriptionRequiredNoAccess =>
+      translate('subscription_required_no_access');
   String get subscribe => translate('subscribe');
   String get renew => translate('renew');
   String get notNow => translate('not_now');
   String get refreshPlans => translate('refresh_plans');
   String get unlockAccess => translate('unlock_access');
-  String get chooseTrimesterSubscription => translate('choose_trimester_subscription');
+  String get chooseTrimesterSubscription =>
+      translate('choose_trimester_subscription');
   String get studentPlanSubtitle => translate('student_plan_subtitle');
   String get libraryPlanSubtitle => translate('library_plan_subtitle');
   String paymentInitiatedWaiting(String planName) =>
@@ -730,13 +793,15 @@ class AppLocalizations {
   String get mobileMoneyPhoneLabel => translate('mobile_money_phone_label');
   String get mobileMoneyPhoneHint => translate('mobile_money_phone_hint');
   String get mobileMoneyPhoneInvalid => translate('mobile_money_phone_invalid');
-  String mobileMoneyApproveOnPhone(String planName) =>
-      translateWithParams('mobile_money_approve_on_phone', {'planName': planName});
+  String mobileMoneyApproveOnPhone(String planName) => translateWithParams(
+      'mobile_money_approve_on_phone', {'planName': planName});
   String get mobileMoneyStartFailed => translate('mobile_money_start_failed');
-  String get mobileMoneyPaymentFailed => translate('mobile_money_payment_failed');
-  String get mobileMoneyPaymentTimeout => translate('mobile_money_payment_timeout');
-  String subscriptionDurationMonths(int months) =>
-      translateWithParams('subscription_duration_months', {'months': '$months'});
+  String get mobileMoneyPaymentFailed =>
+      translate('mobile_money_payment_failed');
+  String get mobileMoneyPaymentTimeout =>
+      translate('mobile_money_payment_timeout');
+  String subscriptionDurationMonths(int months) => translateWithParams(
+      'subscription_duration_months', {'months': '$months'});
   String get continueReading => translate('continue_reading');
   String authorPrefix(String author) =>
       translateWithParams('author_prefix', {'author': author});
@@ -759,10 +824,13 @@ class AppLocalizations {
   String get submit => translate('submit');
   String get subscriptionPaymentsDisabled =>
       translate('subscription_payments_disabled');
-  String get subscriptionActivatedSuccess => translate('subscription_activated_success');
-  String get subscriptionRenewedSuccess => translate('subscription_renewed_success');
+  String get subscriptionActivatedSuccess =>
+      translate('subscription_activated_success');
+  String get subscriptionRenewedSuccess =>
+      translate('subscription_renewed_success');
   String get subscriptionStatusTitle => translate('subscription_status_title');
-  String get subscriptionStatusSubtitle => translate('subscription_status_subtitle');
+  String get subscriptionStatusSubtitle =>
+      translate('subscription_status_subtitle');
   String get statusLabel => translate('status_label');
   String get expiryLabel => translate('expiry_label');
   String get daysRemainingLabel => translate('days_remaining_label');

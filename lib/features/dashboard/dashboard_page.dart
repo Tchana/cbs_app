@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
@@ -70,6 +71,69 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  String _studentDisplayName() {
+    final last = (_profileLastName ?? '').trim();
+    if (last.isNotEmpty) return last;
+    try {
+      final user = AuthService.currentUser;
+      final meta = user?.userMetadata;
+      if (meta != null) {
+        final first = (meta['first_name'] as String?)?.trim() ?? '';
+        final lastMeta = (meta['last_name'] as String?)?.trim() ?? '';
+        final combined = '$first $lastMeta'.trim();
+        if (combined.isNotEmpty) return combined;
+      }
+      final email = user?.email?.trim();
+      if (email != null && email.isNotEmpty) return email;
+    } catch (_) {}
+    return 'CBS Student';
+  }
+
+  Future<void> _onOutstandingBalanceTap(AppLocalizations l10n) async {
+    final amountFormatted =
+        NumberFormat.decimalPattern().format(_outstandingBalance);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.paymentPromptTitle),
+        content: Text(l10n.paymentPromptMessage(amountFormatted)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.paymentPromptCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.paymentPromptConfirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final phone = (await apiService.fetchAdminWhatsAppNumber())?.trim() ?? '';
+    if (phone.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.adminWhatsAppUnavailable)),
+      );
+      return;
+    }
+
+    final message = l10n.paymentWhatsAppMessage(
+      name: _studentDisplayName(),
+      amount: amountFormatted,
+    );
+    final opened = await openWhatsApp(phone, message: message);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.adminWhatsAppUnavailable)),
+      );
+    }
+  }
+
   Future<void> fetchData() async {
     setState(() => _loading = true);
     try {
@@ -85,7 +149,8 @@ class _DashboardPageState extends State<DashboardPage> {
       dataController.setTeachers(teachers);
     } catch (_) {}
     try {
-      final announcements = await apiService.fetchVisibleAnnouncements(limit: 20);
+      final announcements =
+          await apiService.fetchVisibleAnnouncements(limit: 20);
       final unreadCount = await apiService.fetchUnreadAnnouncementsCount();
       final balanceDue = await apiService.fetchMyOutstandingBalance();
       if (mounted) {
@@ -230,8 +295,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void _configureAnnouncementTimer() {
     _announcementTimer?.cancel();
     if (_announcements.length <= 1) return;
-    _announcementTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) {
+    _announcementTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || _announcements.isEmpty) return;
       setState(() {
         _announcementIndex = (_announcementIndex + 1) % _announcements.length;
@@ -246,10 +310,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _openSearch(AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showSearch<void>(
       context: context,
       delegate: _DashboardSearchDelegate(
         l10n: l10n,
+        isDark: isDark,
       ),
     );
   }
@@ -283,8 +349,7 @@ class _DashboardPageState extends State<DashboardPage> {
         : _announcements[_announcementIndex % _announcements.length];
 
     return Scaffold(
-      backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           today,
@@ -305,7 +370,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   );
                   if (mounted) {
-                    final unread = await apiService.fetchUnreadAnnouncementsCount();
+                    final unread =
+                        await apiService.fetchUnreadAnnouncementsCount();
                     setState(() {
                       _unreadAnnouncements = unread;
                     });
@@ -319,8 +385,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   right: 7,
                   top: 7,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 1.5),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(999),
@@ -370,58 +436,78 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   if (_outstandingBalance > 0) ...[
                     const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: CbsColors.errorColor.withValues(alpha: 0.10),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _onOutstandingBalanceTap(l10n),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: CbsColors.errorColor.withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet_outlined,
-                            color: CbsColors.errorColor,
-                            size: 20,
+                        child: Ink(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              l10n.outstandingBalance(
-                                NumberFormat.decimalPattern().format(
-                                  _outstandingBalance,
-                                ),
-                              ),
-                              style: smallStyle18.copyWith(
-                                color: CbsColors.errorColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
+                          decoration: BoxDecoration(
+                            color: CbsColors.brandGold.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  CbsColors.brandGold.withValues(alpha: 0.35),
                             ),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.account_balance_wallet_outlined,
+                                color: CbsColors.brandGold,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  l10n.outstandingBalance(
+                                    NumberFormat.decimalPattern().format(
+                                      _outstandingBalance,
+                                    ),
+                                  ),
+                                  style: smallStyle18.copyWith(
+                                    color: CbsColors.caramel,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: CbsColors.brandGold.withValues(
+                                  alpha: 0.85,
+                                ),
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                     decoration: BoxDecoration(
-                      color: isDark ? CbsColors.darkCard : Colors.white,
+                      // Dark guide: announcement card should sit above surfaces.
+                      color: isDark ? CbsColors.darkElevated : Colors.white,
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.15),
+                        color: isDark
+                            ? CbsColors.goldDeep.withValues(alpha: 0.7)
+                            : CbsColors.primaryBrown.withValues(alpha: 0.3),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.18 : 0.06,
+                          ),
                           blurRadius: 10,
                           offset: const Offset(0, 3),
                         ),
@@ -434,21 +520,27 @@ class _DashboardPageState extends State<DashboardPage> {
                           children: [
                             Icon(
                               Icons.campaign_outlined,
-                              color: CbsColors.primaryBrown,
-                              size: 20,
+                              color: isDark
+                                  ? CbsColors.brandGold
+                                  : CbsColors.primaryBrown,
+                              size: 22,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              l10n.latestAnnouncement,
+                              l10n.latestAnnouncement.toUpperCase(),
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: CbsColors.primaryBrown,
-                                fontSize: 14,
+                                color: isDark
+                                    ? CbsColors.brandGold
+                                        .withValues(alpha: 0.95)
+                                    : CbsColors.primaryBrown
+                                        .withValues(alpha: 0.65),
+                                fontSize: 12,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           latest == null
                               ? l10n.noAnnouncementsYet
@@ -457,24 +549,26 @@ class _DashboardPageState extends State<DashboardPage> {
                           style: smallStyle18.copyWith(
                             fontWeight: FontWeight.w700,
                             color: isDark
-                                ? CbsColors.darkText
-                                : CbsColors.primaryDark[800],
+                                ? CbsColors.darkTextPrimary
+                                : CbsColors.primaryDark[1000],
+                            fontSize: 14,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 3),
                         Text(
                           latest == null
                               ? l10n.announcementsEmptyHint
                               : (latest['body'] ?? '').toString(),
-                          maxLines: 3,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: smallStyle18.copyWith(
-                            fontSize: 14,
-                            color:
-                                isDark ? CbsColors.darkHint : CbsColors.hintColor,
+                            fontSize: 13,
+                            color: isDark
+                                ? CbsColors.darkTextSecondary
+                                : CbsColors.hintColor,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
@@ -493,7 +587,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                 });
                               }
                             },
-                            icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                            icon:
+                                const Icon(Icons.open_in_new_rounded, size: 16),
                             label: Text(l10n.viewAll),
                           ),
                         ),
@@ -505,14 +600,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          CbsColors.primaryBrown.withValues(alpha: 0.95),
-                          CbsColors.brandDeepBlue.withValues(alpha: 0.95),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: CbsColors.primaryBrown.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -525,13 +613,24 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          l10n.verseOfTheDay,
-                          style: smallStyle18.copyWith(
-                            color: CbsColors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.menu_book_sharp,
+                              color: CbsColors.brandGold,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.verseOfTheDay.toUpperCase(),
+                              style: smallStyle18.copyWith(
+                                color: CbsColors.brandGold,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         if (verse?.ref != null && verse!.ref.isNotEmpty) ...[
@@ -541,13 +640,18 @@ class _DashboardPageState extends State<DashboardPage> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: CbsColors.white.withValues(alpha: 0.18),
+                              color:
+                                  CbsColors.brandGold.withValues(alpha: 0.18),
+                              border: Border.all(
+                                color:
+                                    CbsColors.brandGold.withValues(alpha: 0.35),
+                              ),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               verse.ref,
                               style: verySmallStyle12.copyWith(
-                                color: CbsColors.white,
+                                color: CbsColors.brandGold,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -573,6 +677,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                   fontWeight: FontWeight.w500,
                                   color: CbsColors.white,
                                   height: 1.4,
+                                  fontSize: 14,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                       ],
@@ -709,16 +815,98 @@ class _DashboardPageState extends State<DashboardPage> {
         case RecentAccessKind.book:
           final book = byBookId[entry.id];
           if (book == null) continue;
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           children.add(
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: const Icon(Icons.menu_book_rounded),
-              title: Text(book.title ?? l10n.dash),
-              subtitle: Text((book.author ?? '').trim().isEmpty
-                  ? l10n.book
-                  : (book.author ?? '')),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => _openBookQuick(book, l10n),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _openBookQuick(book, l10n),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? CbsColors.darkSurface : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark
+                          ? CbsColors.darkBorder.withValues(alpha: 0.9)
+                          : CbsColors.primaryBrown.withValues(alpha: 0.2),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black
+                            .withValues(alpha: isDark ? 0.14 : 0.04),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: isDark
+                              ? CbsColors.darkElevated
+                              : CbsColors.primaryBrown.withValues(alpha: 0.12),
+                        ),
+                        child: Icon(
+                          Icons.menu_book_rounded,
+                          size: 26,
+                          color: isDark
+                              ? CbsColors.brandGold
+                              : CbsColors.primaryBrown,
+                        ),
+                      ),
+                      gapW12,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (book.title ?? l10n.dash).toString(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: smallStyle18.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? CbsColors.darkTextPrimary
+                                    : CbsColors.primaryDark[800],
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              (book.author ?? '').trim().isEmpty
+                                  ? l10n.book
+                                  : (book.author ?? ''),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: verySmallStyle12.copyWith(
+                                color: isDark
+                                    ? CbsColors.darkTextMetadata
+                                    : CbsColors.hintColor,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: isDark
+                            ? CbsColors.brandGold.withValues(alpha: 0.85)
+                            : CbsColors.hintColor,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           );
       }
@@ -746,13 +934,67 @@ class _DashboardPageState extends State<DashboardPage> {
 class _DashboardSearchDelegate extends SearchDelegate<void> {
   _DashboardSearchDelegate({
     required this.l10n,
+    required this.isDark,
   });
 
   final AppLocalizations l10n;
+  final bool isDark;
   final SupabaseService _supabase = SupabaseService();
 
   @override
   String? get searchFieldLabel => l10n.searchHint;
+
+  @override
+  TextStyle? get searchFieldStyle => TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: isDark
+            ? CbsColors.darkTextPrimary
+            : (CbsColors.primaryDark[800] ?? CbsColors.brownNight),
+      );
+
+  @override
+  ThemeData appBarTheme(BuildContext context) {
+    final base = Theme.of(context);
+    final isDark = base.brightness == Brightness.dark;
+    if (!isDark) return base;
+    return base.copyWith(
+      scaffoldBackgroundColor: CbsColors.darkBg,
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: CbsColors.darkHeaderBg,
+        foregroundColor: CbsColors.darkHeaderText,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        fillColor: CbsColors.darkElevated,
+        hintStyle: const TextStyle(
+          color: CbsColors.darkTextSecondary,
+          fontSize: 13,
+        ),
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(999),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(999),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(999),
+          borderSide: BorderSide.none,
+        ),
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: CbsColors.brandGold,
+        selectionColor: Color(0x33F0C040),
+        selectionHandleColor: CbsColors.brandGold,
+      ),
+    );
+  }
 
   @override
   List<Widget>? buildActions(BuildContext context) => [
@@ -789,17 +1031,36 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
   }
 
   Widget _buildBody(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? CbsColors.darkBg : CbsColors.backgroundColor;
+    final cardBg = isDark ? CbsColors.darkSurface : Colors.white;
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.14);
+    final sectionColor = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final titleColor = isDark
+        ? CbsColors.darkTextPrimary
+        : (CbsColors.primaryDark[800] ?? CbsColors.primaryBrown);
+    final subColor = isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+
     return FutureBuilder<_DashboardSearchData>(
       future: _searchFromDb(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Container(
+            color: bg,
+            child: Center(
+              child: CircularProgressIndicator(
+                color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+              ),
+            ),
+          );
         }
         if (snapshot.hasError) {
           return Center(
             child: Text(
               l10n.noItemsFound,
-              style: smallStyle18.copyWith(color: CbsColors.hintColor),
+              style: smallStyle18.copyWith(color: subColor),
             ),
           );
         }
@@ -817,7 +1078,7 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
           return Center(
             child: Text(
               l10n.noItemsFound,
-              style: smallStyle18.copyWith(color: CbsColors.hintColor),
+              style: smallStyle18.copyWith(color: subColor),
             ),
           );
         }
@@ -830,7 +1091,7 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                 l10n.teachersSection,
                 style: smallStyle18.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: CbsColors.primaryBrown,
+                  color: sectionColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -839,11 +1100,16 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                 final hasImage =
                     t.pImage != null && t.pImage!.trim().isNotEmpty;
                 final initials = _teacherInitials(t);
-                return ListTile(
+                return _SearchResultTile(
+                  cardBg: cardBg,
+                  border: border,
+                  titleColor: titleColor,
+                  subColor: subColor,
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor:
-                        CbsColors.primaryBrown.withValues(alpha: 0.12),
+                    backgroundColor: isDark
+                        ? CbsColors.darkElevated
+                        : CbsColors.primaryBrown.withValues(alpha: 0.12),
                     backgroundImage: hasImage ? NetworkImage(t.pImage!) : null,
                     child: hasImage
                         ? null
@@ -851,13 +1117,16 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                             initials,
                             style: verySmallStyle12.copyWith(
                               fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: CbsColors.primaryBrown,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? CbsColors.brandGold
+                                  : CbsColors.primaryBrown,
                             ),
                           ),
                   ),
-                  title: Text(name.isEmpty ? l10n.dash : name),
-                  subtitle: Text(t.email ?? ''),
+                  title: name.isEmpty ? l10n.dash : name,
+                  subtitle: (t.email ?? '').trim(),
+                  trailingColor: subColor,
                   onTap: () {
                     final navigator = Navigator.of(context);
                     close(context, null);
@@ -883,15 +1152,24 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                 l10n.coursesSection,
                 style: smallStyle18.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: CbsColors.primaryBrown,
+                  color: sectionColor,
                 ),
               ),
               const SizedBox(height: 8),
               ...fCourses.map((c) {
-                return ListTile(
-                  leading: const Icon(Icons.menu_book_rounded),
-                  title: Text(c.title ?? ''),
-                  subtitle: Text(c.description ?? ''),
+                return _SearchResultTile(
+                  cardBg: cardBg,
+                  border: border,
+                  titleColor: titleColor,
+                  subColor: subColor,
+                  leading: Icon(
+                    Icons.menu_book_rounded,
+                    color:
+                        isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                  ),
+                  title: (c.title ?? '').trim(),
+                  subtitle: (c.description ?? '').trim(),
+                  trailingColor: subColor,
                   onTap: () {
                     final navigator = Navigator.of(context);
                     close(context, null);
@@ -910,16 +1188,26 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                 l10n.tabBooks,
                 style: smallStyle18.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: CbsColors.primaryBrown,
+                  color: sectionColor,
                 ),
               ),
               const SizedBox(height: 8),
               ...fBooks.map((b) {
-                return ListTile(
-                  leading: const Icon(Icons.library_books_outlined),
-                  title: Text(b.title ?? ''),
-                  subtitle: Text(
-                      (b.author ?? '').isNotEmpty ? b.author! : (b.book ?? '')),
+                return _SearchResultTile(
+                  cardBg: cardBg,
+                  border: border,
+                  titleColor: titleColor,
+                  subColor: subColor,
+                  leading: Icon(
+                    Icons.library_books_outlined,
+                    color:
+                        isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                  ),
+                  title: (b.title ?? '').trim(),
+                  subtitle:
+                      ((b.author ?? '').isNotEmpty ? b.author! : (b.book ?? ''))
+                          .trim(),
+                  trailingColor: subColor,
                   onTap: () {
                     final navigator = Navigator.of(context);
                     close(context, null);
@@ -935,6 +1223,90 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
           ],
         );
       },
+    );
+  }
+}
+
+class _SearchResultTile extends StatelessWidget {
+  const _SearchResultTile({
+    required this.cardBg,
+    required this.border,
+    required this.titleColor,
+    required this.subColor,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.trailingColor,
+    required this.onTap,
+  });
+
+  final Color cardBg;
+  final Color border;
+  final Color titleColor;
+  final Color subColor;
+  final Widget leading;
+  final String title;
+  final String subtitle;
+  final Color trailingColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 42, child: Center(child: leading)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title.isEmpty ? '—' : title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: smallStyle18.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: verySmallStyle12.copyWith(
+                            color: subColor,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Icon(Icons.chevron_right_rounded, color: trailingColor),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1116,14 +1488,36 @@ class _TeacherCard extends StatelessWidget {
     final hasImage =
         teacher.pImage != null && teacher.pImage!.trim().isNotEmpty;
     final initials = _teacherInitials(teacher);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final card = compact
-        ? _buildCompactCard(name, hasImage, initials)
-        : _buildExpandedCard(name, hasImage, initials);
+        ? _buildCompactCard(context, name, hasImage, initials, isDark: isDark)
+        : _buildExpandedCard(context, name, hasImage, initials, isDark: isDark);
 
     return compact ? SizedBox(width: 152, child: card) : card;
   }
 
-  Widget _buildCompactCard(String name, bool hasImage, String initials) {
+  Widget _buildCompactCard(
+    BuildContext context,
+    String name,
+    bool hasImage,
+    String initials, {
+    required bool isDark,
+  }) {
+    final avatarBg = isDark
+        ? CbsColors.darkAvatarBg
+        : <Color>[
+            CbsColors.primaryBrown,
+            CbsColors.brandGold,
+            CbsColors.white.withValues(alpha: 0.3),
+          ][Random().nextInt(3)];
+    final cardBg = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.14);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subColor = isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(20),
@@ -1133,58 +1527,41 @@ class _TeacherCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [
-                CbsColors.white,
-                CbsColors.primaryBrown.withValues(alpha: 0.06),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: cardBg,
             border: Border.all(
-              color: CbsColors.primaryBrown.withValues(alpha: 0.14),
+              color: border,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            padding: const EdgeInsets.all(12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 78,
-                  height: 78,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        CbsColors.primaryBrown.withValues(alpha: 0.85),
-                        CbsColors.brandDeepBlue.withValues(alpha: 0.80),
-                      ],
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 34,
-                    backgroundColor:
-                        CbsColors.primaryBrown.withValues(alpha: 0.10),
-                    backgroundImage: hasImage ? NetworkImage(teacher.pImage!) : null,
-                    child: hasImage
-                        ? null
-                        : Text(
-                            initials,
-                            style: mediumStyle24Bold.copyWith(
-                              fontSize: 22,
-                              color: CbsColors.primaryBrown,
-                            ),
+                CircleAvatar(
+                  radius: 34,
+                  backgroundColor: avatarBg,
+                  backgroundImage:
+                      hasImage ? NetworkImage(teacher.pImage!) : null,
+                  child: hasImage
+                      ? null
+                      : Text(
+                          initials,
+                          style: mediumStyle24Bold.copyWith(
+                            fontSize: 22,
+                            color: isDark
+                                ? CbsColors.darkAvatarText
+                                : (avatarBg == CbsColors.primaryBrown
+                                    ? CbsColors.brandGold
+                                    : CbsColors.primaryBrown),
                           ),
-                  ),
+                        ),
                 ),
                 gapH10,
                 Text(
@@ -1194,7 +1571,7 @@ class _TeacherCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: mediumBodyStyle.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: CbsColors.primaryDark[800],
+                    color: titleColor,
                     fontSize: 14,
                   ),
                 ),
@@ -1205,7 +1582,7 @@ class _TeacherCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: smallBodyStyle.copyWith(
-                    color: CbsColors.hintColor,
+                    color: subColor,
                     fontSize: 11,
                   ),
                 ),
@@ -1213,19 +1590,24 @@ class _TeacherCard extends StatelessWidget {
                 CbsButton(
                   width: double.infinity,
                   height: 34,
-                  bgColor: CbsColors.primaryBrown,
+                  bgColor:
+                      isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
                   onPressed: onContact,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.chat_outlined,
-                          size: 14, color: CbsColors.white),
+                      Icon(
+                        Icons.chat_outlined,
+                        size: 14,
+                        color: isDark ? CbsColors.brownNight : CbsColors.white,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         contactLabel,
                         style: verySmallStyle10.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: CbsColors.white,
+                          color:
+                              isDark ? CbsColors.brownNight : CbsColors.white,
                         ),
                       ),
                     ],
@@ -1239,9 +1621,23 @@ class _TeacherCard extends StatelessWidget {
     );
   }
 
-  Widget _buildExpandedCard(String name, bool hasImage, String initials) {
+  Widget _buildExpandedCard(
+    BuildContext context,
+    String name,
+    bool hasImage,
+    String initials, {
+    required bool isDark,
+  }) {
+    final cardBg = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.10);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subColor = isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
+
     return Material(
-      color: CbsColors.white,
+      color: cardBg,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1250,22 +1646,27 @@ class _TeacherCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-                color: CbsColors.primaryBrown.withValues(alpha: 0.10)),
-            gradient: LinearGradient(
-              colors: [
-                CbsColors.white,
-                CbsColors.primaryBrown.withValues(alpha: 0.04),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+              color: border,
             ),
+            gradient: isDark
+                ? null
+                : LinearGradient(
+                    colors: [
+                      CbsColors.white,
+                      CbsColors.primaryBrown.withValues(alpha: 0.04),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundColor: CbsColors.primaryBrown.withValues(alpha: 0.10),
+                backgroundColor: isDark
+                    ? CbsColors.darkIconBg
+                    : CbsColors.primaryBrown.withValues(alpha: 0.10),
                 backgroundImage:
                     hasImage ? NetworkImage(teacher.pImage!) : null,
                 child: hasImage
@@ -1274,7 +1675,9 @@ class _TeacherCard extends StatelessWidget {
                         initials,
                         style: mediumStyle24Bold.copyWith(
                           fontSize: 18,
-                          color: CbsColors.primaryBrown,
+                          color: isDark
+                              ? CbsColors.brandGold
+                              : CbsColors.primaryBrown,
                         ),
                       ),
               ),
@@ -1289,7 +1692,7 @@ class _TeacherCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: smallStyle18.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: CbsColors.primaryDark[800],
+                        color: titleColor,
                         fontSize: 16,
                       ),
                     ),
@@ -1299,7 +1702,7 @@ class _TeacherCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: smallBodyStyle.copyWith(
-                        color: CbsColors.hintColor,
+                        color: subColor,
                         fontSize: 12,
                       ),
                     ),
@@ -1310,13 +1713,14 @@ class _TeacherCard extends StatelessWidget {
               CbsButton(
                 width: 92,
                 height: 34,
-                bgColor: CbsColors.primaryBrown,
+                bgColor:
+                    isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
                 onPressed: onContact,
                 child: Text(
                   contactLabel,
                   style: verySmallStyle10.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: CbsColors.white,
+                    color: isDark ? CbsColors.brownNight : CbsColors.white,
                   ),
                 ),
               ),
@@ -1339,8 +1743,7 @@ class _CourseDetailsPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final title = (course.title ?? '').trim();
     return Scaffold(
-      backgroundColor:
-          isDark ? CbsColors.darkSurface : CbsColors.backgroundColor,
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           title.isNotEmpty ? title : l10n.courseDefault,
@@ -1381,8 +1784,14 @@ class _TeacherDetailsPage extends StatelessWidget {
     final initials = _teacherInitials(teacher);
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subColor = isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+    final initialsColor = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
 
     return Scaffold(
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(name.isEmpty ? l10n.unnamedGroup : name),
       ),
@@ -1396,10 +1805,14 @@ class _TeacherDetailsPage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.22),
+                  color: isDark
+                      ? CbsColors.goldDeep.withValues(alpha: 0.55)
+                      : CbsColors.primaryBrown.withValues(alpha: 0.22),
                   width: 2,
                 ),
-                color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                color: isDark
+                    ? CbsColors.darkElevated
+                    : CbsColors.primaryBrown.withValues(alpha: 0.12),
               ),
               child: ClipOval(
                 child: hasImage
@@ -1412,7 +1825,7 @@ class _TeacherDetailsPage extends StatelessWidget {
                             initials,
                             style: largeStyle32Bold.copyWith(
                               fontSize: 34,
-                              color: CbsColors.primaryBrown,
+                              color: initialsColor,
                             ),
                           ),
                         ),
@@ -1422,7 +1835,7 @@ class _TeacherDetailsPage extends StatelessWidget {
                           initials,
                           style: largeStyle32Bold.copyWith(
                             fontSize: 34,
-                            color: CbsColors.primaryBrown,
+                            color: initialsColor,
                           ),
                         ),
                       ),
@@ -1433,33 +1846,33 @@ class _TeacherDetailsPage extends StatelessWidget {
           Text(
             name.isEmpty ? l10n.unnamedGroup : name,
             textAlign: TextAlign.center,
-            style: mediumStyle24Bold.copyWith(color: CbsColors.primaryDark[800]),
+            style: mediumStyle24Bold.copyWith(color: titleColor),
           ),
           const SizedBox(height: 6),
           if ((teacher.email ?? '').trim().isNotEmpty)
             Text(
               teacher.email!.trim(),
               textAlign: TextAlign.center,
-              style: smallStyle18.copyWith(color: CbsColors.hintColor, fontSize: 14),
+              style: smallStyle18.copyWith(color: subColor, fontSize: 14),
             ),
           if ((teacher.phone ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               teacher.phone!.trim(),
               textAlign: TextAlign.center,
-              style: smallStyle18.copyWith(color: CbsColors.hintColor, fontSize: 14),
+              style: smallStyle18.copyWith(color: subColor, fontSize: 14),
             ),
           ],
           const SizedBox(height: 20),
           CbsButton(
             width: double.infinity,
             height: 46,
-            bgColor: CbsColors.primaryBrown,
+            bgColor: isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
             onPressed: onContact,
             child: Text(
               l10n.contact,
               style: smallStyle18.copyWith(
-                color: CbsColors.white,
+                color: isDark ? CbsColors.brownNight : CbsColors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -1468,16 +1881,19 @@ class _TeacherDetailsPage extends StatelessWidget {
           _TeacherInfoSection(
             title: 'Vocation',
             value: (teacher.vocation ?? '').trim(),
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _TeacherInfoSection(
             title: 'Testimony',
             value: (teacher.testimony ?? '').trim(),
+            isDark: isDark,
           ),
           const SizedBox(height: 12),
           _TeacherInfoSection(
             title: 'Journey (Parcours)',
             value: (teacher.journey ?? '').trim(),
+            isDark: isDark,
           ),
         ],
       ),
@@ -1486,30 +1902,44 @@ class _TeacherDetailsPage extends StatelessWidget {
 }
 
 class _TeacherInfoSection extends StatelessWidget {
-  const _TeacherInfoSection({required this.title, required this.value});
+  const _TeacherInfoSection({
+    required this.title,
+    required this.value,
+    required this.isDark,
+  });
 
   final String title;
   final String value;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     final v = value.trim();
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final bodyColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.primaryDark[700];
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: CbsColors.white,
+        color: isDark ? CbsColors.darkSurface : CbsColors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: CbsColors.primaryBrown.withValues(alpha: 0.16),
+          color: isDark
+              ? CbsColors.darkBorder.withValues(alpha: 0.9)
+              : CbsColors.primaryBrown.withValues(alpha: 0.16),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1518,14 +1948,14 @@ class _TeacherInfoSection extends StatelessWidget {
             title,
             style: smallStyle18.copyWith(
               fontWeight: FontWeight.w700,
-              color: CbsColors.primaryDark[800],
+              color: titleColor,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             v.isEmpty ? '—' : v,
             style: verySmallStyle14.copyWith(
-              color: CbsColors.primaryDark[700],
+              color: bodyColor,
               height: 1.35,
             ),
           ),

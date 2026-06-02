@@ -126,7 +126,21 @@ class _AssignmentPageState extends State<AssignmentPage> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? CbsColors.darkSurface : Colors.white;
+    final elevated = isDark
+        ? CbsColors.darkElevated
+        : CbsColors.primaryBrown.withValues(alpha: 0.08);
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.18);
+    final titleColor =
+        isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final bodyColor =
+        isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
+    final accent = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
     return Scaffold(
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
       appBar: AppBar(
         title: Text(
           _details?['assignment']?['title']?.toString() ??
@@ -140,7 +154,11 @@ class _AssignmentPageState extends State<AssignmentPage> {
               Future.wait<Map<String, dynamic>?>([_detailsFuture, _submissionFuture]),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: CircularProgressIndicator(
+                  color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                ),
+              );
             }
 
             final results = snapshot.data;
@@ -148,7 +166,12 @@ class _AssignmentPageState extends State<AssignmentPage> {
             final submission = results?[1];
 
             if (details == null) {
-              return Center(child: Text(l10n.assignmentNotFound));
+              return Center(
+                child: Text(
+                  l10n.assignmentNotFound,
+                  style: smallStyle18.copyWith(color: bodyColor),
+                ),
+              );
             }
 
             _details = details;
@@ -179,7 +202,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       l10n.assignmentPdfLabel,
                       style: smallStyle18.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: CbsColors.primaryBrown,
+                        color: titleColor,
                       ),
                     ),
                   ),
@@ -187,19 +210,20 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     height: 48,
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.25),
+                        color: border,
                       ),
                       borderRadius: BorderRadius.circular(12),
+                      color: isDark ? CbsColors.darkSurface : null,
                     ),
                     child: TextButton.icon(
                       onPressed: () {
                         openRemoteFile(pdfUrl);
                       },
-                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      icon: Icon(Icons.picture_as_pdf_outlined, color: accent),
                       label: Text(
                         l10n.assignmentOpenPdf,
                         style: smallStyle18.copyWith(
-                          color: CbsColors.primaryBrown,
+                          color: accent,
                         ),
                       ),
                     ),
@@ -210,7 +234,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 Text(
                   assignment['description']?.toString() ?? '',
                   style: smallStyle18.copyWith(
-                    color: CbsColors.hintColor,
+                    color: bodyColor,
                     height: 1.4,
                   ),
                 ),
@@ -219,10 +243,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: CbsColors.primaryBrown.withValues(alpha: 0.08),
+                      color: elevated,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                        color: border,
                       ),
                     ),
                     child: Text(
@@ -230,7 +254,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           ? l10n.assignmentSubmissionSuspended
                           : l10n.assignmentSubmissionDowngraded,
                       style: smallStyle18.copyWith(
-                        color: CbsColors.primaryDark[800],
+                        color: titleColor,
                         height: 1.35,
                       ),
                     ),
@@ -258,10 +282,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       margin: const EdgeInsets.only(bottom: 18),
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: surface,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                          color: border,
                         ),
                       ),
                       child: Column(
@@ -271,7 +295,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             prompt,
                             style: smallStyle18.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: CbsColors.primaryDark[800],
+                              color: titleColor,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -283,7 +307,15 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             return RadioListTile<String>(
                               value: optionId,
                               groupValue: groupVal,
-                              title: Text(optionText),
+                              title: Text(
+                                optionText,
+                                style: smallStyle18.copyWith(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? CbsColors.darkTextPrimary
+                                      : CbsColors.primaryDark[800],
+                                ),
+                              ),
                               dense: true,
                               onChanged: submission != null || !canSubmitAssignments
                                   ? null
@@ -301,7 +333,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               l10n.assignmentMcqPoints('${mcqScore ?? 0}'),
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: CbsColors.primaryBrown,
+                                color: accent,
                               ),
                             ),
                           ],
@@ -322,10 +354,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     margin: const EdgeInsets.only(bottom: 18),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: CbsColors.primaryBrown.withValues(alpha: 0.18),
+                        color: border,
                       ),
                     ),
                     child: Column(
@@ -335,7 +367,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                           prompt,
                           style: smallStyle18.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: CbsColors.primaryDark[800],
+                            color: titleColor,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -352,7 +384,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                         )
                                       : l10n.assignmentNoPdfSelectedOptional,
                                   style: smallStyle18.copyWith(
-                                    color: CbsColors.hintColor,
+                                    color: bodyColor,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -379,7 +411,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             Text(
                               l10n.assignmentNoPdfSubmitted,
                               style: smallStyle18.copyWith(
-                                color: CbsColors.hintColor,
+                                color: bodyColor,
                                 fontSize: 13,
                               ),
                             ),
@@ -392,7 +424,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               ),
                               style: smallStyle18.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: CbsColors.primaryBrown,
+                                color: accent,
                               ),
                             ),
                             if (teacherFeedback != null && teacherFeedback.isNotEmpty) ...[
@@ -400,7 +432,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               Text(
                                 l10n.assignmentFeedbackPrefix(teacherFeedback),
                                 style: smallStyle18.copyWith(
-                                  color: CbsColors.primaryDark[800],
+                                  color: titleColor,
                                   fontSize: 13,
                                 ),
                               ),
@@ -409,7 +441,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                             Text(
                               l10n.assignmentWaitingReview,
                               style: smallStyle18.copyWith(
-                                color: CbsColors.hintColor,
+                                color: bodyColor,
                                 fontSize: 13,
                               ),
                             ),
@@ -426,7 +458,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     'MCQ score total: ${submission['mcq_score_total'] ?? 0}',
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: CbsColors.primaryBrown,
+                      color: accent,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -436,7 +468,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     ),
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: CbsColors.primaryDark[800],
+                      color: titleColor,
                     ),
                   ),
                 ],
@@ -449,8 +481,10 @@ class _AssignmentPageState extends State<AssignmentPage> {
                       onPressed:
                           _submitting || !canSubmitAssignments ? null : _submit,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: CbsColors.primaryBrown,
-                        foregroundColor: Colors.white,
+                        backgroundColor:
+                            isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                        foregroundColor:
+                            isDark ? CbsColors.brownNight : Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),

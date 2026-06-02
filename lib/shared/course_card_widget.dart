@@ -1,5 +1,4 @@
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
-import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -30,9 +29,19 @@ class CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n =
-        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final hasLevel = _levelLabel.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bg = isDark ? CbsColors.darkSurface : CbsColors.white;
+    final border = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.primaryBrown.withValues(alpha: 0.2);
+    final iconBg =
+        isDark ? CbsColors.darkElevated : CbsColors.primaryBrown.withValues(alpha: 0.12);
+    final iconColor = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final titleColor = isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
+    final subtitleColor = isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
+    final chevronColor = isDark ? CbsColors.brandGold.withValues(alpha: 0.85) : CbsColors.hintColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -43,15 +52,15 @@ class CourseCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Container(
           decoration: BoxDecoration(
-            color: CbsColors.white,
+            color: bg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: CbsColors.primaryBrown.withValues(alpha: 0.2),
+              color: border,
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: Colors.black.withValues(alpha: isDark ? 0.16 : 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -67,12 +76,12 @@ class CourseCard extends StatelessWidget {
                 height: 52,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                  color: iconBg,
                 ),
                 child: Icon(
                   Icons.menu_book_rounded,
                   size: 26,
-                  color: CbsColors.primaryBrown,
+                  color: iconColor,
                 ),
               ),
               gapW12,
@@ -87,7 +96,7 @@ class CourseCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: smallStyle18.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: CbsColors.primaryDark[800],
+                        color: titleColor,
                         fontSize: 15,
                       ),
                     ),
@@ -98,7 +107,7 @@ class CourseCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: verySmallStyle12.copyWith(
-                          color: CbsColors.hintColor,
+                          color: subtitleColor,
                           fontSize: 12,
                         ),
                       ),
@@ -113,14 +122,24 @@ class CourseCard extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: CbsColors.primaryBrown.withValues(alpha: 0.12),
+                              color: isDark
+                                  ? CbsColors.darkElevated
+                                  : CbsColors.primaryBrown.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
+                              border: isDark
+                                  ? Border.all(
+                                      color: CbsColors.goldDeep
+                                          .withValues(alpha: 0.7),
+                                    )
+                                  : null,
                             ),
                             child: Text(
                               _levelLabel,
                               style: verySmallStyle10.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: CbsColors.primaryBrown,
+                                color: isDark
+                                    ? CbsColors.brandGold
+                                    : CbsColors.primaryBrown,
                               ),
                             ),
                           ),
@@ -132,7 +151,7 @@ class CourseCard extends StatelessWidget {
               Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
-                color: CbsColors.hintColor,
+                color: chevronColor,
               ),
             ],
           ),
