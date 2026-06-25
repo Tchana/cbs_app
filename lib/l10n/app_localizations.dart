@@ -106,6 +106,8 @@ class AppLocalizations {
       'unnamed_group': 'Unnamed',
       'loading': 'Loading...',
       'saving_book_offline': 'Saving book on your device…',
+      'saving_lesson_offline': 'Saving lesson on your device…',
+      'book_download_progress': '{percent}%',
       // Dashboard / Home
       'dashboard_greeting': 'Hello',
       'dashboard_subtitle': 'Continue your studies',
@@ -272,6 +274,29 @@ class AppLocalizations {
       'upload_pdf': 'Upload PDF',
       'open_submitted_pdf': 'Open submitted PDF',
       'submit': 'Submit',
+      'teacher_vocation': 'Vocation',
+      'teacher_testimony': 'Testimony',
+      'teacher_journey': 'Journey',
+      'default_student_name': 'CBS Student',
+      'initials_not_available': 'NA',
+      'initials_unknown': '?',
+      'category_commentary': 'Commentaries',
+      'category_concordance': 'Concordance',
+      'category_other': 'Other',
+      'page_counter': '{current} / {total}',
+      'viewer_loading': 'Loading…',
+      'viewer_failed_load_pdf': 'Failed to load PDF: {details}',
+      'viewer_failed_load_document': 'Failed to load document: {details}',
+      'viewer_pdfjs_failed': 'PDF viewer failed to load',
+      'subscription_status_active': 'Active',
+      'subscription_status_expired': 'Expired',
+      'subscription_status_none': 'None',
+      'subscription_status_pending': 'Pending',
+      'subscription_status_cancelled': 'Cancelled',
+      'subscription_status_suspended': 'Suspended',
+      'language_badge_en': 'EN',
+      'language_badge_fr': 'FR',
+      'course_level_prefix': 'Level {level}',
     },
     'fr': {
       'settings': 'Paramètres',
@@ -366,6 +391,8 @@ class AppLocalizations {
       'unnamed_group': 'Sans nom',
       'loading': 'Chargement...',
       'saving_book_offline': 'Enregistrement du livre sur votre appareil…',
+      'saving_lesson_offline': 'Enregistrement de la leçon sur votre appareil…',
+      'book_download_progress': '{percent} %',
       // Dashboard / Home
       'dashboard_greeting': 'Bonjour',
       'dashboard_subtitle': 'Poursuivez vos études',
@@ -536,6 +563,29 @@ class AppLocalizations {
       'upload_pdf': 'Téléverser un PDF',
       'open_submitted_pdf': 'Ouvrir le PDF soumis',
       'submit': 'Soumettre',
+      'teacher_vocation': 'Vocation',
+      'teacher_testimony': 'Témoignage',
+      'teacher_journey': 'Parcours',
+      'default_student_name': 'Étudiant CBS',
+      'initials_not_available': 'ND',
+      'initials_unknown': '?',
+      'category_commentary': 'Commentaires',
+      'category_concordance': 'Concordance',
+      'category_other': 'Autre',
+      'page_counter': '{current} / {total}',
+      'viewer_loading': 'Chargement…',
+      'viewer_failed_load_pdf': 'Échec du chargement du PDF : {details}',
+      'viewer_failed_load_document': 'Échec du chargement du document : {details}',
+      'viewer_pdfjs_failed': 'Échec du chargement du lecteur PDF',
+      'subscription_status_active': 'Actif',
+      'subscription_status_expired': 'Expiré',
+      'subscription_status_none': 'Aucun',
+      'subscription_status_pending': 'En attente',
+      'subscription_status_cancelled': 'Annulé',
+      'subscription_status_suspended': 'Suspendu',
+      'language_badge_en': 'EN',
+      'language_badge_fr': 'FR',
+      'course_level_prefix': 'Niveau {level}',
     },
   };
 
@@ -643,6 +693,9 @@ class AppLocalizations {
   String get unnamedGroup => translate('unnamed_group');
   String get loading => translate('loading');
   String get savingBookOffline => translate('saving_book_offline');
+  String get savingLessonOffline => translate('saving_lesson_offline');
+  String bookDownloadProgress(int percent) =>
+      translateWithParams('book_download_progress', {'percent': '$percent'});
   // Dashboard
   String get dashboardGreeting => translate('dashboard_greeting');
   String get dashboardSubtitle => translate('dashboard_subtitle');
@@ -834,6 +887,102 @@ class AppLocalizations {
   String get statusLabel => translate('status_label');
   String get expiryLabel => translate('expiry_label');
   String get daysRemainingLabel => translate('days_remaining_label');
+  String get teacherVocation => translate('teacher_vocation');
+  String get teacherTestimony => translate('teacher_testimony');
+  String get teacherJourney => translate('teacher_journey');
+  String get defaultStudentName => translate('default_student_name');
+  String get initialsNotAvailable => translate('initials_not_available');
+  String get initialsUnknown => translate('initials_unknown');
+  String get categoryCommentary => translate('category_commentary');
+  String get categoryConcordance => translate('category_concordance');
+  String get categoryOther => translate('category_other');
+  String pageCounter(int current, int total) => translateWithParams(
+        'page_counter',
+        {'current': '$current', 'total': '$total'},
+      );
+  String get viewerLoading => translate('viewer_loading');
+  String viewerFailedLoadPdf(String details) => translateWithParams(
+        'viewer_failed_load_pdf',
+        {'details': details},
+      );
+  String viewerFailedLoadDocument(String details) => translateWithParams(
+        'viewer_failed_load_document',
+        {'details': details},
+      );
+  String get viewerPdfJsFailed => translate('viewer_pdfjs_failed');
+  String get languageBadgeEn => translate('language_badge_en');
+  String get languageBadgeFr => translate('language_badge_fr');
+  String courseLevelPrefix(String level) =>
+      translateWithParams('course_level_prefix', {'level': level});
+
+  String bookCategoryLabel(String categoryKey) {
+    switch (categoryKey) {
+      case 'bible':
+        return tabBibles;
+      case 'commentary':
+        return categoryCommentary;
+      case 'dictionnaire':
+        return tabDictionaries;
+      case 'concordance':
+        return categoryConcordance;
+      case 'other':
+        return categoryOther;
+      default:
+        return categoryKey;
+    }
+  }
+
+  String? bookLanguageBadge(String? language) {
+    final raw = (language ?? '').trim().toLowerCase();
+    if (raw.isEmpty) return null;
+    if (raw == 'en' ||
+        raw == 'english' ||
+        raw == 'anglais' ||
+        raw.startsWith('en')) {
+      return languageBadgeEn;
+    }
+    if (raw == 'fr' ||
+        raw == 'french' ||
+        raw == 'français' ||
+        raw == 'francais' ||
+        raw.startsWith('fr')) {
+      return languageBadgeFr;
+    }
+    return null;
+  }
+
+  String subscriptionStatusLabel(String rawStatus) {
+    final status = rawStatus.trim().toLowerCase();
+    switch (status) {
+      case 'active':
+        return subscriptionStatusActive;
+      case 'expired':
+        return subscriptionStatusExpired;
+      case 'pending':
+        return subscriptionStatusPending;
+      case 'cancelled':
+      case 'canceled':
+        return subscriptionStatusCancelled;
+      case 'suspended':
+        return subscriptionStatusSuspended;
+      case 'none':
+      case '':
+        return subscriptionStatusNone;
+      default:
+        return rawStatus.isEmpty ? dash : rawStatus;
+    }
+  }
+
+  String get subscriptionStatusActive => translate('subscription_status_active');
+  String get subscriptionStatusExpired =>
+      translate('subscription_status_expired');
+  String get subscriptionStatusNone => translate('subscription_status_none');
+  String get subscriptionStatusPending =>
+      translate('subscription_status_pending');
+  String get subscriptionStatusCancelled =>
+      translate('subscription_status_cancelled');
+  String get subscriptionStatusSuspended =>
+      translate('subscription_status_suspended');
 }
 
 class _AppLocalizationsDelegate

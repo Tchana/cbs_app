@@ -461,7 +461,7 @@ class _LibraryPageState extends State<LibraryPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              title.isEmpty ? '—' : title,
+                              title.isEmpty ? l10n.dash : title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: smallStyle18.copyWith(
@@ -499,7 +499,9 @@ class _LibraryPageState extends State<LibraryPage>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${(progress * 100).round()}%',
+                              l10n.bookDownloadProgress(
+                                (progress * 100).round(),
+                              ),
                               style: smallStyle18.copyWith(
                                 color: isDark
                                     ? CbsColors.brandGold
@@ -588,7 +590,7 @@ class _LibraryPageState extends State<LibraryPage>
   }
 
   String _categoryLabel(BookType category, AppLocalizations l10n) {
-    return category.name;
+    return l10n.bookCategoryLabel(category.name);
   }
 
   SupabaseService get apiService => widget.apiService;

@@ -25,10 +25,13 @@ class LessonPage extends StatefulWidget {
     this.onBack,
   });
 
-  static String _teacherDisplayName(RegisterData? teacher) {
-    if (teacher == null) return '—';
+  static String _teacherDisplayName(
+    RegisterData? teacher,
+    AppLocalizations l10n,
+  ) {
+    if (teacher == null) return l10n.dash;
     final name = '${teacher.firstName ?? ''} ${teacher.lastName ?? ''}'.trim();
-    return name.isEmpty ? '—' : name;
+    return name.isEmpty ? l10n.dash : name;
   }
 
   @override
@@ -120,8 +123,10 @@ class _LessonPageState extends State<LessonPage> {
                     _InfoChip(
                       icon: Icons.person_outline_rounded,
                       label: l10n.teacherLabel,
-                      value:
-                          LessonPage._teacherDisplayName(_courseData?.teacher),
+                      value: LessonPage._teacherDisplayName(
+                        _courseData?.teacher,
+                        l10n,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     _InfoChip(
@@ -186,7 +191,11 @@ class _LessonPageState extends State<LessonPage> {
                         }
                         final url = lesson.file?.trim() ?? '';
                         if (url.isNotEmpty) {
-                          openRemoteFile(url, title: lesson.title);
+                          openRemoteFile(
+                            url,
+                            title: lesson.title,
+                            lessonId: lesson.id,
+                          );
                         }
                       },
                       isLockedByAccess: !canAccessLessons,

@@ -4,10 +4,14 @@
 String buildDocxViewerHtml({
   required String docxBase64,
   int startSegment = 1,
+  String loadingLabel = 'Loading…',
+  String failedToLoadDocumentPrefix = 'Failed to load document: ',
 }) {
   final segment = startSegment < 1 ? 1 : (startSegment > 100 ? 100 : startSegment);
   // Base64 alphabet only — safe to embed in a JS string literal.
   final safeB64 = docxBase64.replaceAll("'", r"\'").replaceAll('\n', '');
+  final safeLoading = _escapeJsString(loadingLabel);
+  final safeFailedPrefix = _escapeJsString(failedToLoadDocumentPrefix);
 
   return '''
 <!DOCTYPE html>
@@ -42,8 +46,10 @@ String buildDocxViewerHtml({
       color: #1a1a1a;
       border-radius: 4px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-      line-height: 1.55;
-      font-size: 16px;
+      line-height: 1.6;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
     #content img { max-width: 100%; height: auto; }
     #content table { max-width: 100%; border-collapse: collapse; }
@@ -60,7 +66,7 @@ String buildDocxViewerHtml({
 </head>
 <body>
   <div id="viewer"><div id="content"></div></div>
-  <div id="status">Loading…</div>
+  <div id="status">$safeLoading</div>
   <script>
     var pageCount = 100;
     var pageNum = $segment;
@@ -140,10 +146,18 @@ String buildDocxViewerHtml({
         });
       })
       .catch(function(err) {
-        document.getElementById('status').textContent = 'Failed to load document: ' + err;
+        document.getElementById('status').textContent = '$safeFailedPrefix' + err;
       });
   </script>
 </body>
 </html>
 ''';
+}
+
+String _escapeJsString(String value) {
+  return value
+      .replaceAll('\\', r'\\')
+      .replaceAll("'", r"\'")
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\r');
 }

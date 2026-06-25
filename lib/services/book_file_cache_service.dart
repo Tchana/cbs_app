@@ -9,6 +9,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Distinguishes on-device cache folders (books vs course lessons).
+enum RemoteFileCacheKind {
+  book,
+  lesson,
+}
+
 /// Resolved local or remote path for opening a library book in the viewer.
 class CachedBookView {
   const CachedBookView({
@@ -30,7 +36,9 @@ class BookFileCacheService {
   BookFileCacheService({Dio? dio}) : _dio = dio ?? Dio();
 
   final Dio _dio;
-  static const _metaPrefix = 'book_file_cache_meta_';
+
+  static String _metaPrefix(RemoteFileCacheKind kind) =>
+      '${kind.name}_file_cache_meta_';
 
   /// Stable cache invalidation key (ignores signed-URL query tokens).
   static String stableRemoteKey(String remoteUrl) {
@@ -45,31 +53,42 @@ class BookFileCacheService {
     return uri.path.isNotEmpty ? uri.path : remoteUrl.trim();
   }
 
-  Future<bool> isCached(String bookId, String remoteUrl) async {
-    final file = await _localFile(bookId, remoteUrl);
+  Future<bool> isCached(
+    String cacheId,
+    String remoteUrl, {
+    RemoteFileCacheKind kind = RemoteFileCacheKind.book,
+  }) async {
+    final file = await _localFile(cacheId, remoteUrl, kind: kind);
     if (file == null || !await file.exists()) return false;
-    final meta = await _readMeta(bookId);
+    final meta = await _readMeta(cacheId, kind: kind);
     if (meta?['remoteKey'] != stableRemoteKey(remoteUrl)) return false;
     if (_isPdfRemote(remoteUrl) && !await _fileLooksLikePdf(file)) return false;
     return true;
   }
 
-  Future<void> invalidate(String bookId) async {
-    final id = bookId.trim();
+  Future<void> invalidate(
+    String cacheId, {
+    RemoteFileCacheKind kind = RemoteFileCacheKind.book,
+  }) async {
+    final id = cacheId.trim();
     if (id.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_metaKey(id));
+    await prefs.remove(_metaKey(id, kind: kind));
     try {
-      final dir = await _bookDirectory(id);
+      final dir = await _cacheDirectory(id, kind: kind);
       if (await dir.exists()) {
         await dir.delete(recursive: true);
       }
     } catch (_) {}
   }
 
-  Future<File?> getCachedFile(String bookId, String remoteUrl) async {
-    if (!await isCached(bookId, remoteUrl)) return null;
-    return _localFile(bookId, remoteUrl);
+  Future<File?> getCachedFile(
+    String cacheId,
+    String remoteUrl, {
+    RemoteFileCacheKind kind = RemoteFileCacheKind.book,
+  }) async {
+    if (!await isCached(cacheId, remoteUrl, kind: kind)) return null;
+    return _localFile(cacheId, remoteUrl, kind: kind);
   }
 
   bool _isPdfRemote(String remoteUrl) =>
@@ -87,6 +106,8 @@ class BookFileCacheService {
   Future<CachedBookView> getOrDownload({
     required String bookId,
     required String remoteUrl,
+    RemoteFileCacheKind kind = RemoteFileCacheKind.book,
+    void Function(int received, int total)? onReceiveProgress,
   }) async {
     final id = bookId.trim();
     final remote = remoteUrl.trim();
@@ -96,28 +117,30 @@ class BookFileCacheService {
     }
 
     final remoteKey = stableRemoteKey(remote);
-    final existing = await _localFile(id, remote);
+    final existing = await _localFile(id, remote, kind: kind);
     if (existing != null &&
         await existing.exists() &&
-        (await _readMeta(id))?['remoteKey'] == remoteKey) {
+        (await _readMeta(id, kind: kind))?['remoteKey'] == remoteKey) {
       if (_isPdfRemote(remote) && !await _fileLooksLikePdf(existing)) {
-        await invalidate(id);
+        await invalidate(id, kind: kind);
       } else {
         return _viewForFile(existing, remote);
       }
     }
 
     final signed = await resolveStorageViewUrl(remote);
-    final dir = await _bookDirectory(id);
+    final dir = await _cacheDirectory(id, kind: kind);
     await dir.create(recursive: true);
 
     final ext = extensionFromFileName(fileNameFromUrl(remote));
-    final fileName = ext.isEmpty ? 'book.bin' : 'book.$ext';
+    final baseName = kind == RemoteFileCacheKind.lesson ? 'lesson' : 'book';
+    final fileName = ext.isEmpty ? '$baseName.bin' : '$baseName.$ext';
     final outFile = File('${dir.path}/$fileName');
 
     await _dio.download(
       signed,
       outFile.path,
+      onReceiveProgress: onReceiveProgress,
       options: Options(
         receiveTimeout: const Duration(minutes: 5),
         followRedirects: true,
@@ -138,7 +161,7 @@ class BookFileCacheService {
       'remoteKey': remoteKey,
       'path': outFile.path,
       'cachedAtMs': DateTime.now().millisecondsSinceEpoch,
-    });
+    }, kind: kind);
 
     return _viewForFile(outFile, remote);
   }
@@ -164,7 +187,10 @@ class BookFileCacheService {
     );
   }
 
-  Future<Directory> _bookDirectory(String bookId) async {
+  Future<Directory> _cacheDirectory(
+    String cacheId, {
+    required RemoteFileCacheKind kind,
+  }) async {
     final root = await getApplicationDocumentsDirectory();
     var userPart = 'guest';
     try {
@@ -172,11 +198,15 @@ class BookFileCacheService {
           (Supabase.instance.client.auth.currentUser?.id ?? '').trim();
       if (userId.isNotEmpty) userPart = userId;
     } catch (_) {}
-    return Directory('${root.path}/book_cache/$userPart/$bookId');
+    return Directory('${root.path}/${kind.name}_cache/$userPart/$cacheId');
   }
 
-  Future<File?> _localFile(String bookId, String remoteUrl) async {
-    final meta = await _readMeta(bookId);
+  Future<File?> _localFile(
+    String cacheId,
+    String remoteUrl, {
+    required RemoteFileCacheKind kind,
+  }) async {
+    final meta = await _readMeta(cacheId, kind: kind);
     if (meta != null) {
       final path = (meta['path'] as String?)?.trim();
       if (path != null && path.isNotEmpty) {
@@ -184,11 +214,12 @@ class BookFileCacheService {
       }
     }
 
-    final dir = await _bookDirectory(bookId);
+    final dir = await _cacheDirectory(cacheId, kind: kind);
     if (!await dir.exists()) return null;
 
     final ext = extensionFromFileName(fileNameFromUrl(remoteUrl));
-    final candidate = File('${dir.path}/book.$ext');
+    final baseName = kind == RemoteFileCacheKind.lesson ? 'lesson' : 'book';
+    final candidate = File('${dir.path}/$baseName.$ext');
     if (await candidate.exists()) return candidate;
 
     final entries =
@@ -196,11 +227,15 @@ class BookFileCacheService {
     return entries.isEmpty ? null : entries.first;
   }
 
-  String _metaKey(String bookId) => '$_metaPrefix$bookId';
+  String _metaKey(String cacheId, {required RemoteFileCacheKind kind}) =>
+      '${_metaPrefix(kind)}$cacheId';
 
-  Future<Map<String, dynamic>?> _readMeta(String bookId) async {
+  Future<Map<String, dynamic>?> _readMeta(
+    String cacheId, {
+    required RemoteFileCacheKind kind,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_metaKey(bookId));
+    final raw = prefs.getString(_metaKey(cacheId, kind: kind));
     if (raw == null || raw.isEmpty) return null;
     try {
       final decoded = jsonDecode(raw);
@@ -210,8 +245,12 @@ class BookFileCacheService {
     return null;
   }
 
-  Future<void> _writeMeta(String bookId, Map<String, dynamic> meta) async {
+  Future<void> _writeMeta(
+    String cacheId,
+    Map<String, dynamic> meta, {
+    required RemoteFileCacheKind kind,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_metaKey(bookId), jsonEncode(meta));
+    await prefs.setString(_metaKey(cacheId, kind: kind), jsonEncode(meta));
   }
 }

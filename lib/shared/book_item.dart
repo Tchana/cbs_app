@@ -5,24 +5,8 @@ import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 
 /// Normalizes book language from API/backoffice to a short EN / FR label.
-String? bookLanguageBadgeLabel(String? language) {
-  final raw = (language ?? '').trim().toLowerCase();
-  if (raw.isEmpty) return null;
-  if (raw == 'en' ||
-      raw == 'english' ||
-      raw == 'anglais' ||
-      raw.startsWith('en')) {
-    return 'EN';
-  }
-  if (raw == 'fr' ||
-      raw == 'french' ||
-      raw == 'français' ||
-      raw == 'francais' ||
-      raw.startsWith('fr')) {
-    return 'FR';
-  }
-  return null;
-}
+String? bookLanguageBadgeLabel(String? language, AppLocalizations l10n) =>
+    l10n.bookLanguageBadge(language);
 
 class BookItem extends StatelessWidget {
   final LibraryData book;
@@ -54,7 +38,7 @@ class BookItem extends StatelessWidget {
         isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
     final subtitleColor =
         isDark ? CbsColors.darkTextMetadata : CbsColors.hintColor;
-    final languageLabel = bookLanguageBadgeLabel(book.language);
+    final languageLabel = bookLanguageBadgeLabel(book.language, l10n);
 
     final radius = compact ? 10.0 : 14.0;
     final coverRadius = compact ? 8.0 : 10.0;
@@ -142,7 +126,7 @@ class BookItem extends StatelessWidget {
                 ),
               SizedBox(height: titleGap),
               Text(
-                title.isEmpty ? '—' : title,
+                title.isEmpty ? l10n.dash : title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: smallStyle18.copyWith(

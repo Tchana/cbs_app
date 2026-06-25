@@ -66,8 +66,10 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
       });
     } catch (e) {
       if (!mounted) return;
+      final l10n =
+          AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
       setState(() {
-        _error = e.toString();
+        _error = l10n.unknownError;
         _loading = false;
       });
     }
@@ -148,7 +150,7 @@ class _SubscribeBottomSheetState extends State<_SubscribeBottomSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.toString());
+      setState(() => _error = l10n.unknownError);
     } finally {
       if (mounted) setState(() => _processing = false);
     }

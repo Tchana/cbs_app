@@ -13,8 +13,10 @@ import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/book_reading_progress_service.dart';
 import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/shared/cached_remote_image.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
+import 'package:center_for_biblical_studies/shared/rich_text_content.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
@@ -71,7 +73,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  String _studentDisplayName() {
+  String _studentDisplayName(AppLocalizations l10n) {
     final last = (_profileLastName ?? '').trim();
     if (last.isNotEmpty) return last;
     try {
@@ -86,7 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
       final email = user?.email?.trim();
       if (email != null && email.isNotEmpty) return email;
     } catch (_) {}
-    return 'CBS Student';
+    return l10n.defaultStudentName;
   }
 
   Future<void> _onOutstandingBalanceTap(AppLocalizations l10n) async {
@@ -123,7 +125,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     final message = l10n.paymentWhatsAppMessage(
-      name: _studentDisplayName(),
+      name: _studentDisplayName(l10n),
       amount: amountFormatted,
     );
     final opened = await openWhatsApp(phone, message: message);
@@ -1099,7 +1101,7 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                 final name = '${t.firstName ?? ''} ${t.lastName ?? ''}'.trim();
                 final hasImage =
                     t.pImage != null && t.pImage!.trim().isNotEmpty;
-                final initials = _teacherInitials(t);
+                final initials = _teacherInitials(t, l10n);
                 return _SearchResultTile(
                   cardBg: cardBg,
                   border: border,
@@ -1110,7 +1112,7 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                     backgroundColor: isDark
                         ? CbsColors.darkElevated
                         : CbsColors.primaryBrown.withValues(alpha: 0.12),
-                    backgroundImage: hasImage ? NetworkImage(t.pImage!) : null,
+                    backgroundImage: cachedRemoteImageProvider(t.pImage),
                     child: hasImage
                         ? null
                         : Text(
@@ -1252,6 +1254,8 @@ class _SearchResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -1276,7 +1280,7 @@ class _SearchResultTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        title.isEmpty ? '—' : title,
+                        title.isEmpty ? l10n.dash : title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: smallStyle18.copyWith(
@@ -1484,10 +1488,12 @@ class _TeacherCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final name = '${teacher.firstName ?? ''} ${teacher.lastName ?? ''}'.trim();
     final hasImage =
         teacher.pImage != null && teacher.pImage!.trim().isNotEmpty;
-    final initials = _teacherInitials(teacher);
+    final initials = _teacherInitials(teacher, l10n);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final card = compact
         ? _buildCompactCard(context, name, hasImage, initials, isDark: isDark)
@@ -1503,6 +1509,8 @@ class _TeacherCard extends StatelessWidget {
     String initials, {
     required bool isDark,
   }) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final avatarBg = isDark
         ? CbsColors.darkAvatarBg
         : <Color>[
@@ -1547,8 +1555,7 @@ class _TeacherCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 34,
                   backgroundColor: avatarBg,
-                  backgroundImage:
-                      hasImage ? NetworkImage(teacher.pImage!) : null,
+                  backgroundImage: cachedRemoteImageProvider(teacher.pImage),
                   child: hasImage
                       ? null
                       : Text(
@@ -1565,7 +1572,7 @@ class _TeacherCard extends StatelessWidget {
                 ),
                 gapH10,
                 Text(
-                  name.isEmpty ? '—' : name,
+                  name.isEmpty ? l10n.dash : name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -1628,6 +1635,8 @@ class _TeacherCard extends StatelessWidget {
     String initials, {
     required bool isDark,
   }) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final cardBg = isDark ? CbsColors.darkSurface : CbsColors.white;
     final border = isDark
         ? CbsColors.darkBorder.withValues(alpha: 0.9)
@@ -1668,7 +1677,7 @@ class _TeacherCard extends StatelessWidget {
                     ? CbsColors.darkIconBg
                     : CbsColors.primaryBrown.withValues(alpha: 0.10),
                 backgroundImage:
-                    hasImage ? NetworkImage(teacher.pImage!) : null,
+                    cachedRemoteImageProvider(teacher.pImage),
                 child: hasImage
                     ? null
                     : Text(
@@ -1687,7 +1696,7 @@ class _TeacherCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isEmpty ? '—' : name,
+                      name.isEmpty ? l10n.dash : name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: smallStyle18.copyWith(
@@ -1778,12 +1787,12 @@ class _TeacherDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final name = '${teacher.firstName ?? ''} ${teacher.lastName ?? ''}'.trim();
     final hasImage =
         teacher.pImage != null && teacher.pImage!.trim().isNotEmpty;
-    final initials = _teacherInitials(teacher);
-    final l10n =
-        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final initials = _teacherInitials(teacher, l10n);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor =
         isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
@@ -1816,11 +1825,21 @@ class _TeacherDetailsPage extends StatelessWidget {
               ),
               child: ClipOval(
                 child: hasImage
-                    ? Image.network(
-                        teacher.pImage!.trim(),
+                    ? CachedRemoteImage(
+                        url: teacher.pImage!.trim(),
                         fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                        errorBuilder: (_, __, ___) => Center(
+                        width: 104,
+                        height: 104,
+                        placeholder: Center(
+                          child: Text(
+                            initials,
+                            style: largeStyle32Bold.copyWith(
+                              fontSize: 34,
+                              color: initialsColor,
+                            ),
+                          ),
+                        ),
+                        error: Center(
                           child: Text(
                             initials,
                             style: largeStyle32Bold.copyWith(
@@ -1879,21 +1898,23 @@ class _TeacherDetailsPage extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           _TeacherInfoSection(
-            title: 'Vocation',
+            title: l10n.teacherVocation,
             value: (teacher.vocation ?? '').trim(),
             isDark: isDark,
           ),
           const SizedBox(height: 12),
           _TeacherInfoSection(
-            title: 'Testimony',
+            title: l10n.teacherTestimony,
             value: (teacher.testimony ?? '').trim(),
             isDark: isDark,
+            richText: true,
           ),
           const SizedBox(height: 12),
           _TeacherInfoSection(
-            title: 'Journey (Parcours)',
+            title: l10n.teacherJourney,
             value: (teacher.journey ?? '').trim(),
             isDark: isDark,
+            richText: true,
           ),
         ],
       ),
@@ -1906,14 +1927,18 @@ class _TeacherInfoSection extends StatelessWidget {
     required this.title,
     required this.value,
     required this.isDark,
+    this.richText = false,
   });
 
   final String title;
   final String value;
   final bool isDark;
+  final bool richText;
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final v = value.trim();
     final titleColor =
         isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800];
@@ -1952,13 +1977,22 @@ class _TeacherInfoSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            v.isEmpty ? '—' : v,
-            style: verySmallStyle14.copyWith(
-              color: bodyColor,
-              height: 1.35,
-            ),
-          ),
+          richText
+              ? RichTextContent(
+                  html: v,
+                  textStyle: verySmallStyle14.copyWith(
+                    color: bodyColor,
+                    height: 1.35,
+                  ),
+                  emptyFallback: l10n.dash,
+                )
+              : Text(
+                  v.isEmpty ? l10n.dash : v,
+                  style: verySmallStyle14.copyWith(
+                    color: bodyColor,
+                    height: 1.35,
+                  ),
+                ),
         ],
       ),
     );
@@ -2022,7 +2056,7 @@ class _DailyVerse {
   final String ref;
 }
 
-String _teacherInitials(RegisterData teacher) {
+String _teacherInitials(RegisterData teacher, AppLocalizations l10n) {
   final first = (teacher.firstName ?? '').trim();
   final last = (teacher.lastName ?? '').trim();
   if (first.isNotEmpty && last.isNotEmpty) {
@@ -2039,5 +2073,5 @@ String _teacherInitials(RegisterData teacher) {
     final part = email.split('@').first;
     return part.substring(0, part.length >= 2 ? 2 : 1).toUpperCase();
   }
-  return 'NA';
+  return l10n.initialsNotAvailable;
 }

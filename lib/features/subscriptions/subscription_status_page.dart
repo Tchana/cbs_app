@@ -47,8 +47,10 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
       });
     } catch (e) {
       if (!mounted) return;
+      final l10n =
+          AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
       setState(() {
-        _error = e.toString();
+        _error = l10n.unknownError;
         _loading = false;
       });
     }
@@ -81,7 +83,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
       }
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text(l10n.errorWithDetails(e))),
+        SnackBar(content: Text(l10n.unknownError)),
       );
     } finally {
       if (mounted) setState(() => _renewing = false);
@@ -106,7 +108,7 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
     final localeName = Localizations.localeOf(context).toString();
     final endsAtLabel = () {
       final raw = endsAt.trim();
-      if (raw.isEmpty) return '—';
+      if (raw.isEmpty) return l10n.dash;
       final parsed = DateTime.tryParse(raw);
       if (parsed == null) return raw;
       return DateFormat.yMMMd(localeName).add_Hm().format(parsed.toLocal());
@@ -177,7 +179,13 @@ class _SubscriptionStatusPageState extends State<SubscriptionStatusPage> {
                             ),
                           ),
                           gapH8,
-                          _kv(l10n.statusLabel, subStatus.isEmpty ? '—' : subStatus, muted),
+                          _kv(
+                            l10n.statusLabel,
+                            subStatus.isEmpty
+                                ? l10n.dash
+                                : l10n.subscriptionStatusLabel(subStatus),
+                            muted,
+                          ),
                           _kv(l10n.expiryLabel, endsAtLabel, muted),
                           _kv(l10n.daysRemainingLabel, '$daysRemaining', muted),
                           gapH10,

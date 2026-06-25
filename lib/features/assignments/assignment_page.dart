@@ -455,7 +455,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                 if (submission != null) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'MCQ score total: ${submission['mcq_score_total'] ?? 0}',
+                    l10n.assignmentMcqScoreTotal(
+                      '${submission['mcq_score_total'] ?? 0}',
+                    ),
                     style: smallStyle18.copyWith(
                       fontWeight: FontWeight.w700,
                       color: accent,

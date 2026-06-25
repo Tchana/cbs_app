@@ -3,6 +3,9 @@ String buildPdfJsViewerHtml({
   int startPage = 1,
   String? fileUrl,
   String? pdfBase64,
+  String loadingLabel = 'Loading…',
+  String failedToLoadPdfPrefix = 'Failed to load PDF: ',
+  String pdfJsFailedMessage = 'PDF.js failed to load',
 }) {
   assert(
     fileUrl != null || pdfBase64 != null,
@@ -13,6 +16,9 @@ String buildPdfJsViewerHtml({
   final loadDocumentJs = pdfBase64 != null
       ? _jsLoadDocumentFromBase64(pdfBase64)
       : "pdfjsLib.getDocument({ url: '${_escapeJsString(fileUrl!)}', withCredentials: false })";
+  final safeLoading = _escapeJsString(loadingLabel);
+  final safeFailedPrefix = _escapeJsString(failedToLoadPdfPrefix);
+  final safePdfJsFailed = _escapeJsString(pdfJsFailedMessage);
 
   return '''
 <!DOCTYPE html>
@@ -48,9 +54,9 @@ String buildPdfJsViewerHtml({
     .page-wrap canvas {
       display: block;
       max-width: 100%;
-      height: auto;
       background: #fff;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      image-rendering: auto;
     }
     #status {
       flex: 0 0 auto;
@@ -64,7 +70,7 @@ String buildPdfJsViewerHtml({
 </head>
 <body>
   <div id="viewer"></div>
-  <div id="status">Loading…</div>
+  <div id="status">$safeLoading</div>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -79,7 +85,7 @@ String buildPdfJsViewerHtml({
 
     function notifyError(err) {
       var msg = (err && err.message) ? err.message : String(err);
-      document.getElementById('status').textContent = 'Failed to load PDF: ' + msg;
+      document.getElementById('status').textContent = '$safeFailedPrefix' + msg;
       if (window.ReadingProgress && ReadingProgress.postMessage) {
         ReadingProgress.postMessage(JSON.stringify({ error: msg }));
       }
@@ -93,13 +99,6 @@ String buildPdfJsViewerHtml({
       if (window.ReadingProgress && ReadingProgress.postMessage) {
         ReadingProgress.postMessage(payload);
       }
-    }
-
-    function pageScale(page) {
-      var base = page.getViewport({ scale: 1 });
-      var width = viewer.clientWidth - 4;
-      if (width < 120) width = 120;
-      return width / base.width;
     }
 
     function updateCurrentPageFromScroll() {
@@ -153,11 +152,19 @@ String buildPdfJsViewerHtml({
 
     function renderPage(num) {
       return pdfDoc.getPage(num).then(function(page) {
-        var viewport = page.getViewport({ scale: pageScale(page) });
+        var base = page.getViewport({ scale: 1 });
+        var width = viewer.clientWidth - 4;
+        if (width < 120) width = 120;
+        var cssScale = width / base.width;
+        var outputScale = window.devicePixelRatio || 1;
+        var viewport = page.getViewport({ scale: cssScale * outputScale });
+
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        canvas.style.width = Math.floor(viewport.width / outputScale) + 'px';
+        canvas.style.height = Math.floor(viewport.height / outputScale) + 'px';
 
         var wrap = document.createElement('div');
         wrap.className = 'page-wrap';
@@ -208,7 +215,7 @@ String buildPdfJsViewerHtml({
         return;
       }
       if (retries <= 0) {
-        notifyError('PDF.js failed to load');
+        notifyError('$safePdfJsFailed');
         return;
       }
       setTimeout(function() { waitForPdfJs(retries - 1); }, 200);

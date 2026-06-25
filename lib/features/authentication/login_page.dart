@@ -97,12 +97,13 @@ class _LoginPageState extends State<LoginPage> {
       });
     } catch (e, stackTrace) {
       if (!mounted) return;
-      final msg = e.toString();
+      final l10n = AppLocalizations.of(context) ??
+          AppLocalizations(const Locale('fr'));
       setState(() {
         _isLoading = false;
-        _errorMessage = msg;
+        _errorMessage = l10n.unknownError;
       });
-      _logError(message: msg, stackTrace: stackTrace);
+      _logError(message: e.toString(), stackTrace: stackTrace);
     }
   }
 

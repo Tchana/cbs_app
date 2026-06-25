@@ -135,7 +135,7 @@ Future<bool> initiateMobileMoneyPayment({
     return false;
   } catch (e) {
     messenger.showSnackBar(
-      SnackBar(content: Text(l10n.errorWithDetails(e))),
+      SnackBar(content: Text(l10n.unknownError)),
     );
     return false;
   }

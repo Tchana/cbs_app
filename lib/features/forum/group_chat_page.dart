@@ -108,7 +108,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
         }
       });
     } catch (e) {
-      if (mounted) setState(() => errorMessage = e.toString());
+      if (mounted) {
+        final l10n =
+            AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+        setState(() => errorMessage = l10n.unknownError);
+      }
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -134,10 +138,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
         _messageController.clear();
         await fetchMessages();
       } else if (mounted) {
-        setState(() => errorMessage = result['message'] ?? l10n.errorPrefix);
+        setState(() => errorMessage = l10n.unknownError);
       }
     } catch (e) {
-      if (mounted) setState(() => errorMessage = e.toString());
+      if (mounted) setState(() => errorMessage = l10n.unknownError);
     } finally {
       if (mounted) setState(() => isSending = false);
     }
@@ -487,7 +491,7 @@ class _MessageBubble extends StatelessWidget {
   String _initials(UserData? user) {
     final name = _displayName(user);
     final parts = name.split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
+    if (parts.isEmpty || parts.first.isEmpty) return l10n.initialsUnknown;
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }

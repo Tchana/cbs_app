@@ -1,4 +1,5 @@
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
+import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -21,15 +22,17 @@ class CourseCard extends StatelessWidget {
     return name;
   }
 
-  String get _levelLabel {
-    final level = courseData.level?.toLowerCase();
+  String _levelLabel(AppLocalizations l10n) {
+    final level = courseData.level?.trim();
     if (level == null || level.isEmpty) return '';
-    return level[0].toUpperCase() + level.substring(1);
+    return l10n.courseLevelPrefix(level);
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasLevel = _levelLabel.isNotEmpty;
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    final hasLevel = _levelLabel(l10n).isNotEmpty;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bg = isDark ? CbsColors.darkSurface : CbsColors.white;
@@ -134,7 +137,7 @@ class CourseCard extends StatelessWidget {
                                   : null,
                             ),
                             child: Text(
-                              _levelLabel,
+                              _levelLabel(l10n),
                               style: verySmallStyle10.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: isDark

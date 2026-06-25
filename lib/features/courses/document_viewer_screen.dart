@@ -110,9 +110,10 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           if (_viewerAttempt < 2) {
             _loadFallbackViewer();
           } else {
+            final l10n = _l10n(context);
             setState(() {
               _loading = false;
-              _errorMessage = error.description;
+              _errorMessage = l10n.fileLoadError;
             });
           }
         },
@@ -232,12 +233,16 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     await _loadPdfWithCurrentStrategy();
   }
 
+  AppLocalizations _l10n(BuildContext context) =>
+      AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+
   Future<void> _retryPdfWithNextStrategy() async {
     if (!mounted || _pdfLoadAttempt >= 2) {
       if (mounted) {
+        final l10n = _l10n(context);
         setState(() {
           _loading = false;
-          _errorMessage ??= 'Could not open PDF';
+          _errorMessage ??= l10n.pdfLoadError;
         });
       }
       return;
@@ -265,10 +270,15 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
         final bytes = _pdfBytes ?? await _fetchPdfBytes();
         _pdfBytes = bytes;
         if (bytes != null && bytes.length <= maxPdfBase64Bytes) {
+          if (!mounted) return;
+          final l10n = _l10n(context);
           _webController.loadHtmlString(
             buildPdfJsViewerHtml(
               pdfBase64: base64Encode(bytes),
               startPage: startPage,
+              loadingLabel: l10n.viewerLoading,
+              failedToLoadPdfPrefix: l10n.viewerFailedLoadPdf(''),
+              pdfJsFailedMessage: l10n.viewerPdfJsFailed,
             ),
             baseUrl: 'https://cdnjs.cloudflare.com',
           );
@@ -279,8 +289,16 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
 
       if (_pdfLoadAttempt == 1) {
         final url = await _resolveNetworkPdfUrl();
+        if (!mounted) return;
+        final l10n = _l10n(context);
         _webController.loadHtmlString(
-          buildPdfJsViewerHtml(fileUrl: url, startPage: startPage),
+          buildPdfJsViewerHtml(
+            fileUrl: url,
+            startPage: startPage,
+            loadingLabel: l10n.viewerLoading,
+            failedToLoadPdfPrefix: l10n.viewerFailedLoadPdf(''),
+            pdfJsFailedMessage: l10n.viewerPdfJsFailed,
+          ),
           baseUrl: 'https://cdnjs.cloudflare.com',
         );
         return;
@@ -414,10 +432,13 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     try {
       final bytes = await _loadDocumentBytes();
       if (!mounted) return;
+      final l10n = _l10n(context);
       _webController.loadHtmlString(
         buildDocxViewerHtml(
           docxBase64: base64Encode(bytes),
           startSegment: startSegment,
+          loadingLabel: l10n.viewerLoading,
+          failedToLoadDocumentPrefix: l10n.viewerFailedLoadDocument(''),
         ),
         baseUrl: 'https://cdnjs.cloudflare.com',
       );
@@ -484,16 +505,16 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     return l10n.documentViewer;
   }
 
-  String? _pageSubtitle() {
+  String? _pageSubtitle(AppLocalizations l10n) {
     if (_displayPage <= 0 || _displayPages <= 0) return null;
-    return '$_displayPage / $_displayPages';
+    return l10n.pageCounter(_displayPage, _displayPages);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
-    final pageSubtitle = _pageSubtitle();
+    final pageSubtitle = _pageSubtitle(l10n);
 
     return PopScope(
       canPop: false,

@@ -9,6 +9,7 @@ import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class ForumPage extends StatefulWidget {
   const ForumPage({
@@ -50,8 +51,10 @@ class _ForumPageState extends State<ForumPage> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n =
+            AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
         setState(() {
-          errorMessage = e.toString();
+          errorMessage = l10n.unknownError;
         });
       }
     } finally {
@@ -505,18 +508,19 @@ class _GroupCardState extends State<_GroupCard> {
   String _formatTime(AppLocalizations l10n, String? dateString) {
     if (dateString == null) return '';
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateTime.parse(dateString).toLocal();
       final now = DateTime.now();
       final difference = now.difference(date);
+      final localeName = l10n.locale.toString();
 
       if (difference.inDays == 0) {
-        return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+        return DateFormat.Hm(localeName).format(date);
       } else if (difference.inDays == 1) {
         return l10n.timeYesterdayShort;
       } else if (difference.inDays < 7) {
         return l10n.daysAgo(difference.inDays);
       } else {
-        return '${date.day}/${date.month}';
+        return DateFormat.Md(localeName).format(date);
       }
     } catch (e) {
       return '';
@@ -727,7 +731,7 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? l10n.groupCreateError),
+            content: Text(l10n.groupCreateError),
             backgroundColor: CbsColors.errorColor,
           ),
         );
@@ -736,7 +740,7 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(l10n.errorWithDetails(e)),
+          content: Text(l10n.unknownError),
           backgroundColor: CbsColors.errorColor,
         ),
       );
