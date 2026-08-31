@@ -3,6 +3,8 @@ import 'package:center_for_biblical_studies/data/controllers/data_controller.dar
 import 'package:center_for_biblical_studies/features/authentication/signup_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/page/main_page.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_login_view.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/text_input_field.dart';
@@ -162,6 +164,12 @@ class _LoginPageState extends State<LoginPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
 
+    if (Adaptive.isDesktop(context)) {
+      return DesktopLoginView(
+        form: _buildLoginForm(l10n, desktop: true),
+      );
+    }
+
     return Scaffold(
       backgroundColor: CbsColors.backgroundColor,
       appBar: AppBar(
@@ -215,7 +223,48 @@ class _LoginPageState extends State<LoginPage> {
           // Form
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-            child: Form(
+            child: _buildLoginForm(l10n, desktop: false),
+          ),
+          // Register link
+          Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  l10n.doNotHaveAccount,
+                  style: smallStyle18.copyWith(
+                    color: CbsColors.primaryDark[600],
+                    fontSize: 14,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Get.to(() => const SignupPage()),
+                  child: Text(
+                    l10n.register,
+                    style: smallStyle18.copyWith(
+                      color: CbsColors.primaryBrown,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginForm(AppLocalizations l10n, {required bool desktop}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final linkColor = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final mutedColor = isDark
+        ? CbsColors.brandGold.withValues(alpha: 0.78)
+        : CbsColors.primaryDark[600];
+
+    return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -224,6 +273,7 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _emailController,
                     label: l10n.email,
                     hint: l10n.email,
+                    fieldHeight: desktop ? 48 : null,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     validator: (v) {
@@ -250,6 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                             ? null
                             : l10n.invalidPassword;
                       },
+                      fieldHeight: desktop ? 48 : null,
                       suffix: IconButton(
                         onPressed: () => _passwordObscure.value = !obscure,
                         icon: Icon(
@@ -257,7 +308,9 @@ class _LoginPageState extends State<LoginPage> {
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           size: 22,
-                          color: CbsColors.hintColor,
+                          color: isDark
+                              ? CbsColors.brandGold
+                              : CbsColors.hintColor,
                         ),
                       ),
                     ),
@@ -270,7 +323,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         l10n.forgotPassword,
                         style: smallStyle18.copyWith(
-                          color: CbsColors.primaryBrown,
+                          color: linkColor,
                           fontSize: 14,
                         ),
                       ),
@@ -306,7 +359,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ],
-                  gapH28,
+                  gapH20,
                   ValueListenableBuilder<bool>(
                     valueListenable: _fieldValid,
                     builder: (_, isValid, __) => SizedBox(
@@ -321,7 +374,9 @@ class _LoginPageState extends State<LoginPage> {
                           foregroundColor: CbsColors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(
+                              desktop ? 6 : 16,
+                            ),
                           ),
                         ),
                         child: _isLoading
@@ -343,97 +398,94 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  gapH24,
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Divider(color: CbsColors.primaryGrey[600])),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          l10n.orLoginWith,
+                  if (!desktop) ...[
+                    gapH24,
+                    Row(
+                      children: [
+                        Expanded(
+                            child: Divider(color: CbsColors.primaryGrey[600])),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            l10n.orLoginWith,
+                            style: smallStyle18.copyWith(
+                              color: CbsColors.hintColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                            child: Divider(color: CbsColors.primaryGrey[600])),
+                      ],
+                    ),
+                    gapH20,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {},
+                            icon:
+                                const Icon(Icons.g_mobiledata_rounded, size: 24),
+                            label: Text(l10n.google),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: CbsColors.primaryDark[800],
+                              side:
+                                  BorderSide(color: CbsColors.primaryGrey[600]!),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        gapW16,
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.facebook_rounded, size: 24),
+                            label: Text(l10n.facebook),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: CbsColors.primaryDark[800],
+                              side:
+                                  BorderSide(color: CbsColors.primaryGrey[600]!),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (desktop) ...[
+                    gapH24,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          l10n.doNotHaveAccount,
                           style: smallStyle18.copyWith(
-                            color: CbsColors.hintColor,
+                            color: mutedColor,
                             fontSize: 14,
                           ),
                         ),
-                      ),
-                      Expanded(
-                          child: Divider(color: CbsColors.primaryGrey[600])),
-                    ],
-                  ),
-                  gapH20,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon:
-                              const Icon(Icons.g_mobiledata_rounded, size: 24),
-                          label: Text(l10n.google),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: CbsColors.primaryDark[800],
-                            side:
-                                BorderSide(color: CbsColors.primaryGrey[600]!),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        TextButton(
+                          onPressed: () => Get.to(() => const SignupPage()),
+                          child: Text(
+                            l10n.register,
+                            style: smallStyle18.copyWith(
+                              color: linkColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                           ),
                         ),
-                      ),
-                      gapW16,
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.facebook_rounded, size: 24),
-                          label: Text(l10n.facebook),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: CbsColors.primaryDark[800],
-                            side:
-                                BorderSide(color: CbsColors.primaryGrey[600]!),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
-            ),
-          ),
-          // Register link
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  l10n.doNotHaveAccount,
-                  style: smallStyle18.copyWith(
-                    color: CbsColors.primaryDark[600],
-                    fontSize: 14,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => Get.to(() => const SignupPage()),
-                  child: Text(
-                    l10n.register,
-                    style: smallStyle18.copyWith(
-                      color: CbsColors.primaryBrown,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -446,6 +498,10 @@ class _LoginPageState extends State<LoginPage> {
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
     Widget? suffix,
+    double? fieldHeight,
+    Color? labelColor,
+    Color? textColor,
+    Color? hintColor,
   }) {
     return TextInputField(
       controller: controller,
@@ -458,6 +514,10 @@ class _LoginPageState extends State<LoginPage> {
       onChanged: (_) => _formKey.currentState?.validate(),
       suffixIcon: suffix,
       padding: 0,
+      height: fieldHeight,
+      labelColor: labelColor,
+      textColor: textColor,
+      hintColor: hintColor,
     );
   }
 }

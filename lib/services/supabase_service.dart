@@ -201,27 +201,24 @@ class SupabaseService {
   // Courses
   // ---------------------------------------------------------------------------
 
+  static const _courseSelect =
+      '*, teacher:profiles(*), overview_videos:course_overview_videos(*), '
+      'lessons:lessons(*, resources:lesson_resources(*))';
+
   Future<List<CourseData>> fetchCourses() async {
     final res = await _client
         .from('courses')
-        .select('*, teacher:profiles(*), lessons:lessons(*)')
+        .select(_courseSelect)
         .eq('active', true)
         .order('created_at', ascending: false);
 
-    DataController? dataController;
     try {
-      final access = await fetchMyAccessProfile(syncEntitlement: true);
-      dataController = Get.find<DataController>();
+      final access = await fetchMyAccessProfile();
       _syncAccessProfileToController(access);
     } catch (_) {}
 
-    final all = (res as List)
+    return (res as List)
         .map((row) => _courseFromRow(row as Map<String, dynamic>))
-        .toList();
-
-    if (dataController == null) return all;
-    return all
-        .where((c) => dataController!.canAccessCourseLevel(c.level))
         .toList();
   }
 
@@ -231,7 +228,7 @@ class SupabaseService {
     if (q.isEmpty) {
       final res = await _client
           .from('courses')
-          .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .select(_courseSelect)
           .eq('active', true)
           .order('created_at', ascending: false)
           .limit(12);
@@ -242,7 +239,7 @@ class SupabaseService {
 
     final byTextRes = await _client
         .from('courses')
-        .select('*, teacher:profiles(*), lessons:lessons(*)')
+        .select(_courseSelect)
         .eq('active', true)
         .or('title.ilike.%$q%,description.ilike.%$q%')
         .order('created_at', ascending: false)
@@ -268,7 +265,7 @@ class SupabaseService {
     if (teacherIds.isNotEmpty) {
       final byTeacherRes = await _client
           .from('courses')
-          .select('*, teacher:profiles(*), lessons:lessons(*)')
+          .select(_courseSelect)
           .eq('active', true)
           .inFilter('teacher_id', teacherIds)
           .order('created_at', ascending: false)
@@ -291,6 +288,7 @@ class SupabaseService {
   CourseData _courseFromRow(Map<String, dynamic> row) {
     final teacher = row['teacher'];
     final lessonsList = row['lessons'] as List<dynamic>?;
+    final overviewVideosList = row['overview_videos'] as List<dynamic>?;
     return CourseData(
       id: row['id']?.toString(),
       title: row['title'] as String?,
@@ -298,20 +296,152 @@ class SupabaseService {
           ? _profileToRegisterData(teacher as Map<String, dynamic>)
           : null,
       description: row['description'] as String?,
-      level: row['level'] as String?,
-      lessons: lessonsList
-          ?.map((e) => _lessonFromRow(e as Map<String, dynamic>))
-          .toList(),
+      learningObjectives: row['learning_objectives'] as String?,
+      courseCover: row['course_cover_url'] as String?,
+      overviewVideos: overviewVideosList
+          ?.map((e) => _overviewVideoFromRow(e as Map<String, dynamic>))
+          .toList()
+        ?..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0)),
+      lessons: () {
+        final rawLessons =
+            lessonsList?.cast<Map<String, dynamic>>() ?? const [];
+        final sorted = List<Map<String, dynamic>>.from(rawLessons)
+          ..sort(
+            (a, b) => ((a['sort_order'] as int?) ?? 0)
+                .compareTo((b['sort_order'] as int?) ?? 0),
+          );
+        return sorted.map(_lessonFromRow).toList();
+      }(),
+    );
+  }
+
+  CourseOverviewVideoData _overviewVideoFromRow(Map<String, dynamic> row) {
+    return CourseOverviewVideoData(
+      id: row['id']?.toString(),
+      title: row['title'] as String?,
+      url: row['url'] as String?,
+      sortOrder: row['sort_order'] as int?,
     );
   }
 
   LessonData _lessonFromRow(Map<String, dynamic> row) {
+    final resourcesList = row['resources'] as List<dynamic>?;
     return LessonData(
       id: row['id']?.toString(),
       course: row['course_id']?.toString(),
       title: row['title'] as String?,
       description: row['description'] as String?,
       file: row['file_url'] as String?,
+      resources: resourcesList
+          ?.map((e) => _lessonResourceFromRow(e as Map<String, dynamic>))
+          .toList()
+        ?..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0)),
+    );
+  }
+
+  LessonResourceData _lessonResourceFromRow(Map<String, dynamic> row) {
+    return LessonResourceData(
+      id: row['id']?.toString(),
+      lessonId: row['lesson_id']?.toString(),
+      resourceType: row['resource_type'] as String?,
+      title: row['title'] as String?,
+      url: row['url'] as String?,
+      sourceKind: row['source_kind'] as String?,
+      sortOrder: row['sort_order'] as int?,
+    );
+  }
+
+  Future<List<CourseCommentData>> fetchCourseComments(String courseId) async {
+    final res = await _client
+        .from('course_comments')
+        .select('id, course_id, user_id, content, created_at, updated_at')
+        .eq('course_id', courseId)
+        .order('created_at', ascending: true);
+
+    final comments = (res as List)
+        .map((row) => row as Map<String, dynamic>)
+        .toList();
+    if (comments.isEmpty) return const [];
+
+    final userIds = comments
+        .map((c) => c['user_id']?.toString())
+        .whereType<String>()
+        .toSet()
+        .toList();
+
+    final profilesRes = await _client
+        .from('profiles')
+        .select('id, first_name, last_name, email, role')
+        .inFilter('id', userIds);
+
+    final profileById = <String, Map<String, dynamic>>{};
+    for (final p in profilesRes as List) {
+      final map = p as Map<String, dynamic>;
+      final id = map['id']?.toString();
+      if (id != null) profileById[id] = map;
+    }
+
+    return comments.map((c) {
+      final userId = c['user_id']?.toString();
+      final profile = userId != null ? profileById[userId] : null;
+      final first = profile?['first_name']?.toString().trim() ?? '';
+      final last = profile?['last_name']?.toString().trim() ?? '';
+      final email = profile?['email']?.toString().trim() ?? '';
+      final authorName = '$first $last'.trim();
+      return CourseCommentData(
+        id: c['id']?.toString(),
+        courseId: c['course_id']?.toString(),
+        userId: userId,
+        content: c['content'] as String?,
+        createdAt: c['created_at']?.toString(),
+        updatedAt: c['updated_at']?.toString(),
+        authorName: authorName.isNotEmpty ? authorName : email,
+        authorRole: profile?['role']?.toString(),
+      );
+    }).toList();
+  }
+
+  Future<CourseCommentData?> postCourseComment(
+    String courseId,
+    String content,
+  ) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return null;
+
+    final res = await _client
+        .from('course_comments')
+        .insert({
+          'course_id': courseId,
+          'user_id': userId,
+          'content': trimmed,
+        })
+        .select('id, course_id, user_id, content, created_at, updated_at')
+        .single();
+
+    final row = res;
+    final profile = await _client
+        .from('profiles')
+        .select('first_name, last_name, email, role')
+        .eq('id', userId)
+        .maybeSingle();
+
+    final first = profile?['first_name']?.toString().trim() ?? '';
+    final last = profile?['last_name']?.toString().trim() ?? '';
+    final email = profile?['email']?.toString().trim() ?? '';
+    final authorName = '$first $last'.trim();
+
+    return CourseCommentData(
+      id: row['id']?.toString(),
+      courseId: row['course_id']?.toString(),
+      userId: row['user_id']?.toString(),
+      content: row['content'] as String?,
+      createdAt: row['created_at']?.toString(),
+      updatedAt: row['updated_at']?.toString(),
+      authorName: authorName.isNotEmpty ? authorName : email,
+      authorRole: profile?['role']?.toString(),
     );
   }
 
@@ -335,169 +465,41 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
 
   Future<List<LibraryData>> fetchBooks() async {
-    final access = await fetchMyAccessProfile(syncEntitlement: true);
-    _syncAccessProfileToController(access);
-    final subscription = (access['subscription_type'] ?? '').toString();
-    // Library access is subscription-driven (ignore role).
-    final hasLibraryAccess = subscription == 'student' || subscription == 'library_user';
+    try {
+      final access = await fetchMyAccessProfile();
+      _syncAccessProfileToController(access);
+    } catch (_) {}
 
     final res = await _client
         .from('books')
         .select()
         .order('created_at', ascending: false);
-    return (res as List).map((row) {
-      final m = row as Map<String, dynamic>;
-      final tier = (m['access_tier'] ?? 'public').toString();
-      final isLocked = tier == 'subscriber' && !hasLibraryAccess;
-      final description = (m['description'] as String?) ?? '';
-      final withLockTag = isLocked ? '__LOCKED__ $description' : description;
-      return LibraryData(
-        id: m['id']?.toString(),
-        title: m['title'] as String?,
-        author: m['author'] as String?,
-        book: isLocked ? null : _bookFileUrlFromRow(m),
-        category: _bookTypeFromRaw(m['category'] as String?),
-        bookCover: m['book_cover_url'] as String?,
-        description: withLockTag,
-        language: m['language'] as String?,
-      );
-    }).toList();
+    return (res as List)
+        .map((row) => _bookFromRow(row as Map<String, dynamic>))
+        .toList();
   }
 
   void _syncAccessProfileToController(Map<String, dynamic> access) {
     try {
       Get.find<DataController>().setAccessProfile(
         role: access['role'] ?? '',
-        subscription: access['subscription_type'] ?? '',
-        maxLevel: access['school_max_level'] ?? 0,
-        accessState: access['access_state'] ?? 'none',
       );
     } catch (_) {
       // Ignore if controller isn't ready (e.g. in tests).
     }
   }
 
-  Future<Map<String, dynamic>> fetchMyAccessProfile({bool syncEntitlement = false}) async {
+  Future<Map<String, dynamic>> fetchMyAccessProfile() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      return {
-        'role': '',
-        'subscription_type': 'none',
-        'school_max_level': 0,
-        'access_state': 'none',
-        'can_submit_assignments': false,
-        'is_suspended': false,
-      };
+      return {'role': ''};
     }
-    if (syncEntitlement) {
-      await _client.rpc('apply_subscription_entitlement', params: {'p_user_id': userId});
-    }
-    final statusRow = await _client
-        .from('v_user_subscription_status')
-        .select(
-            'role,subscription_type,school_max_level,access_state,can_submit_assignments,is_suspended')
-        .eq('user_id', userId)
-        .maybeSingle();
-    final row = statusRow ??
-        await _client
-            .from('profiles')
-            .select('role,subscription_type,school_max_level')
-            .eq('id', userId)
-            .maybeSingle();
-    if (row == null) {
-      return {
-        'role': '',
-        'subscription_type': 'none',
-        'school_max_level': 0,
-        'access_state': 'none',
-        'can_submit_assignments': false,
-        'is_suspended': false,
-      };
-    }
-    return {
-      'role': row['role']?.toString() ?? '',
-      'subscription_type': row['subscription_type']?.toString() ?? 'none',
-      'school_max_level':
-          int.tryParse(row['school_max_level']?.toString() ?? '0') ?? 0,
-      'access_state': row['access_state']?.toString() ?? 'none',
-      'can_submit_assignments': row['can_submit_assignments'] == true,
-      'is_suspended': row['is_suspended'] == true,
-    };
-  }
-
-  Future<void> subscribeCurrentUser(String type) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) throw Exception('Not authenticated');
-    final normalized = type == 'student' ? 'student' : 'library_user';
-    await _client.from('profiles').update({
-      'role': normalized,
-      'subscription_type': normalized,
-      if (normalized == 'student') 'school_max_level': 1,
-      'updated_at': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', userId);
-  }
-
-  Future<bool> subscriptionPaymentsEnabled() async {
-    final enabled = await _client.rpc('subscription_payments_enabled');
-    return enabled == true;
-  }
-
-  Future<List<Map<String, dynamic>>> fetchSubscriptionPlans() async {
-    final res = await _client
-        .from('subscription_plans')
-        .select(
-            'id,code,name,target_role,duration_months,price_amount,currency,active,installments:subscription_plan_installments(installment_number,amount,due_after_days,active)')
-        .eq('active', true)
-        .order('price_amount', ascending: true);
-    return (res as List)
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
-  }
-
-  Future<Map<String, dynamic>> createSubscriptionPayment(
-    String planCode, {
-    required String phoneNumber,
-  }) async {
-    final response = await _client.functions.invoke(
-      'create-subscription-payment',
-      body: {
-        'planCode': planCode,
-        'phoneNumber': phoneNumber,
-      },
-    );
-    if (response.status >= 400) {
-      throw Exception(
-          (response.data is Map<String, dynamic> ? response.data['error'] : null) ??
-              'Failed to create subscription payment');
-    }
-    if (response.data is! Map<String, dynamic>) {
-      throw Exception('Invalid payment response');
-    }
-    return Map<String, dynamic>.from(response.data as Map);
-  }
-
-  Future<Map<String, dynamic>?> fetchMySubscriptionStatus() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return null;
     final row = await _client
-        .from('v_user_subscription_status')
-        .select(
-            'user_id,subscription_status,starts_at,ends_at,days_remaining,plan_code,plan_name,payment_reference,payment_status,role,subscription_type,school_max_level,access_state,can_submit_assignments,is_suspended,total_due,total_paid,amount_owing,overdue_amount,overdue_installments,next_due_at')
-        .eq('user_id', userId)
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
         .maybeSingle();
-    if (row == null) return null;
-    return Map<String, dynamic>.from(row as Map);
-  }
-
-  Future<Map<String, dynamic>> refreshMyEntitlement() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('Not authenticated');
-    }
-    await _client.rpc('apply_subscription_entitlement', params: {'p_user_id': userId});
-    final access = await fetchMyAccessProfile();
-    _syncAccessProfileToController(access);
-    return access;
+    return {'role': row?['role']?.toString() ?? ''};
   }
 
   Future<List<BookType>> fetchBookCategories() async {
@@ -732,11 +734,6 @@ class SupabaseService {
       throw Exception('Not authenticated');
     }
 
-    final access = await fetchMyAccessProfile();
-    if (access['can_submit_assignments'] != true) {
-      throw Exception('Assignment submission is disabled for your current subscription status.');
-    }
-
     // Insert submission first so we can build student answer storage paths.
     final submissionRes = await _client
         .from('assignment_submissions')
@@ -770,7 +767,7 @@ class SupabaseService {
           'selected_option_id': selectedOptionId,
           'student_answer_pdf_url': null,
         });
-      } else if (type == 'open_pdf') {
+      } else if (type == 'open_pdf' || type == 'open_doc') {
         final file = openPdfByQuestionId[qid];
         String? publicUrl;
 
@@ -779,10 +776,19 @@ class SupabaseService {
           final fileName =
               '${DateTime.now().microsecondsSinceEpoch}.$ext';
           final storagePath = '$submissionId/$qid/$fileName';
+          final contentType = type == 'open_doc'
+              ? (ext == 'docx'
+                  ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                  : ext == 'odt'
+                      ? 'application/vnd.oasis.opendocument.text'
+                      : 'application/msword')
+              : 'application/pdf';
 
-          await _client.storage
-              .from('assignment-submissions')
-              .upload(storagePath, file, fileOptions: FileOptions(contentType: 'application/pdf'));
+          await _client.storage.from('assignment-submissions').upload(
+                storagePath,
+                file,
+                fileOptions: FileOptions(contentType: contentType),
+              );
 
           publicUrl = _client.storage
               .from('assignment-submissions')
@@ -886,40 +892,6 @@ class SupabaseService {
         .upsert(payload, onConflict: 'announcement_id,student_id');
   }
 
-  /// Course fees owed — matches backoffice Finance → Course payments `total_owed`.
-  Future<int> fetchMyOutstandingBalance() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return 0;
-
-    try {
-      final rpc = await _client.rpc('get_my_course_total_owed');
-      return _parseNonNegativeInt(rpc);
-    } catch (_) {
-      // Fallback if migration 031 not applied yet.
-    }
-
-    final res = await _client
-        .from('v_student_course_payment_summary')
-        .select('total_owed')
-        .eq('student_id', userId)
-        .maybeSingle();
-
-    if (res == null) return 0;
-    return _parseNonNegativeInt(res['total_owed']);
-  }
-
-  int _parseNonNegativeInt(dynamic raw) {
-    int value = 0;
-    if (raw is int) {
-      value = raw;
-    } else if (raw is double) {
-      value = raw.round();
-    } else {
-      value = int.tryParse(raw?.toString() ?? '0') ?? 0;
-    }
-    return value < 0 ? 0 : value;
-  }
-
   // ---------------------------------------------------------------------------
   // Teachers (profiles with role teacher)
   // ---------------------------------------------------------------------------
@@ -963,54 +935,6 @@ class SupabaseService {
         .toList();
   }
 
-  /// Admin WhatsApp for course-fee payments (`app_settings` or first admin profile).
-  Future<String?> fetchAdminWhatsAppNumber() async {
-    try {
-      final row = await _client
-          .from('app_settings')
-          .select('value')
-          .eq('key', 'admin_whatsapp_number')
-          .maybeSingle();
-      if (row != null) {
-        final fromSettings = _whatsappFromJsonValue(row['value']);
-        if (fromSettings != null) return fromSettings;
-      }
-    } catch (_) {}
-
-    try {
-      final admins = await _client
-          .from('profiles')
-          .select()
-          .eq('role', 'admin')
-          .limit(1);
-      final list = List<dynamic>.from(admins as List);
-      if (list.isNotEmpty && list.first is Map) {
-        return _whatsappFromProfileRow(
-          Map<String, dynamic>.from(list.first as Map),
-        );
-      }
-    } catch (_) {}
-
-    return null;
-  }
-
-  String? _whatsappFromJsonValue(dynamic value) {
-    if (value is String) {
-      final trimmed = value.trim();
-      return trimmed.isEmpty ? null : trimmed;
-    }
-    if (value is Map) {
-      const keys = ['number', 'phone', 'whatsapp', 'whatsapp_number'];
-      for (final key in keys) {
-        final raw = value[key];
-        if (raw == null) continue;
-        final trimmed = raw.toString().trim();
-        if (trimmed.isNotEmpty) return trimmed;
-      }
-    }
-    return null;
-  }
-
   String? _whatsappFromProfileRow(Map<String, dynamic> row) {
     const keys = <String>[
       'whatsapp_number',
@@ -1045,6 +969,40 @@ class SupabaseService {
   // ---------------------------------------------------------------------------
   // Rooms (forum groups)
   // ---------------------------------------------------------------------------
+
+  /// Finds the forum room linked to a course (matched by course title).
+  Future<GroupData?> fetchGroupForCourse({
+    required String courseTitle,
+  }) async {
+    final title = courseTitle.trim();
+    if (title.isEmpty) return null;
+
+    try {
+      final res = await _client
+          .from('rooms')
+          .select()
+          .eq('is_deleted', false)
+          .eq('name', title)
+          .maybeSingle();
+
+      if (res is! Map<String, dynamic>) return null;
+
+      final id = res['id']?.toString();
+      int count = 0;
+      if (id != null) {
+        try {
+          final rpc = await _client
+              .from('room_participants')
+              .select('room_id')
+              .eq('room_id', id);
+          count = (rpc as List).length;
+        } catch (_) {}
+      }
+      return _groupFromRow(res, participantsCount: count);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<List<GroupData>> fetchGroups() async {
     final res = await _client

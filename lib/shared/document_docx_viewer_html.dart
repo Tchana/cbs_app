@@ -1,6 +1,7 @@
 /// Mammoth.js DOCX viewer with vertical scroll and progress reporting to Flutter.
 ///
 /// Uses 100 virtual "pages" mapped to scroll position (same contract as PDF viewer).
+/// Renders as real HTML text (not canvas) for sharp glyphs on all densities.
 String buildDocxViewerHtml({
   required String docxBase64,
   int startSegment = 1,
@@ -18,7 +19,7 @@ String buildDocxViewerHtml({
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -27,8 +28,10 @@ String buildDocxViewerHtml({
       height: 100%;
       background: #111;
       color: #eee;
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       overflow: hidden;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
     body { display: flex; flex-direction: column; }
     #viewer {
@@ -41,19 +44,43 @@ String buildDocxViewerHtml({
     #content {
       max-width: 720px;
       margin: 0 auto;
-      padding: 16px 14px 32px;
+      padding: 20px 18px 36px;
       background: #fff;
-      color: #1a1a1a;
+      color: #111;
       border-radius: 4px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-      line-height: 1.6;
-      font-size: 17px;
+      line-height: 1.65;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
     }
-    #content img { max-width: 100%; height: auto; }
-    #content table { max-width: 100%; border-collapse: collapse; }
-    #content td, #content th { border: 1px solid #ccc; padding: 4px 8px; }
+    #content h1, #content h2, #content h3, #content h4 {
+      color: #111;
+      line-height: 1.3;
+      margin: 1.1em 0 0.45em;
+    }
+    #content h1 { font-size: 1.55em; }
+    #content h2 { font-size: 1.35em; }
+    #content h3 { font-size: 1.18em; }
+    #content p { margin: 0 0 0.85em; }
+    #content li { margin: 0.25em 0; }
+    #content img {
+      max-width: 100%;
+      height: auto;
+      image-rendering: auto;
+    }
+    #content table {
+      max-width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95em;
+    }
+    #content td, #content th {
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+    }
     #status {
       flex: 0 0 auto;
       padding: 10px 12px;

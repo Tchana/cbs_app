@@ -208,9 +208,13 @@ abstract final class CbsTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: CbsColors.darkElevated,
-        hintStyle: const TextStyle(color: CbsColors.darkTextSecondary),
-        labelStyle: const TextStyle(color: CbsColors.darkTextSecondary),
+        hintStyle: TextStyle(
+          color: CbsColors.brandGold.withValues(alpha: 0.45),
+        ),
+        labelStyle: const TextStyle(color: CbsColors.brandGold),
         floatingLabelStyle: const TextStyle(color: CbsColors.brandGold),
+        prefixIconColor: CbsColors.brandGold,
+        suffixIconColor: CbsColors.brandGold,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: CbsColors.darkBorder),

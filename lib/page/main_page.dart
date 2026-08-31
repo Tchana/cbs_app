@@ -4,9 +4,12 @@ import 'package:center_for_biblical_studies/features/forum/forum_pages.dart';
 import 'package:center_for_biblical_studies/features/library/Library_page.dart';
 import 'package:center_for_biblical_studies/features/settings/settings.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
-import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_shell.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_shell_controller.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -15,7 +18,7 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
+class _MainPageState extends State<MainPage> {
   List pages = [
     DashboardPage(),
     LibraryPage(),
@@ -25,40 +28,30 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   ];
 
   int currentStep = 0;
+  Worker? _requestedTabWorker;
 
-  Future<void> _refreshEntitlementIfNeeded(int index) async {
-    if (index == 0 || index == 1 || index == 2) {
-      try {
-        await const SupabaseService().refreshMyEntitlement();
-      } catch (_) {}
-    }
+  @override
+  void initState() {
+    super.initState();
+    final shell = ensureDesktopShellController();
+    _requestedTabWorker = ever(shell.requestedTab, (index) {
+      if (index == null) return;
+      shell.requestedTab.value = null;
+      if (!mounted) return;
+      setState(() => currentStep = index);
+    });
+  }
+
+  @override
+  void dispose() {
+    _requestedTabWorker?.dispose();
+    super.dispose();
   }
 
   void onTap(int index) {
     setState(() {
       currentStep = index;
     });
-    _refreshEntitlementIfNeeded(index);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _refreshEntitlementIfNeeded(currentStep);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _refreshEntitlementIfNeeded(currentStep);
-    }
   }
 
   @override
@@ -67,6 +60,27 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final navTheme = Theme.of(context).bottomNavigationBarTheme;
+    final destinations = [
+      DesktopNavDestination(icon: Icons.home_rounded, label: l10n.navHome),
+      DesktopNavDestination(
+        icon: Icons.my_library_books_rounded,
+        label: l10n.navLibrary,
+      ),
+      DesktopNavDestination(icon: Icons.school_rounded, label: l10n.navCourses),
+      DesktopNavDestination(icon: Icons.forum_rounded, label: l10n.navForum),
+      DesktopNavDestination(icon: Icons.settings_rounded, label: l10n.settings),
+    ];
+
+    if (Adaptive.isDesktop(context)) {
+      return DesktopShell(
+        currentIndex: currentStep,
+        onDestinationSelected: onTap,
+        destinations: destinations,
+        onSearch: () => openDashboardSearch(context),
+        child: pages[currentStep],
+      );
+    }
+
     return Scaffold(
       body: pages[currentStep],
       bottomNavigationBar: SafeArea(

@@ -1,7 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-
+import 'package:center_for_biblical_studies/features/courses/native_pdf_viewer_screen.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/book_file_cache_service.dart';
 import 'package:center_for_biblical_studies/services/book_reading_progress_service.dart';
@@ -16,6 +13,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 
 class DocumentViewerScreen extends StatefulWidget {
   const DocumentViewerScreen({
@@ -51,6 +52,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   int _displayPage = 0;
   int _displayPages = 0;
   Uint8List? _pdfBytes;
+  bool _webReady = false;
 
   String get _kindSourceUrl =>
       (widget.originalRemoteUrl ?? widget.url).trim();
@@ -71,6 +73,8 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   @override
   void initState() {
     super.initState();
+    // PDFs use the native PDFium viewer — skip WebView setup.
+    if (_isPdf) return;
     _initWebController();
     _loadPrimaryViewer();
   }
@@ -79,6 +83,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     _webController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF111111));
+    _webReady = true;
 
     final platform = _webController.platform;
     if (platform is AndroidWebViewController) {
@@ -392,6 +397,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     _viewerAttempt = 2;
     final url = await _resolveNetworkPdfUrl();
     if (!mounted) return;
+    // Last-resort PDF path only — prefer PDF.js for sharp text.
     _webController.loadHtmlString(
       buildGoogleDocsViewerHtml(url),
       baseUrl: 'https://docs.google.com',
@@ -444,11 +450,14 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       );
     } catch (_) {
       if (!mounted) return;
-      _loadDocsViewer(markLastOpened: false);
+      await _loadDocsViewer(markLastOpened: false, preferOfficeOnline: true);
     }
   }
 
-  Future<void> _loadDocsViewer({bool markLastOpened = true}) async {
+  Future<void> _loadDocsViewer({
+    bool markLastOpened = true,
+    bool preferOfficeOnline = true,
+  }) async {
     if (markLastOpened && _trackBookPages) {
       await _progressService.markLastOpened(widget.bookId);
     }
@@ -460,7 +469,18 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       docsUrl = await resolveStorageViewUrl(docsUrl);
     }
     if (!mounted) return;
-    setState(() => _viewerAttempt = 1);
+
+    // Office Online usually renders text more sharply than Google Docs gview images.
+    if (preferOfficeOnline) {
+      setState(() => _viewerAttempt = 1);
+      _webController.loadHtmlString(
+        buildOfficeOnlineViewerHtml(docsUrl),
+        baseUrl: 'https://view.officeapps.live.com',
+      );
+      return;
+    }
+
+    setState(() => _viewerAttempt = 2);
     _webController.loadHtmlString(
       buildGoogleDocsViewerHtml(docsUrl),
       baseUrl: 'https://docs.google.com',
@@ -474,7 +494,10 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       await _loadGoogleDocsPdfViewer();
       return;
     }
-    await _loadDocsViewer();
+    // Word / Office: try Google Docs after Office Online.
+    if (_viewerAttempt < 2) {
+      await _loadDocsViewer(preferOfficeOnline: false);
+    }
   }
 
   String? _baseUrlFor(String fileUrl) {
@@ -512,6 +535,16 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isPdf) {
+      return NativePdfViewerScreen(
+        url: widget.url,
+        title: widget.title,
+        bookId: widget.bookId,
+        originalRemoteUrl: widget.originalRemoteUrl,
+        pdfHtmlBaseUrl: widget.pdfHtmlBaseUrl,
+      );
+    }
+
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final pageSubtitle = _pageSubtitle(l10n);
@@ -561,7 +594,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
             )
           : Stack(
               children: [
-                WebViewWidget(controller: _webController),
+                if (_webReady) WebViewWidget(controller: _webController),
                 if (_loading)
                   const ColoredBox(
                     color: Color(0xFF111111),
@@ -613,6 +646,6 @@ class PdfViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DocumentViewerScreen(url: pdfUrl);
+    return NativePdfViewerScreen(url: pdfUrl);
   }
 }

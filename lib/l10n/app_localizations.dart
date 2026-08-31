@@ -76,6 +76,11 @@ class AppLocalizations {
       'nav_forum': 'Forum',
       // Library
       'library': 'Library',
+      'library_search_hint': 'Search title, author, category…',
+      'library_stat_total_books': 'Total books',
+      'library_stat_categories': 'Categories',
+      'library_all_categories': 'All categories',
+      'library_books_count': '{count} books',
       'tab_all': 'All',
       'tab_bibles': 'Bibles',
       'tab_books': 'Books',
@@ -90,6 +95,9 @@ class AppLocalizations {
       'onboarding_3': 'Gain knowledge on different doctrinal traditions',
       // Forum
       'forum': 'Forum',
+      'forum_rooms': 'Rooms',
+      'forum_select_room': 'Select a room',
+      'forum_pick_room_hint': 'Pick a room to start messaging.',
       'create_group': 'Create a group',
       'group_name': 'Group name',
       'description': 'Description',
@@ -117,6 +125,7 @@ class AppLocalizations {
       'teachers_section': 'Teachers',
       'courses_section': 'Courses',
       'see_all': 'See all',
+      'view': 'View',
       'contact': 'Contact',
       'notifications_tooltip': 'Notifications',
       'outstanding_balance': 'You owe {amount} FCFA',
@@ -193,6 +202,19 @@ class AppLocalizations {
       'description_label': 'Description',
       'teacher_label': 'Teacher',
       'lessons_label': 'Lessons',
+      'learning_objectives_label': 'Learning objectives',
+      'tab_overview': 'Overview',
+      'overview_videos_label': 'Overview videos',
+      'course_discussion_label': 'Discussion',
+      'course_discussion_unavailable':
+          'Discussion room is not available for this course yet.',
+      'resources_label': 'Resources',
+      'no_resources_yet': 'No resources yet',
+      'no_comments_yet': 'No comments yet',
+      'comment_hint': 'Write a comment…',
+      'post_comment': 'Post',
+      'comment_post_failed': 'Could not post comment. Please try again.',
+      'watch_video': 'Watch video',
       'no_lessons_yet': 'No lessons yet',
       'lesson_label': 'Lesson',
       'open_pdf': 'Open PDF',
@@ -361,6 +383,11 @@ class AppLocalizations {
       'nav_forum': 'Forum',
       // Library
       'library': 'Bibliothèque',
+      'library_search_hint': 'Rechercher titre, auteur, catégorie…',
+      'library_stat_total_books': 'Total livres',
+      'library_stat_categories': 'Catégories',
+      'library_all_categories': 'Toutes les catégories',
+      'library_books_count': '{count} livres',
       'tab_all': 'Tout',
       'tab_bibles': 'Bibles',
       'tab_books': 'Livres',
@@ -375,6 +402,9 @@ class AppLocalizations {
       'onboarding_3': 'Acquérez la connaissance sur les courants doctrinaux',
       // Forum
       'forum': 'Forum',
+      'forum_rooms': 'Salons',
+      'forum_select_room': 'Sélectionner un salon',
+      'forum_pick_room_hint': 'Choisissez un salon pour commencer à discuter.',
       'create_group': 'Créer un groupe',
       'group_name': 'Nom du groupe',
       'description': 'Description',
@@ -402,6 +432,7 @@ class AppLocalizations {
       'teachers_section': 'Enseignants',
       'courses_section': 'Cours',
       'see_all': 'Voir tout',
+      'view': 'Voir',
       'contact': 'Contacter',
       'notifications_tooltip': 'Notifications',
       'outstanding_balance': 'Vous devez {amount} FCFA',
@@ -479,6 +510,19 @@ class AppLocalizations {
       'description_label': 'Description',
       'teacher_label': 'Professeur',
       'lessons_label': 'Leçons',
+      'learning_objectives_label': 'Objectifs d\'apprentissage',
+      'tab_overview': 'Aperçu',
+      'overview_videos_label': 'Vidéos de présentation',
+      'course_discussion_label': 'Discussion',
+      'course_discussion_unavailable':
+          'Le salon de discussion n\'est pas encore disponible pour ce cours.',
+      'resources_label': 'Ressources',
+      'no_resources_yet': 'Aucune ressource pour le moment',
+      'no_comments_yet': 'Aucun commentaire pour le moment',
+      'comment_hint': 'Écrire un commentaire…',
+      'post_comment': 'Publier',
+      'comment_post_failed': 'Impossible de publier le commentaire. Réessayez.',
+      'watch_video': 'Voir la vidéo',
       'no_lessons_yet': 'Aucune leçon pour le moment',
       'lesson_label': 'Leçon',
       'open_pdf': 'Ouvrir le PDF',
@@ -663,6 +707,12 @@ class AppLocalizations {
   String get navForum => translate('nav_forum');
   // Library
   String get library => translate('library');
+  String get librarySearchHint => translate('library_search_hint');
+  String get libraryStatTotalBooks => translate('library_stat_total_books');
+  String get libraryStatCategories => translate('library_stat_categories');
+  String get libraryAllCategories => translate('library_all_categories');
+  String libraryBooksCount(int count) =>
+      translateWithParams('library_books_count', {'count': '$count'});
   String get tabAll => translate('tab_all');
   String get tabBibles => translate('tab_bibles');
   String get tabBooks => translate('tab_books');
@@ -677,6 +727,9 @@ class AppLocalizations {
   String get onboarding3 => translate('onboarding_3');
   // Forum
   String get forum => translate('forum');
+  String get forumRooms => translate('forum_rooms');
+  String get forumSelectRoom => translate('forum_select_room');
+  String get forumPickRoomHint => translate('forum_pick_room_hint');
   String get createGroup => translate('create_group');
   String get groupName => translate('group_name');
   String get description => translate('description');
@@ -706,6 +759,7 @@ class AppLocalizations {
   String get teachersSection => translate('teachers_section');
   String get coursesSection => translate('courses_section');
   String get seeAll => translate('see_all');
+  String get view => translate('view');
   String get contact => translate('contact');
   String get notificationsTooltip => translate('notifications_tooltip');
   String outstandingBalance(String amount) =>
@@ -800,6 +854,19 @@ class AppLocalizations {
   String get descriptionLabel => translate('description_label');
   String get teacherLabel => translate('teacher_label');
   String get lessonsLabel => translate('lessons_label');
+  String get learningObjectivesLabel => translate('learning_objectives_label');
+  String get tabOverview => translate('tab_overview');
+  String get overviewVideosLabel => translate('overview_videos_label');
+  String get courseDiscussionLabel => translate('course_discussion_label');
+  String get courseDiscussionUnavailable =>
+      translate('course_discussion_unavailable');
+  String get resourcesLabel => translate('resources_label');
+  String get noResourcesYet => translate('no_resources_yet');
+  String get noCommentsYet => translate('no_comments_yet');
+  String get commentHint => translate('comment_hint');
+  String get postComment => translate('post_comment');
+  String get commentPostFailed => translate('comment_post_failed');
+  String get watchVideo => translate('watch_video');
   String get noLessonsYet => translate('no_lessons_yet');
   String get lessonLabel => translate('lesson_label');
   String get openPdf => translate('open_pdf');

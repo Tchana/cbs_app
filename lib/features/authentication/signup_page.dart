@@ -1,6 +1,8 @@
 import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/page/main_page.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_auth_layout.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/text_input_field.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
@@ -123,6 +125,13 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    if (Adaptive.isDesktop(context)) {
+      return DesktopAuthLayout(
+        headline: l10n.createYourAccount,
+        subtitle: l10n.register,
+        form: _buildSignupForm(l10n),
+      );
+    }
     return Scaffold(
       backgroundColor: CbsColors.backgroundColor,
       appBar: AppBar(
@@ -174,7 +183,22 @@ class _SignupPageState extends State<SignupPage> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-            child: Form(
+            child: _buildSignupForm(l10n),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignupForm(AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final linkColor = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final mutedColor = isDark
+        ? CbsColors.brandGold.withValues(alpha: 0.78)
+        : CbsColors.primaryDark[600];
+    final iconColor = isDark ? CbsColors.brandGold : CbsColors.hintColor;
+
+    return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,7 +260,7 @@ class _SignupPageState extends State<SignupPage> {
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           size: 22,
-                          color: CbsColors.hintColor,
+                          color: iconColor,
                         ),
                       ),
                     ),
@@ -272,7 +296,7 @@ class _SignupPageState extends State<SignupPage> {
                               ? Icons.visibility_off_outlined
                               : Icons.visibility_outlined,
                           size: 22,
-                          color: CbsColors.hintColor,
+                          color: iconColor,
                         ),
                       ),
                     ),
@@ -344,19 +368,14 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 32),
-            child: Row(
+                  gapH24,
+                  Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   l10n.iHaveAccount,
                   style: smallStyle18.copyWith(
-                    color: CbsColors.primaryDark[600],
+                    color: mutedColor,
                     fontSize: 14,
                   ),
                 ),
@@ -365,7 +384,7 @@ class _SignupPageState extends State<SignupPage> {
                   child: Text(
                     l10n.login,
                     style: smallStyle18.copyWith(
-                      color: CbsColors.primaryBrown,
+                      color: linkColor,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -373,9 +392,8 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
+                ],
+              ),
     );
   }
 }

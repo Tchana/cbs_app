@@ -19,7 +19,37 @@ String buildDocumentViewerHtml(String fileUrl) {
 ''';
 }
 
-/// Google Docs embedded viewer — fallback for Office documents when direct view fails.
+/// Microsoft Office Online embedded viewer — usually sharper text than Google Docs gview.
+String buildOfficeOnlineViewerHtml(String fileUrl) {
+  final encoded = Uri.encodeComponent(fileUrl);
+  return '''
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #111; overflow: hidden; }
+    iframe {
+      border: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    src="https://view.officeapps.live.com/op/embed.aspx?src=$encoded"
+    allowfullscreen
+    title="document"
+  ></iframe>
+</body>
+</html>
+''';
+}
+
+/// Google Docs embedded viewer — fallback for Office documents when Office Online fails.
 String buildGoogleDocsViewerHtml(String fileUrl) {
   final encoded = Uri.encodeComponent(fileUrl);
   return '''
@@ -27,14 +57,23 @@ String buildGoogleDocsViewerHtml(String fileUrl) {
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: #111; }
-    iframe { border: 0; width: 100%; height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; background: #111; overflow: hidden; }
+    iframe {
+      border: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
-  <iframe src="https://docs.google.com/gview?embedded=true&url=$encoded" allowfullscreen></iframe>
+  <iframe
+    src="https://docs.google.com/gview?embedded=true&url=$encoded"
+    allowfullscreen
+    title="document"
+  ></iframe>
 </body>
 </html>
 ''';

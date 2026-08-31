@@ -4,6 +4,9 @@ import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/features/forum/group_chat_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_campus_ui.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -27,12 +30,54 @@ class _ForumPageState extends State<ForumPage> {
   final DataController dataController = Get.find<DataController>();
   bool isLoading = false;
   String? errorMessage;
+  String? _selectedGroupUuid;
 
   @override
   void initState() {
     super.initState();
     if (dataController.groups.isEmpty) {
       fetchGroups();
+    } else {
+      _ensureSelectedGroup(dataController.groups, notify: false);
+    }
+  }
+
+  List<GroupData> get _visibleGroups => dataController.groups
+      .where((group) => group.is_deleted != true)
+      .toList();
+
+  GroupData? get _selectedGroup {
+    final id = _selectedGroupUuid;
+    if (id == null) return null;
+    for (final group in _visibleGroups) {
+      if (group.uuid == id) return group;
+    }
+    return null;
+  }
+
+  void _ensureSelectedGroup(List<GroupData> groups, {bool notify = true}) {
+    final visible = groups.where((g) => g.is_deleted != true).toList();
+    if (visible.isEmpty) {
+      if (_selectedGroupUuid != null) {
+        if (notify && mounted) {
+          setState(() => _selectedGroupUuid = null);
+        } else {
+          _selectedGroupUuid = null;
+        }
+      }
+      return;
+    }
+
+    final stillValid =
+        _selectedGroupUuid != null &&
+            visible.any((g) => g.uuid == _selectedGroupUuid);
+    if (!stillValid) {
+      final nextId = visible.first.uuid;
+      if (notify && mounted) {
+        setState(() => _selectedGroupUuid = nextId);
+      } else {
+        _selectedGroupUuid = nextId;
+      }
     }
   }
 
@@ -48,6 +93,7 @@ class _ForumPageState extends State<ForumPage> {
       final groups = await widget.apiService.fetchGroups();
       if (mounted) {
         dataController.setGroups(groups);
+        _ensureSelectedGroup(groups);
       }
     } catch (e) {
       if (mounted) {
@@ -91,101 +137,519 @@ class _ForumPageState extends State<ForumPage> {
     final l10n =
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = Adaptive.isDesktop(context);
 
     return Scaffold(
       backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
-      body: RefreshIndicator(
-        color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
-        onRefresh: fetchGroups,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              backgroundColor:
-                  isDark ? CbsColors.darkBg : CbsColors.brandIvory,
-              surfaceTintColor: Colors.transparent,
-              title: Text(
-                l10n.forum,
-                style: smallStyle18.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 22,
-                  color: isDark
-                      ? CbsColors.darkTextPrimary
-                      : CbsColors.primaryBrown,
-                ),
-              ),
-              actions: [
-                IconButton(
-                  onPressed: fetchGroups,
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: l10n.refresh,
-                ),
-              ],
+      body: DesktopPageFrame(
+        padding: isDesktop
+            ? const EdgeInsets.fromLTRB(12, 12, 12, 12)
+            : EdgeInsets.zero,
+        child: isDesktop
+            ? _buildDesktopForum(context, l10n, isDark)
+            : _buildMobileForum(context, l10n, isDark),
+      ),
+      floatingActionButton: isDesktop
+          ? null
+          : FloatingActionButton(
+              onPressed: _showCreateGroupDialog,
+              elevation: 3,
+              backgroundColor: CbsColors.brandGold,
+              foregroundColor: CbsColors.brownNight,
+              child: const Icon(Icons.add_rounded, size: 26),
             ),
+    );
+  }
+
+  Widget _buildMobileForum(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+  ) {
+    return RefreshIndicator(
+      color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+      onRefresh: fetchGroups,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
+            surfaceTintColor: Colors.transparent,
+            title: Text(
+              l10n.forum,
+              style: smallStyle18.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                color: isDark
+                    ? CbsColors.darkTextPrimary
+                    : CbsColors.primaryBrown,
+              ),
+            ),
+            actions: [
+              IconButton(
+                onPressed: fetchGroups,
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: l10n.refresh,
+              ),
+            ],
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: _ForumHeroBanner(l10n: l10n, isDark: isDark),
+            ),
+          ),
+          if (errorMessage != null)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: _ForumHeroBanner(l10n: l10n, isDark: isDark),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _ForumErrorBanner(message: errorMessage!),
               ),
             ),
-            if (errorMessage != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: _ForumErrorBanner(message: errorMessage!),
-                ),
-              ),
-            Obx(() {
-              final groups = dataController.groups
-                  .where((g) => g.is_deleted != true)
-                  .toList();
+          Obx(() {
+            final groups = _visibleGroups;
 
-              if (isLoading && groups.isEmpty) {
-                return const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
+            if (isLoading && groups.isEmpty) {
+              return const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
 
-              if (groups.isEmpty) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _ForumEmptyState(
-                    l10n: l10n,
-                    isDark: isDark,
-                    onCreate: _showCreateGroupDialog,
-                  ),
-                );
-              }
-
-              return SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _GroupCard(
-                          group: groups[index],
-                          apiService: widget.apiService,
-                        ),
-                      );
-                    },
-                    childCount: groups.length,
-                  ),
+            if (groups.isEmpty) {
+              return SliverFillRemaining(
+                hasScrollBody: false,
+                child: _ForumEmptyState(
+                  l10n: l10n,
+                  isDark: isDark,
+                  onCreate: _showCreateGroupDialog,
                 ),
               );
-            }),
-          ],
+            }
+
+            return SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 88),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _GroupCard(
+                        group: groups[index],
+                        apiService: widget.apiService,
+                      ),
+                    );
+                  },
+                  childCount: groups.length,
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopForum(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+  ) {
+    return Obx(() {
+      final groups = _visibleGroups;
+      final selected = _selectedGroup;
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 320,
+            child: CampusCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _DesktopForumRoomsHeader(
+                    l10n: l10n,
+                    isDark: isDark,
+                    onRefresh: fetchGroups,
+                    onCreate: _showCreateGroupDialog,
+                  ),
+                  if (errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                      child: _ForumErrorBanner(message: errorMessage!),
+                    ),
+                  Expanded(
+                    child: isLoading && groups.isEmpty
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: isDark
+                                  ? CbsColors.brandGold
+                                  : CbsColors.primaryBrown,
+                            ),
+                          )
+                        : groups.isEmpty
+                            ? _DesktopForumEmptyRooms(
+                                l10n: l10n,
+                                isDark: isDark,
+                                onCreate: _showCreateGroupDialog,
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  4,
+                                  12,
+                                  12,
+                                ),
+                                itemCount: groups.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final group = groups[index];
+                                  return _DesktopForumRoomTile(
+                                    group: group,
+                                    l10n: l10n,
+                                    isDark: isDark,
+                                    selected:
+                                        group.uuid == _selectedGroupUuid,
+                                    onTap: () {
+                                      setState(
+                                        () => _selectedGroupUuid = group.uuid,
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: CampusCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _DesktopForumChatHeader(
+                    group: selected,
+                    l10n: l10n,
+                    isDark: isDark,
+                  ),
+                  Expanded(
+                    child: selected == null
+                        ? _DesktopForumChatPlaceholder(
+                            l10n: l10n,
+                            isDark: isDark,
+                          )
+                        : GroupChatPage(
+                            key: ValueKey(selected.uuid),
+                            group: selected,
+                            embedded: true,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+class _DesktopForumRoomsHeader extends StatelessWidget {
+  const _DesktopForumRoomsHeader({
+    required this.l10n,
+    required this.isDark,
+    required this.onRefresh,
+    required this.onCreate,
+  });
+
+  final AppLocalizations l10n;
+  final bool isDark;
+  final VoidCallback onRefresh;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.creamDark;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 12, 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              l10n.forumRooms,
+              style: smallStyle18.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                color: isDark
+                    ? CbsColors.darkTextPrimary
+                    : CbsColors.primaryBrown,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.createGroup,
+            onPressed: onCreate,
+            icon: Icon(
+              Icons.add_rounded,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          ),
+          IconButton(
+            tooltip: l10n.refresh,
+            onPressed: onRefresh,
+            icon: Icon(
+              Icons.refresh_rounded,
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopForumRoomTile extends StatelessWidget {
+  const _DesktopForumRoomTile({
+    required this.group,
+    required this.l10n,
+    required this.isDark,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final GroupData group;
+  final AppLocalizations l10n;
+  final bool isDark;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = group.name ?? l10n.unnamedGroup;
+    final description = (group.description ?? '').trim();
+    final selectedBg = isDark
+        ? CbsColors.brandGold.withValues(alpha: 0.14)
+        : CbsColors.primaryBrown.withValues(alpha: 0.10);
+    final selectedBorder = isDark
+        ? CbsColors.brandGold.withValues(alpha: 0.65)
+        : CbsColors.primaryBrown;
+    final idleBg =
+        isDark ? CbsColors.darkBg : const Color(0xFFF4EFE6);
+    final idleBorder = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.creamDark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? selectedBg : idleBg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? selectedBorder : idleBorder,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: smallStyle18.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: isDark
+                            ? CbsColors.darkTextPrimary
+                            : CbsColors.primaryBrown,
+                      ),
+                    ),
+                  ),
+                  if (group.is_private == true)
+                    Icon(
+                      Icons.lock_rounded,
+                      size: 14,
+                      color: isDark
+                          ? CbsColors.brandGold
+                          : CbsColors.primaryBrown,
+                    ),
+                ],
+              ),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: verySmallStyle12.copyWith(
+                    color: isDark
+                        ? CbsColors.darkTextSecondary
+                        : CbsColors.hintColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateGroupDialog,
-        elevation: 3,
-        backgroundColor: CbsColors.brandGold,
-        foregroundColor: CbsColors.brownNight,
-        child: const Icon(Icons.add_rounded, size: 26),
+    );
+  }
+}
+
+class _DesktopForumChatHeader extends StatelessWidget {
+  const _DesktopForumChatHeader({
+    required this.group,
+    required this.l10n,
+    required this.isDark,
+  });
+
+  final GroupData? group;
+  final AppLocalizations l10n;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isDark
+        ? CbsColors.darkBorder.withValues(alpha: 0.9)
+        : CbsColors.creamDark;
+    final title = group?.name ?? l10n.forumSelectRoom;
+    final description = (group?.description ?? '').trim();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w700,
+              fontSize: 17,
+              color: isDark
+                  ? CbsColors.darkTextPrimary
+                  : CbsColors.primaryBrown,
+            ),
+          ),
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              description,
+              style: verySmallStyle12.copyWith(
+                color: isDark
+                    ? CbsColors.darkTextSecondary
+                    : CbsColors.hintColor,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopForumChatPlaceholder extends StatelessWidget {
+  const _DesktopForumChatPlaceholder({
+    required this.l10n,
+    required this.isDark,
+  });
+
+  final AppLocalizations l10n;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          l10n.forumPickRoomHint,
+          textAlign: TextAlign.center,
+          style: smallStyle18.copyWith(
+            fontSize: 14,
+            color: isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopForumEmptyRooms extends StatelessWidget {
+  const _DesktopForumEmptyRooms({
+    required this.l10n,
+    required this.isDark,
+    required this.onCreate,
+  });
+
+  final AppLocalizations l10n;
+  final bool isDark;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            l10n.noGroups,
+            textAlign: TextAlign.center,
+            style: smallStyle18.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? CbsColors.darkTextPrimary
+                  : CbsColors.primaryBrown,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.createFirst,
+            textAlign: TextAlign.center,
+            style: verySmallStyle12.copyWith(
+              color: isDark
+                  ? CbsColors.darkTextSecondary
+                  : CbsColors.hintColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onCreate,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: Text(l10n.createGroup),
+            style: FilledButton.styleFrom(
+              backgroundColor:
+                  isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+              foregroundColor:
+                  isDark ? CbsColors.brownNight : CbsColors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -678,7 +1142,7 @@ class _CreateRoomPageState extends State<_CreateRoomPage> {
     final borderColor =
         isDark ? CbsColors.darkBorder : CbsColors.creamDark;
     final labelColor =
-        isDark ? CbsColors.darkTextSecondary : CbsColors.caramel;
+        isDark ? CbsColors.brandGold : CbsColors.caramel;
 
     return InputDecoration(
       labelText: label,

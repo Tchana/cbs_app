@@ -61,8 +61,8 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             Image.asset(
               'assets/images/cbs_logo.png',
-              width: 120,
-              height: 120,
+              width: MediaQuery.sizeOf(context).width >= 800 ? 160 : 120,
+              height: MediaQuery.sizeOf(context).width >= 800 ? 160 : 120,
             ),
             const SizedBox(height: 18),
             Text(
@@ -149,7 +149,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (index) => setState(() => _currentPage = index),
                 itemCount: 3,
                 itemBuilder: (context, index) {
-                  return Padding(
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: Padding(
                     padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
                     child: Column(
                       children: [
@@ -226,6 +229,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         const SizedBox(height: 16),
                       ],
+                    ),
+                      ),
                     ),
                   );
                 },

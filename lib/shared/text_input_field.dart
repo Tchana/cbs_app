@@ -22,6 +22,9 @@ class TextInputField extends StatefulWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onSubmitted;
   final void Function(String)? onChanged;
+  final Color? labelColor;
+  final Color? textColor;
+  final Color? hintColor;
 
   const TextInputField({
     super.key,
@@ -44,6 +47,9 @@ class TextInputField extends StatefulWidget {
     this.textInputAction,
     this.onChanged,
     this.autofocus,
+    this.labelColor,
+    this.textColor,
+    this.hintColor,
   });
 
   @override
@@ -53,6 +59,16 @@ class TextInputField extends StatefulWidget {
 class _TextInputFieldState extends State<TextInputField> {
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = widget.labelColor ??
+        (isDark ? CbsColors.brandGold : CbsColors.primaryDark[800]);
+    final textColor = widget.textColor ??
+        (isDark ? CbsColors.darkTextPrimary : CbsColors.primaryDark[800]);
+    final hintColor = widget.hintColor ??
+        (isDark
+            ? CbsColors.brandGold.withValues(alpha: 0.45)
+            : Colors.black.withValues(alpha: 0.3));
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: widget.padding ?? 20.0),
       child: Column(
@@ -61,7 +77,7 @@ class _TextInputFieldState extends State<TextInputField> {
           if (widget.label != null)
             Text(
               widget.label!,
-              style: smallBodyStyle.copyWith(color: CbsColors.primaryDark[800]),
+              style: smallBodyStyle.copyWith(color: labelColor),
             ),
           if (widget.label != null)
             const SizedBox(
@@ -70,19 +86,20 @@ class _TextInputFieldState extends State<TextInputField> {
           SizedBox(
             height: widget.height ?? (widget.errorText == null ? 40 : 55),
             child: TextField(
-              style: smallBodyStyle.copyWith(color: CbsColors.primaryDark[800]),
+              style: smallBodyStyle.copyWith(color: textColor),
+              cursorColor: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
               minLines: widget.minLines,
               maxLines: widget.maxLines,
               controller: widget.controller,
               onSubmitted: widget.onSubmitted,
+              onChanged: widget.onChanged,
               readOnly: widget.readOnly!,
               autofocus: widget.autofocus ?? false,
               decoration: InputDecoration(
                 isDense: true,
                 border: const OutlineInputBorder(),
                 hintText: widget.hintText,
-                hintStyle: smallBodyStyle.copyWith(
-                    color: Colors.black.withValues(alpha: 0.3)),
+                hintStyle: smallBodyStyle.copyWith(color: hintColor),
                 suffixIcon: widget.suffixIcon,
                 prefixIcon: widget.prefixIcon,
                 errorText: widget.errorText,

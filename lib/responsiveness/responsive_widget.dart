@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
 import 'package:flutter/material.dart';
 
 class ResponsiveWidget extends StatelessWidget {
@@ -12,18 +13,16 @@ class ResponsiveWidget extends StatelessWidget {
     this.smallScreen,
   });
 
-  static bool isSmallScreen(BuildContext context) {
-    return MediaQuery.of(context).size.width < 800;
-  }
+  static bool isSmallScreen(BuildContext context) =>
+      Adaptive.isCompact(context);
 
-  static bool isLargeScreen(BuildContext context) {
-    return MediaQuery.of(context).size.width > 1200;
-  }
+  static bool isLargeScreen(BuildContext context) =>
+      Adaptive.isExpanded(context);
 
-  static bool isMediumScreen(BuildContext context) {
-    return MediaQuery.of(context).size.width >= 800 &&
-        MediaQuery.of(context).size.width <= 1200;
-  }
+  static bool isMediumScreen(BuildContext context) =>
+      Adaptive.isMedium(context);
+
+  static bool isDesktop(BuildContext context) => Adaptive.isDesktop(context);
 
   @override
   Widget build(BuildContext context) {

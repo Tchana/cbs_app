@@ -1,9 +1,39 @@
 import 'package:center_for_biblical_studies/features/courses/document_viewer_screen.dart';
+import 'package:center_for_biblical_studies/features/courses/native_pdf_viewer_screen.dart';
+import 'package:center_for_biblical_studies/features/courses/video_viewer_screen.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/book_file_cache_service.dart';
+import 'package:center_for_biblical_studies/shared/remote_file_kind.dart';
 import 'package:center_for_biblical_studies/shared/resolve_storage_view_url.dart';
+import 'package:center_for_biblical_studies/shared/video_url_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Opens a video resource inside the app (direct file or embedded link).
+Future<void> openVideoInApp(
+  String url, {
+  String? title,
+}) async {
+  final trimmed = url.trim();
+  if (trimmed.isEmpty) return;
+  if (!isInAppVideoResource(url: trimmed)) return;
+
+  final signed = await resolveStorageViewUrl(trimmed);
+  final screen = VideoViewerScreen(
+    url: signed,
+    originalUrl: trimmed,
+    title: title,
+  );
+
+  final nav = Get.key.currentState;
+  if (nav != null) {
+    await nav.push<void>(MaterialPageRoute(builder: (_) => screen));
+    return;
+  }
+
+  await Get.to(() => screen);
+}
 
 /// Opens a remote file (lesson, library book, attachment) in the in-app viewer.
 ///
@@ -14,9 +44,21 @@ Future<void> openRemoteFile(
   String? title,
   String? bookId,
   String? lessonId,
+  String? resourceType,
 }) async {
   final trimmed = url.trim();
   if (trimmed.isEmpty) return;
+
+  if (isInAppVideoResource(url: trimmed, resourceType: resourceType)) {
+    await openVideoInApp(trimmed, title: title);
+    return;
+  }
+
+  final kind = resolveRemoteFileKind(url: trimmed, resourceType: resourceType);
+  if (remoteFileKindOpensExternally(kind)) {
+    await launchExternalUrl(trimmed);
+    return;
+  }
 
   final bookCacheId = (bookId ?? '').trim();
   final lessonCacheId = (lessonId ?? '').trim();
@@ -67,13 +109,24 @@ Future<void> openRemoteFile(
     view = CachedBookView(viewerUrl: signed);
   }
 
-  final screen = DocumentViewerScreen(
-    url: view.viewerUrl,
-    title: title,
-    bookId: bookCacheId.isNotEmpty ? bookCacheId : null,
-    originalRemoteUrl: cacheId != null ? trimmed : null,
-    pdfHtmlBaseUrl: view.pdfHtmlBaseUrl,
-  );
+  final kindSource = trimmed;
+  final isPdf = remoteFileKindFromUrl(kindSource) == RemoteFileKind.pdf;
+
+  final Widget screen = isPdf
+      ? NativePdfViewerScreen(
+          url: view.viewerUrl,
+          title: title,
+          bookId: bookCacheId.isNotEmpty ? bookCacheId : null,
+          originalRemoteUrl: cacheId != null ? trimmed : null,
+          pdfHtmlBaseUrl: view.pdfHtmlBaseUrl,
+        )
+      : DocumentViewerScreen(
+          url: view.viewerUrl,
+          title: title,
+          bookId: bookCacheId.isNotEmpty ? bookCacheId : null,
+          originalRemoteUrl: cacheId != null ? trimmed : null,
+          pdfHtmlBaseUrl: view.pdfHtmlBaseUrl,
+        );
 
   final nav = Get.key.currentState;
   if (nav != null) {
@@ -84,6 +137,16 @@ Future<void> openRemoteFile(
   }
 
   await Get.to(() => screen);
+}
+
+Future<bool> launchExternalUrl(String url) async {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null) return false;
+  try {
+    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<CachedBookView> _withOfflineDownloadDialog(

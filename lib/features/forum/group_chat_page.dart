@@ -4,6 +4,7 @@ import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
@@ -12,8 +13,13 @@ import 'package:intl/intl.dart';
 
 class GroupChatPage extends StatefulWidget {
   final GroupData group;
+  final bool embedded;
 
-  const GroupChatPage({super.key, required this.group});
+  const GroupChatPage({
+    super.key,
+    required this.group,
+    this.embedded = false,
+  });
 
   @override
   State<GroupChatPage> createState() => _GroupChatPageState();
@@ -154,70 +160,26 @@ class _GroupChatPageState extends State<GroupChatPage> {
     final localeName = Localizations.localeOf(context).toString();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            _GroupAvatar(
-              name: widget.group.name ?? l10n.unnamedGroup,
-              isDark: isDark,
-              size: 40,
-            ),
-            gapW10,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.group.name ?? l10n.unnamedGroup,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: smallStyle18.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  if ((widget.group.description ?? '').trim().isNotEmpty)
-                    Text(
-                      widget.group.description!.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: smallStyle18.copyWith(
-                        fontSize: 12,
-                        color: isDark
-                            ? CbsColors.darkTextSecondary
-                            : CbsColors.caramel,
-                      ),
-                    )
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: fetchMessages,
-            tooltip: l10n.refresh,
-          ),
-        ],
-      ),
-      body: Column(
+    final chatBody = DesktopPageFrame(
+      maxWidth: widget.embedded ? double.infinity : 860,
+      padding: EdgeInsets.zero,
+      child: Column(
         children: [
           if (errorMessage != null) _ErrorBanner(message: errorMessage!),
           Expanded(
             child: isLoading && messages.isEmpty
                 ? Center(
                     child: CircularProgressIndicator(
-                      color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                      color:
+                          isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
                     ),
                   )
                 : messages.isEmpty
                     ? _EmptyChatState(l10n: l10n, isDark: isDark)
                     : RefreshIndicator(
-                        color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+                        color: isDark
+                            ? CbsColors.brandGold
+                            : CbsColors.primaryBrown,
                         onRefresh: fetchMessages,
                         child: ListView.builder(
                           controller: _scrollController,
@@ -279,6 +241,66 @@ class _GroupChatPageState extends State<GroupChatPage> {
           ),
         ],
       ),
+    );
+
+    if (widget.embedded) {
+      return ColoredBox(
+        color: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
+        child: chatBody,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: isDark ? CbsColors.darkBg : CbsColors.brandIvory,
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            _GroupAvatar(
+              name: widget.group.name ?? l10n.unnamedGroup,
+              isDark: isDark,
+              size: 40,
+            ),
+            gapW10,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.group.name ?? l10n.unnamedGroup,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: smallStyle18.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  if ((widget.group.description ?? '').trim().isNotEmpty)
+                    Text(
+                      widget.group.description!.trim(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: smallStyle18.copyWith(
+                        fontSize: 12,
+                        color: isDark
+                            ? CbsColors.darkTextSecondary
+                            : CbsColors.caramel,
+                      ),
+                    )
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: fetchMessages,
+            tooltip: l10n.refresh,
+          ),
+        ],
+      ),
+      body: chatBody,
     );
   }
 }

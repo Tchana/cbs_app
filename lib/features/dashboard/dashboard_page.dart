@@ -14,10 +14,15 @@ import 'package:center_for_biblical_studies/services/book_reading_progress_servi
 import 'package:center_for_biblical_studies/services/recent_access_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/shared/cached_remote_image.dart';
+import 'package:center_for_biblical_studies/shared/book_item.dart';
 import 'package:center_for_biblical_studies/shared/course_card_widget.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/rich_text_content.dart';
 import 'package:center_for_biblical_studies/shared/section_header.dart';
+import 'package:center_for_biblical_studies/features/dashboard/desktop_home_view.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_shell_controller.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/constants/text_styles.dart';
@@ -53,7 +58,6 @@ class _DashboardPageState extends State<DashboardPage> {
   _DailyVerse? _dailyVerse;
   bool _loadingVerse = false;
   int _unreadAnnouncements = 0;
-  int _outstandingBalance = 0;
   List<Map<String, dynamic>> _announcements = const <Map<String, dynamic>>[];
   int _announcementIndex = 0;
   Timer? _announcementTimer;
@@ -71,69 +75,6 @@ class _DashboardPageState extends State<DashboardPage> {
       supabase: apiService,
       teacher: teacher,
     );
-  }
-
-  String _studentDisplayName(AppLocalizations l10n) {
-    final last = (_profileLastName ?? '').trim();
-    if (last.isNotEmpty) return last;
-    try {
-      final user = AuthService.currentUser;
-      final meta = user?.userMetadata;
-      if (meta != null) {
-        final first = (meta['first_name'] as String?)?.trim() ?? '';
-        final lastMeta = (meta['last_name'] as String?)?.trim() ?? '';
-        final combined = '$first $lastMeta'.trim();
-        if (combined.isNotEmpty) return combined;
-      }
-      final email = user?.email?.trim();
-      if (email != null && email.isNotEmpty) return email;
-    } catch (_) {}
-    return l10n.defaultStudentName;
-  }
-
-  Future<void> _onOutstandingBalanceTap(AppLocalizations l10n) async {
-    final amountFormatted =
-        NumberFormat.decimalPattern().format(_outstandingBalance);
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.paymentPromptTitle),
-        content: Text(l10n.paymentPromptMessage(amountFormatted)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.paymentPromptCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.paymentPromptConfirm),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    final phone = (await apiService.fetchAdminWhatsAppNumber())?.trim() ?? '';
-    if (phone.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.adminWhatsAppUnavailable)),
-      );
-      return;
-    }
-
-    final message = l10n.paymentWhatsAppMessage(
-      name: _studentDisplayName(l10n),
-      amount: amountFormatted,
-    );
-    final opened = await openWhatsApp(phone, message: message);
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.adminWhatsAppUnavailable)),
-      );
-    }
   }
 
   Future<void> fetchData() async {
@@ -154,7 +95,6 @@ class _DashboardPageState extends State<DashboardPage> {
       final announcements =
           await apiService.fetchVisibleAnnouncements(limit: 20);
       final unreadCount = await apiService.fetchUnreadAnnouncementsCount();
-      final balanceDue = await apiService.fetchMyOutstandingBalance();
       if (mounted) {
         setState(() {
           _announcements = announcements;
@@ -162,7 +102,6 @@ class _DashboardPageState extends State<DashboardPage> {
             _announcementIndex = 0;
           }
           _unreadAnnouncements = unreadCount;
-          _outstandingBalance = balanceDue;
         });
         _configureAnnouncementTimer();
       }
@@ -190,6 +129,10 @@ class _DashboardPageState extends State<DashboardPage> {
     await RecentAccessService.markCourseAccessed(course.id);
     await _loadRecentAccess();
     if (!mounted) return;
+    if (Adaptive.isDesktop(context)) {
+      ensureDesktopShellController().openCourseInShell(course);
+      return;
+    }
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _CourseDetailsPage(course: course),
@@ -349,79 +292,134 @@ class _DashboardPageState extends State<DashboardPage> {
     final latest = _announcements.isEmpty
         ? null
         : _announcements[_announcementIndex % _announcements.length];
+    final isDesktop = Adaptive.isDesktop(context);
+
+    if (isDesktop) {
+      final verseText =
+          verse == null ? null : (languageCode == 'fr' ? verse.fr : verse.en);
+      return Scaffold(
+        backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
+        body: DesktopHomeView(
+          greeting: greetingText,
+          today: today,
+          unreadAnnouncements: _unreadAnnouncements,
+          latestAnnouncement: latest,
+          announcements: _announcements,
+          verseText: verseText,
+          verseRef: verse?.ref,
+          verseLoading: _loadingVerse,
+          recentAccess: _recentAccess,
+          onRefresh: fetchData,
+          onSearch: () => _openSearch(l10n),
+          onOpenAnnouncements: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => AnnouncementsPage(apiService: apiService),
+              ),
+            );
+            if (!mounted) return;
+            final unread = await apiService.fetchUnreadAnnouncementsCount();
+            setState(() => _unreadAnnouncements = unread);
+          },
+          onOpenCourse: _openCourseDetails,
+          onOpenBook: (book) => _openBookQuick(book, l10n),
+          onOpenTeacher: (teacher) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => _TeacherDetailsPage(
+                  teacher: teacher,
+                  onContact: () => _contactTeacher(teacher),
+                ),
+              ),
+            );
+          },
+          onSeeAllTeachers: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const _AllTeachersPage(),
+              ),
+            );
+          },
+          onContactTeacher: _contactTeacher,
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          today,
-          style: smallStyle18.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: false,
-        actions: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              IconButton(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AnnouncementsPage(apiService: apiService),
-                    ),
-                  );
-                  if (mounted) {
-                    final unread =
-                        await apiService.fetchUnreadAnnouncementsCount();
-                    setState(() {
-                      _unreadAnnouncements = unread;
-                    });
-                  }
-                },
-                icon: const Icon(Icons.notifications_outlined),
-                tooltip: l10n.notificationsTooltip,
-              ),
-              if (_unreadAnnouncements > 0)
-                Positioned(
-                  right: 7,
-                  top: 7,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      _unreadAnnouncements > 99
-                          ? '99+'
-                          : _unreadAnnouncements.toString(),
-                      style: verySmallStyle12.copyWith(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              title: Text(
+                today,
+                style: smallStyle18.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
-            ],
-          ),
-          IconButton(
-            onPressed: () => _openSearch(l10n),
-            icon: const Icon(Icons.search_rounded),
-            tooltip: l10n.searchHint,
-          ),
-        ],
-      ),
+              ),
+              centerTitle: false,
+              actions: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      onPressed: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AnnouncementsPage(apiService: apiService),
+                          ),
+                        );
+                        if (mounted) {
+                          final unread =
+                              await apiService.fetchUnreadAnnouncementsCount();
+                          setState(() {
+                            _unreadAnnouncements = unread;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.notifications_outlined),
+                      tooltip: l10n.notificationsTooltip,
+                    ),
+                    if (_unreadAnnouncements > 0)
+                      Positioned(
+                        right: 7,
+                        top: 7,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _unreadAnnouncements > 99
+                                ? '99+'
+                                : _unreadAnnouncements.toString(),
+                            style: verySmallStyle12.copyWith(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                IconButton(
+                  onPressed: () => _openSearch(l10n),
+                  icon: const Icon(Icons.search_rounded),
+                  tooltip: l10n.searchHint,
+                ),
+              ],
+            ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: fetchData,
           color: CbsColors.primaryBrown,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: DesktopPageFrame(
+              padding: Adaptive.pagePadding(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -436,62 +434,6 @@ class _DashboardPageState extends State<DashboardPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (_outstandingBalance > 0) ...[
-                    const SizedBox(height: 10),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _onOutstandingBalanceTap(l10n),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Ink(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: CbsColors.brandGold.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color:
-                                  CbsColors.brandGold.withValues(alpha: 0.35),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.account_balance_wallet_outlined,
-                                color: CbsColors.brandGold,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  l10n.outstandingBalance(
-                                    NumberFormat.decimalPattern().format(
-                                      _outstandingBalance,
-                                    ),
-                                  ),
-                                  style: smallStyle18.copyWith(
-                                    color: CbsColors.caramel,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: CbsColors.brandGold.withValues(
-                                  alpha: 0.85,
-                                ),
-                                size: 22,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -718,7 +660,23 @@ class _DashboardPageState extends State<DashboardPage> {
                               )
                             : teacherCount == 0
                                 ? _emptyBlock(l10n.noItemsFound)
-                                : SizedBox(
+                                : Adaptive.isDesktop(context)
+                                    ? _HomeTeacherAvatars(
+                                        teachers: teachers,
+                                        onTap: (teacher) {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  _TeacherDetailsPage(
+                                                teacher: teacher,
+                                                onContact: () =>
+                                                    _contactTeacher(teacher),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      )
+                                    : SizedBox(
                                     height: 200,
                                     child: ListView.separated(
                                       scrollDirection: Axis.horizontal,
@@ -803,6 +761,7 @@ class _DashboardPageState extends State<DashboardPage> {
     };
 
     final children = <Widget>[];
+    final recentBooks = <LibraryData>[];
     for (final entry in _recentAccess) {
       switch (entry.kind) {
         case RecentAccessKind.course:
@@ -817,6 +776,10 @@ class _DashboardPageState extends State<DashboardPage> {
         case RecentAccessKind.book:
           final book = byBookId[entry.id];
           if (book == null) continue;
+          if (Adaptive.isDesktop(context)) {
+            recentBooks.add(book);
+            continue;
+          }
           final isDark = Theme.of(context).brightness == Brightness.dark;
           children.add(
             Material(
@@ -914,13 +877,35 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     }
 
-    if (children.isEmpty) {
+    if (children.isEmpty && recentBooks.isEmpty) {
       return _emptyBlock(l10n.noRecentAccessYet);
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+      children: [
+        ...children,
+        if (recentBooks.isNotEmpty)
+          Builder(
+            builder: (context) {
+              final shown = recentBooks.take(3).toList();
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < shown.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 12),
+                    Expanded(
+                      child: HomeBookCard(
+                        book: shown[i],
+                        onView: () => _openBookQuick(shown[i], l10n),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+      ],
     );
   }
 
@@ -931,6 +916,19 @@ class _DashboardPageState extends State<DashboardPage> {
       return null;
     }
   }
+}
+
+void openDashboardSearch(BuildContext context) {
+  final l10n =
+      AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  showSearch<void>(
+    context: context,
+    delegate: _DashboardSearchDelegate(
+      l10n: l10n,
+      isDark: isDark,
+    ),
+  );
 }
 
 class _DashboardSearchDelegate extends SearchDelegate<void> {
@@ -1173,9 +1171,12 @@ class _DashboardSearchDelegate extends SearchDelegate<void> {
                   subtitle: (c.description ?? '').trim(),
                   trailingColor: subColor,
                   onTap: () {
-                    final navigator = Navigator.of(context);
                     close(context, null);
-                    navigator.push(
+                    if (Adaptive.isDesktop(context)) {
+                      ensureDesktopShellController().openCourseInShell(c);
+                      return;
+                    }
+                    Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => _CourseDetailsPage(course: c),
                       ),
@@ -1471,6 +1472,95 @@ class _AllTeachersPageState extends State<_AllTeachersPage> {
   }
 }
 
+class _HomeTeacherAvatars extends StatelessWidget {
+  const _HomeTeacherAvatars({
+    required this.teachers,
+    required this.onTap,
+  });
+
+  final List<RegisterData> teachers;
+  final void Function(RegisterData teacher) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final count = teachers.length;
+        const gap = 16.0;
+        final maxSize = 88.0;
+        final available = constraints.maxWidth - gap * (count - 1);
+        final size = (available / count).clamp(48.0, maxSize);
+        return SizedBox(
+          height: size,
+          child: Row(
+            children: [
+              for (var i = 0; i < count; i++) ...[
+                if (i > 0) const SizedBox(width: gap),
+                Expanded(
+                  child: Center(
+                    child: _TeacherAvatarButton(
+                      teacher: teachers[i],
+                      diameter: size,
+                      initials: _teacherInitials(teachers[i], l10n),
+                      onTap: () => onTap(teachers[i]),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TeacherAvatarButton extends StatelessWidget {
+  const _TeacherAvatarButton({
+    required this.teacher,
+    required this.diameter,
+    required this.initials,
+    required this.onTap,
+  });
+
+  final RegisterData teacher;
+  final double diameter;
+  final String initials;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final photo = (teacher.pImage ?? '').trim();
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: CircleAvatar(
+          radius: diameter / 2,
+          backgroundColor: CbsColors.primaryBrown,
+          backgroundImage:
+              photo.isNotEmpty ? cachedRemoteImageProvider(photo) : null,
+          child: photo.isNotEmpty
+              ? null
+              : Text(
+                  initials,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: diameter * 0.32,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class _TeacherCard extends StatelessWidget {
   const _TeacherCard({
     required this.teacher,
@@ -1676,8 +1766,7 @@ class _TeacherCard extends StatelessWidget {
                 backgroundColor: isDark
                     ? CbsColors.darkIconBg
                     : CbsColors.primaryBrown.withValues(alpha: 0.10),
-                backgroundImage:
-                    cachedRemoteImageProvider(teacher.pImage),
+                backgroundImage: cachedRemoteImageProvider(teacher.pImage),
                 child: hasImage
                     ? null
                     : Text(

@@ -2,20 +2,24 @@
 
 import 'dart:io';
 
-import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
 import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class AssignmentPage extends StatefulWidget {
   final String assignmentId;
+  final bool embedded;
 
-  const AssignmentPage({super.key, required this.assignmentId});
+  const AssignmentPage({
+    super.key,
+    required this.assignmentId,
+    this.embedded = false,
+  });
 
   @override
   State<AssignmentPage> createState() => _AssignmentPageState();
@@ -61,10 +65,12 @@ class _AssignmentPageState extends State<AssignmentPage> {
     }
   }
 
-  Future<void> _pickOpenPdf(String questionId) async {
+  Future<void> _pickOpenFile(String questionId, {required bool isDoc}) async {
     final res = await FilePicker.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: isDoc
+          ? ['doc', 'docx', 'odt', 'rtf']
+          : ['pdf'],
     );
 
     if (res == null || res.files.isEmpty) return;
@@ -128,9 +134,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
         AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surface = isDark ? CbsColors.darkSurface : Colors.white;
-    final elevated = isDark
-        ? CbsColors.darkElevated
-        : CbsColors.primaryBrown.withValues(alpha: 0.08);
     final border = isDark
         ? CbsColors.darkBorder.withValues(alpha: 0.9)
         : CbsColors.primaryBrown.withValues(alpha: 0.18);
@@ -141,15 +144,19 @@ class _AssignmentPageState extends State<AssignmentPage> {
     final accent = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
     return Scaffold(
       backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          _details?['assignment']?['title']?.toString() ??
-              l10n.assignmentTitleFallback,
-        ),
-        centerTitle: false,
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text(
+                _details?['assignment']?['title']?.toString() ??
+                    l10n.assignmentTitleFallback,
+              ),
+              centerTitle: false,
+            ),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>?>>(
+        child: DesktopPageFrame(
+          padding: EdgeInsets.zero,
+          child: FutureBuilder<List<Map<String, dynamic>?>>(
           future:
               Future.wait<Map<String, dynamic>?>([_detailsFuture, _submissionFuture]),
           builder: (context, snapshot) {
@@ -180,12 +187,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
             final pdfUrl = assignment['pdf_url']?.toString();
             final questions = (details['questions'] as List)
                 .cast<Map<String, dynamic>>();
-            final dataController =
-                Get.isRegistered<DataController>() ? Get.find<DataController>() : null;
-            final canSubmitAssignments =
-                dataController?.canSubmitAssignments ?? true;
-            final isSuspended = dataController?.isSuspended ?? false;
-
             _initAnswerStateIfNeeded(questions);
 
             final answersByQuestionId =
@@ -239,29 +240,6 @@ class _AssignmentPageState extends State<AssignmentPage> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                if (submission == null && !canSubmitAssignments) ...[
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: elevated,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: border,
-                      ),
-                    ),
-                    child: Text(
-                      isSuspended
-                          ? l10n.assignmentSubmissionSuspended
-                          : l10n.assignmentSubmissionDowngraded,
-                      style: smallStyle18.copyWith(
-                        color: titleColor,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                ],
-
                 ...questions.map((q) {
                   final qid = q['id']?.toString() ?? '';
                   final type = (q['type'] ?? '').toString();
@@ -317,7 +295,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                 ),
                               ),
                               dense: true,
-                              onChanged: submission != null || !canSubmitAssignments
+                              onChanged: submission != null
                                   ? null
                                   : (v) {
                                       setState(() {
@@ -342,7 +320,12 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     );
                   }
 
-                  // open_pdf
+                  final isDocQuestion = type == 'open_doc';
+                  if (type != 'open_pdf' && type != 'open_doc') {
+                    return const SizedBox.shrink();
+                  }
+
+                  // open_pdf / open_doc file upload
                   final answer = answersByQuestionId[qid] as Map<String, dynamic>?;
                   final studentPdfUrl = answer?['student_answer_pdf_url']?.toString();
                   final teacherPoints = answer?['teacher_points'];
@@ -382,7 +365,9 @@ class _AssignmentPageState extends State<AssignmentPage> {
                                               .split(RegExp(r'[\\/]'))
                                               .last,
                                         )
-                                      : l10n.assignmentNoPdfSelectedOptional,
+                                      : (isDocQuestion
+                                          ? 'No document selected (optional)'
+                                          : l10n.assignmentNoPdfSelectedOptional),
                                   style: smallStyle18.copyWith(
                                     color: bodyColor,
                                     fontSize: 13,
@@ -391,10 +376,14 @@ class _AssignmentPageState extends State<AssignmentPage> {
                               ),
                               const SizedBox(width: 8),
                               OutlinedButton.icon(
-                                onPressed:
-                                    canSubmitAssignments ? () => _pickOpenPdf(qid) : null,
+                                onPressed: () => _pickOpenFile(
+                                  qid,
+                                  isDoc: isDocQuestion,
+                                ),
                                 icon: const Icon(Icons.upload_file_rounded),
-                                label: Text(l10n.uploadPdf),
+                                label: Text(
+                                  isDocQuestion ? 'Upload document' : l10n.uploadPdf,
+                                ),
                               ),
                             ],
                           ),
@@ -481,7 +470,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed:
-                          _submitting || !canSubmitAssignments ? null : _submit,
+                          _submitting ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
@@ -503,6 +492,7 @@ class _AssignmentPageState extends State<AssignmentPage> {
               ],
             );
           },
+        ),
         ),
       ),
     );

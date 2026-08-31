@@ -1,4 +1,6 @@
 /// PDF.js in-WebView viewer with vertical scrolling and progress reporting to Flutter.
+///
+/// Renders each page at device pixel ratio (min 2×) so text stays sharp on high-DPI screens.
 String buildPdfJsViewerHtml({
   int startPage = 1,
   String? fileUrl,
@@ -25,7 +27,7 @@ String buildPdfJsViewerHtml({
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -40,23 +42,25 @@ String buildPdfJsViewerHtml({
     body { display: flex; flex-direction: column; }
     #viewer {
       flex: 1 1 auto;
-      overflow-x: hidden;
+      overflow-x: auto;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 12px 10px 24px;
+      padding: 12px 8px 24px;
     }
     .page-wrap {
       display: flex;
       justify-content: center;
       margin: 0 auto 14px;
-      max-width: 100%;
+      width: 100%;
     }
     .page-wrap canvas {
       display: block;
-      max-width: 100%;
+      /* Never CSS-downscale after render — that softens text */
+      max-width: none !important;
+      width: auto;
+      height: auto;
       background: #fff;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
-      image-rendering: auto;
     }
     #status {
       flex: 0 0 auto;
@@ -81,6 +85,7 @@ String buildPdfJsViewerHtml({
     var scrollTargetPage = $page;
     var scrollTimer = null;
     var lastPostedPage = 0;
+    var renderToken = 0;
     var viewer = document.getElementById('viewer');
 
     function notifyError(err) {
@@ -150,21 +155,37 @@ String buildPdfJsViewerHtml({
       postProgress(true);
     }
 
-    function renderPage(num) {
-      return pdfDoc.getPage(num).then(function(page) {
-        var base = page.getViewport({ scale: 1 });
-        var width = viewer.clientWidth - 4;
-        if (width < 120) width = 120;
-        var cssScale = width / base.width;
-        var outputScale = window.devicePixelRatio || 1;
-        var viewport = page.getViewport({ scale: cssScale * outputScale });
+    function pixelRatio() {
+      // Cap at 3 to avoid huge canvases / OOM; floor at 2 for sharp text on phones.
+      var dpr = window.devicePixelRatio || 1;
+      if (dpr < 2) dpr = 2;
+      if (dpr > 3) dpr = 3;
+      return dpr;
+    }
 
+    function cssPageWidth() {
+      var width = viewer.clientWidth - 16;
+      if (width < 120) width = 120;
+      return width;
+    }
+
+    function renderPage(num, token) {
+      return pdfDoc.getPage(num).then(function(page) {
+        if (token !== renderToken) return;
+
+        var base = page.getViewport({ scale: 1 });
+        var cssScale = cssPageWidth() / base.width;
+        var outputScale = pixelRatio();
+
+        // CSS size = fit to viewer width; bitmap = CSS * DPR for sharp glyphs.
+        var viewport = page.getViewport({ scale: cssScale });
         var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-        canvas.style.width = Math.floor(viewport.width / outputScale) + 'px';
-        canvas.style.height = Math.floor(viewport.height / outputScale) + 'px';
+        var ctx = canvas.getContext('2d', { alpha: false });
+
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = Math.floor(viewport.width) + 'px';
+        canvas.style.height = Math.floor(viewport.height) + 'px';
 
         var wrap = document.createElement('div');
         wrap.className = 'page-wrap';
@@ -172,7 +193,16 @@ String buildPdfJsViewerHtml({
         wrap.appendChild(canvas);
         viewer.appendChild(wrap);
 
-        return page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
+        var renderContext = {
+          canvasContext: ctx,
+          viewport: viewport,
+          transform: outputScale !== 1
+            ? [outputScale, 0, 0, outputScale, 0, 0]
+            : null
+        };
+
+        return page.render(renderContext).promise.then(function() {
+          if (token !== renderToken) return;
           if (num === scrollTargetPage) {
             scrollToPage(scrollTargetPage);
           }
@@ -180,14 +210,33 @@ String buildPdfJsViewerHtml({
       });
     }
 
-    function renderRange(from, to) {
+    function renderRange(from, to, token) {
       var chain = Promise.resolve();
       for (var i = from; i <= to; i++) {
         (function(n) {
-          chain = chain.then(function() { return renderPage(n); });
+          chain = chain.then(function() {
+            if (token !== renderToken) return;
+            return renderPage(n, token);
+          });
         })(i);
       }
       return chain;
+    }
+
+    function clearPages() {
+      while (viewer.firstChild) viewer.removeChild(viewer.firstChild);
+    }
+
+    function renderAllPages() {
+      if (!pdfDoc) return Promise.resolve();
+      var token = ++renderToken;
+      var savedPage = pageNum || scrollTargetPage || 1;
+      clearPages();
+      return renderRange(1, pageCount, token).then(function() {
+        if (token !== renderToken) return;
+        scrollToPage(savedPage);
+        updateCurrentPageFromScroll();
+      });
     }
 
     function openPdf() {
@@ -198,16 +247,28 @@ String buildPdfJsViewerHtml({
         if (scrollTargetPage < 1) scrollTargetPage = 1;
         pageNum = scrollTargetPage;
         document.getElementById('status').textContent = '';
-        return renderRange(1, scrollTargetPage).then(function() {
+
+        var token = ++renderToken;
+        return renderRange(1, scrollTargetPage, token).then(function() {
+          if (token !== renderToken) return;
           scrollToPage(scrollTargetPage);
           if (scrollTargetPage < pageCount) {
-            return renderRange(scrollTargetPage + 1, pageCount);
+            return renderRange(scrollTargetPage + 1, pageCount, token);
           }
         });
       }).then(function() {
         updateCurrentPageFromScroll();
       });
     }
+
+    var resizeTimer = null;
+    window.addEventListener('resize', function() {
+      if (!pdfDoc) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function() {
+        renderAllPages().catch(function() {});
+      }, 250);
+    });
 
     function waitForPdfJs(retries) {
       if (typeof pdfjsLib !== 'undefined') {

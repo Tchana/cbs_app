@@ -1,6 +1,7 @@
 import 'package:center_for_biblical_studies/features/assignments/assignment_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,15 @@ import 'package:intl/intl.dart';
 
 class CourseAssignmentsPage extends StatefulWidget {
   final String courseId;
+  final bool embedded;
+  final void Function(String assignmentId)? onOpenAssignment;
 
-  const CourseAssignmentsPage({super.key, required this.courseId});
+  const CourseAssignmentsPage({
+    super.key,
+    required this.courseId,
+    this.embedded = false,
+    this.onOpenAssignment,
+  });
 
   @override
   State<CourseAssignmentsPage> createState() => _CourseAssignmentsPageState();
@@ -50,12 +58,16 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
         isDark ? CbsColors.darkTextSecondary : CbsColors.hintColor;
     return Scaffold(
       backgroundColor: isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
-      appBar: AppBar(
-        title: Text(l10n.assignmentsTitle),
-        centerTitle: false,
-      ),
+      appBar: widget.embedded
+          ? null
+          : AppBar(
+              title: Text(l10n.assignmentsTitle),
+              centerTitle: false,
+            ),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
+        child: DesktopPageFrame(
+          padding: EdgeInsets.zero,
+          child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -111,6 +123,11 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
                         if (assignmentId == null || assignmentId.isEmpty) {
                           return;
                         }
+                        final openInShell = widget.onOpenAssignment;
+                        if (openInShell != null) {
+                          openInShell(assignmentId);
+                          return;
+                        }
                         Get.to(() => AssignmentPage(assignmentId: assignmentId));
                       },
                       child: Container(
@@ -163,6 +180,7 @@ class _CourseAssignmentsPageState extends State<CourseAssignmentsPage> {
               ),
             );
           },
+        ),
         ),
       ),
     );

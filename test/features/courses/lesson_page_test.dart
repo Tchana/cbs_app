@@ -23,7 +23,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: LessonPage(courseData: course),
+          body: SizedBox(
+            height: 600,
+            child: LessonPage(courseData: course),
+          ),
         ),
       ),
     );

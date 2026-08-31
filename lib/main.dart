@@ -1,6 +1,10 @@
 import 'package:center_for_biblical_studies/data/controllers/data_controller.dart';
+import 'package:center_for_biblical_studies/features/authentication/login_page.dart';
 import 'package:center_for_biblical_studies/features/splash_screens/splash_screens.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/page/main_page.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_shell_controller.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
 import 'package:center_for_biblical_studies/supabase/supabase_config.dart';
 import 'package:center_for_biblical_studies/utils/cbs_theme.dart';
@@ -15,6 +19,8 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+  Get.put(DataController(), permanent: true);
+  Get.put(DesktopShellController(), permanent: true);
   runApp(const MyApp());
 }
 
@@ -53,8 +59,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    Get.put(DataController());
-
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) =>
@@ -75,7 +79,17 @@ class _MyAppState extends State<MyApp> {
         Locale('en', ''),
         Locale('fr', ''),
       ],
-      home: const SplashScreen(),
+      getPages: [
+        GetPage(name: '/MainPage', page: () => const MainPage()),
+      ],
+      home: Builder(
+        builder: (context) {
+          if (Adaptive.isDesktop(context)) {
+            return const LoginPage();
+          }
+          return const SplashScreen();
+        },
+      ),
     );
   }
 }

@@ -2,12 +2,14 @@ import 'package:center_for_biblical_studies/features/authentication/login_page.d
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_campus_ui.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:center_for_biblical_studies/features/subscriptions/subscription_status_page.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -220,7 +222,9 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
       backgroundColor:
           isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
-      appBar: AppBar(
+      appBar: Adaptive.isDesktop(context)
+          ? null
+          : AppBar(
         title: Text(
           localizations.settings,
           style: smallStyle18.copyWith(fontWeight: FontWeight.w600),
@@ -234,11 +238,19 @@ class _SettingsState extends State<Settings> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: DesktopPageFrame(
+          padding: EdgeInsets.zero,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (Adaptive.isDesktop(context))
+                CampusPageHeader(
+                  title: localizations.settings,
+                  subtitle: localizations.settingsSubtitle,
+                  icon: Icons.settings_rounded,
+                ),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -494,37 +506,6 @@ class _SettingsState extends State<Settings> {
                   children: [
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        Icons.workspace_premium_rounded,
-                        color: accentIcon,
-                      ),
-                      title: Text(
-                        localizations.subscriptionStatusTitle,
-                        style: smallStyle18.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? CbsColors.darkTextPrimary : null,
-                        ),
-                      ),
-                      subtitle: Text(
-                        localizations.subscriptionStatusSubtitle,
-                        style: smallStyle18.copyWith(
-                          fontSize: 13,
-                          color: muted,
-                        ),
-                      ),
-                      trailing: Icon(
-                        Icons.chevron_right,
-                        color: muted,
-                      ),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SubscriptionStatusPage(),
-                        ),
-                      ),
-                    ),
-                    _divider(isDark),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
                       leading:
                           const Icon(Icons.logout, color: CbsColors.errorColor),
                       title: Text(
@@ -552,6 +533,7 @@ class _SettingsState extends State<Settings> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

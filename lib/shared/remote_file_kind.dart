@@ -4,7 +4,33 @@ enum RemoteFileKind {
   pdf,
   image,
   text,
+  video,
+  audio,
+  link,
+  slides,
+  doc,
   external,
+}
+
+RemoteFileKind remoteFileKindFromResourceType(String? resourceType) {
+  switch (resourceType?.trim().toLowerCase()) {
+    case 'video':
+      return RemoteFileKind.video;
+    case 'audio':
+      return RemoteFileKind.audio;
+    case 'pdf':
+      return RemoteFileKind.pdf;
+    case 'doc':
+      return RemoteFileKind.doc;
+    case 'image':
+      return RemoteFileKind.image;
+    case 'link':
+      return RemoteFileKind.link;
+    case 'slides':
+      return RemoteFileKind.slides;
+    default:
+      return RemoteFileKind.external;
+  }
 }
 
 RemoteFileKind remoteFileKindFromUrl(String url) {
@@ -16,6 +42,27 @@ RemoteFileKind remoteFileKindFromUrl(String url) {
   final ext = path.substring(dot + 1);
 
   if (ext == 'pdf') return RemoteFileKind.pdf;
+
+  if (const {
+    'mp4',
+    'webm',
+    'mov',
+    'm4v',
+    'mkv',
+  }.contains(ext)) {
+    return RemoteFileKind.video;
+  }
+
+  if (const {
+    'mp3',
+    'wav',
+    'm4a',
+    'ogg',
+    'aac',
+    'flac',
+  }.contains(ext)) {
+    return RemoteFileKind.audio;
+  }
 
   if (const {
     'jpg',
@@ -43,7 +90,56 @@ RemoteFileKind remoteFileKindFromUrl(String url) {
     return RemoteFileKind.text;
   }
 
+  if (const {
+    'ppt',
+    'pptx',
+    'pps',
+    'ppsx',
+    'odp',
+  }.contains(ext)) {
+    return RemoteFileKind.slides;
+  }
+
+  if (const {
+    'doc',
+    'docx',
+    'docm',
+    'dot',
+    'dotx',
+    'rtf',
+    'odt',
+  }.contains(ext)) {
+    return RemoteFileKind.doc;
+  }
+
   return RemoteFileKind.external;
+}
+
+bool remoteFileKindOpensExternally(RemoteFileKind kind) {
+  switch (kind) {
+    case RemoteFileKind.audio:
+    case RemoteFileKind.link:
+      return true;
+    case RemoteFileKind.video:
+    case RemoteFileKind.pdf:
+    case RemoteFileKind.image:
+    case RemoteFileKind.text:
+    case RemoteFileKind.slides:
+    case RemoteFileKind.doc:
+    case RemoteFileKind.external:
+      return false;
+  }
+}
+
+RemoteFileKind resolveRemoteFileKind({
+  required String url,
+  String? resourceType,
+}) {
+  if (resourceType != null && resourceType.trim().isNotEmpty) {
+    final fromType = remoteFileKindFromResourceType(resourceType);
+    if (fromType != RemoteFileKind.external) return fromType;
+  }
+  return remoteFileKindFromUrl(url);
 }
 
 RemoteFileKind remoteFileKindFromBytes(Uint8List bytes, {RemoteFileKind? fallback}) {

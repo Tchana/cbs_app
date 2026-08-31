@@ -1,4 +1,5 @@
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +73,9 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         centerTitle: false,
       ),
       body: SafeArea(
-        child: FutureBuilder<List<Map<String, dynamic>>>(
+        child: DesktopPageFrame(
+          padding: EdgeInsets.zero,
+          child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -258,6 +261,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
               ),
             );
           },
+        ),
         ),
       ),
     );

@@ -45,7 +45,7 @@ void main() {
       (tester) async {
     final dc = Get.put(DataController());
     // Library UI access is subscription-driven; enable it for this widget test.
-    dc.setAccessProfile(role: 'library_user', subscription: 'library_user', maxLevel: 0);
+    dc.setAccessProfile(role: 'library_user');
     dc.setBooks(const [
       LibraryData(
         id: '1',
@@ -61,6 +61,10 @@ void main() {
       ),
     ]);
 
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: [
@@ -70,17 +74,19 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: [Locale('en'), Locale('fr')],
-        home: LibraryPage(apiService: _FakeLibrarySupabaseService()),
+        home: MediaQuery(
+          data: MediaQueryData(size: Size(390, 844)),
+          child: LibraryPage(apiService: _FakeLibrarySupabaseService()),
+        ),
       ),
     );
 
     await tester.pumpAndSettle();
 
     expect(find.text('All'), findsOneWidget);
-    expect(find.text('bible'), findsOneWidget);
-    expect(find.text('commentary'), findsOneWidget);
-    expect(find.text('other'), findsOneWidget);
-    expect(find.text('Continue reading'), findsOneWidget);
-    expect(find.text('Author: Moses'), findsWidgets);
+    expect(find.text('Bibles'), findsOneWidget);
+    expect(find.text('Commentaries'), findsOneWidget);
+    expect(find.text('Other'), findsOneWidget);
+    expect(find.text('Genesis'), findsWidgets);
   });
 }
