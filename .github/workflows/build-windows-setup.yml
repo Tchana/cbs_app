@@ -1,0 +1,99 @@
+name: Build Windows Setup
+
+# Builds the CBS Windows desktop installer (Inno Setup .exe).
+# Run manually from the Actions tab, or reuse the artifact from a tag Release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Installer version label (defaults to pubspec version name)'
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - 'windows/**'
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/build-windows-setup.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-setup:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $pubspec = (Select-String -Path "pubspec.yaml" -Pattern "^\s*version:\s*(.+)$").Matches.Groups[1].Value.Trim()
+          $name = ($pubspec -split "\+")[0].Trim()
+          $build = ($pubspec -split "\+")[1].Trim()
+          $inputVersion = "${{ inputs.version }}".Trim()
+          if ($inputVersion) {
+            $name = $inputVersion.TrimStart('v')
+          }
+          "version=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          "build=$build" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Building Windows setup for version $name+$build"
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - run: flutter pub get
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer (.exe)
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          New-Item -ItemType Directory -Force -Path "build\installer" | Out-Null
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            $iscc = "${env:ProgramFiles}\Inno Setup 6\ISCC.exe"
+          }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+          & $iscc "windows\installer.iss" `
+            /DMyAppName="CBS" `
+            /DMyAppVersion="$version" `
+            /DMyAppPublisher="Center for Biblical Studies" `
+            /DMyAppURL="https://github.com/Tchana/cbs_app" `
+            /DMyAppExeName="cbs.exe"
+          Get-ChildItem "build\installer\*.exe" | Format-Table Name, Length
+
+      - name: Upload setup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbs-windows-setup-${{ steps.version.outputs.version }}
+          path: build/installer/cbs_setup_*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach to GitHub Release (manual version tag)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.version != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: CBS ${{ steps.version.outputs.version }} (Windows)
+          files: build/installer/cbs_setup_*.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
