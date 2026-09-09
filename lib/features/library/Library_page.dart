@@ -21,7 +21,7 @@ import 'package:get/get.dart';
 SliverGridDelegate _libraryBookGridDelegate(BuildContext context) {
   if (Adaptive.isCompact(context)) {
     return const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
+      crossAxisCount: 3,
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
       childAspectRatio: 0.66,
