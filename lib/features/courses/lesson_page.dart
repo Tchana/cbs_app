@@ -1,14 +1,20 @@
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/data/authentication/register_data.dart';
 import 'package:center_for_biblical_studies/data/courses/course_data.dart';
 import 'package:center_for_biblical_studies/data/group/group_data.dart';
 import 'package:center_for_biblical_studies/features/assignments/course_assignments_page.dart';
+import 'package:center_for_biblical_studies/features/courses/inline_video_player.dart';
+import 'package:center_for_biblical_studies/features/courses/video_viewer_screen.dart';
 import 'package:center_for_biblical_studies/features/forum/group_chat_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
+import 'package:center_for_biblical_studies/services/chat_notification_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
+import 'package:center_for_biblical_studies/shared/cached_remote_image.dart';
 import 'package:center_for_biblical_studies/shared/custom_button.dart';
 import 'package:center_for_biblical_studies/shared/open_remote_file.dart';
 import 'package:center_for_biblical_studies/shared/remote_file_icons.dart';
+import 'package:center_for_biblical_studies/shared/resolve_storage_view_url.dart';
 import 'package:center_for_biblical_studies/shared/rich_text_content.dart';
 import 'package:center_for_biblical_studies/shared/video_url_utils.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
@@ -90,6 +96,10 @@ class _LessonPageState extends State<LessonPage>
     setState(() => _forumLoading = true);
     try {
       final group = await _apiService.fetchGroupForCourse(courseTitle: title);
+      if (group?.uuid != null) {
+        await _apiService.ensureRoomMembership(group!.uuid!);
+        await ChatNotificationService.instance.refreshMemberships();
+      }
       if (mounted && _forumCourseTitle == title) {
         setState(() => _forumGroup = group);
       }
@@ -98,6 +108,32 @@ class _LessonPageState extends State<LessonPage>
       if (mounted && _forumCourseTitle == title) {
         setState(() => _forumLoading = false);
       }
+    }
+  }
+
+  Future<GroupData?> _createCourseDiscussion() async {
+    final title = (_courseData?.title ?? '').trim();
+    if (title.isEmpty) return null;
+    setState(() => _forumLoading = true);
+    try {
+      final result =
+          await _apiService.createCourseDiscussionRoom(courseTitle: title);
+      if (result['success'] == true && result['data'] is GroupData) {
+        final group = result['data'] as GroupData;
+        await ChatNotificationService.instance.refreshMemberships();
+        if (mounted) {
+          setState(() {
+            _forumGroup = group;
+            _forumCourseTitle = title;
+          });
+        }
+        return group;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    } finally {
+      if (mounted) setState(() => _forumLoading = false);
     }
   }
 
@@ -169,160 +205,188 @@ class _LessonPageState extends State<LessonPage>
 
     return DesktopPageFrame(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor),
-              boxShadow: isDark
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (description.isNotEmpty) ...[
-                  Text(
-                    l10n.descriptionLabel,
-                    style: smallStyle18.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: titleColor,
-                    ),
-                  ),
-                  gapH8,
-                  Text(
-                    description,
-                    style: verySmallStyle12.copyWith(
-                      color: bodyColor,
-                      height: 1.4,
-                    ),
-                  ),
-                  gapH16,
-                ],
-                Row(
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                  boxShadow: isDark
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _InfoChip(
-                      icon: Icons.person_outline_rounded,
-                      label: l10n.teacherLabel,
-                      value: LessonPage._teacherDisplayName(
-                        _courseData?.teacher,
-                        l10n,
+                    if (description.isNotEmpty) ...[
+                      Text(
+                        l10n.descriptionLabel,
+                        style: smallStyle18.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
                       ),
+                      gapH8,
+                      Text(
+                        description,
+                        style: verySmallStyle12.copyWith(
+                          color: bodyColor,
+                          height: 1.4,
+                        ),
+                      ),
+                      gapH16,
+                    ],
+                    Row(
+                      children: [
+                        _InfoChip(
+                          icon: Icons.person_outline_rounded,
+                          label: l10n.teacherLabel,
+                          value: LessonPage._teacherDisplayName(
+                            _courseData?.teacher,
+                            l10n,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        _InfoChip(
+                          icon: Icons.menu_book_rounded,
+                          label: l10n.lessonsLabel,
+                          value: '$lessonCount',
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    _InfoChip(
-                      icon: Icons.menu_book_rounded,
-                      label: l10n.lessonsLabel,
-                      value: '$lessonCount',
+                    gapH16,
+                    CbsButton(
+                      width: double.infinity,
+                      height: 50,
+                      bgColor: isDark
+                          ? CbsColors.primaryYellow
+                          : CbsColors.primaryBrown,
+                      borderColor: isDark
+                          ? CbsColors.primaryYellow
+                          : CbsColors.primaryBrown,
+                      onPressed: () {
+                        final courseId = _courseData?.id;
+                        if (courseId == null) return;
+                        final openInShell = widget.onOpenAssignments;
+                        if (openInShell != null) {
+                          openInShell(courseId);
+                          return;
+                        }
+                        Get.to(() => CourseAssignmentsPage(courseId: courseId));
+                      },
+                      child: Text(
+                        l10n.viewAssignments,
+                        style: verySmallStyle12.copyWith(
+                          color: isDark ? CbsColors.brownNight : Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                gapH16,
-                CbsButton(
-                  width: double.infinity,
-                  height: 50,
-                  bgColor:
-                      isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
-                  borderColor:
-                      isDark ? CbsColors.primaryYellow : CbsColors.primaryBrown,
-                  onPressed: () {
-                    final courseId = _courseData?.id;
-                    if (courseId == null) return;
-                    final openInShell = widget.onOpenAssignments;
-                    if (openInShell != null) {
-                      openInShell(courseId);
-                      return;
-                    }
-                    Get.to(() => CourseAssignmentsPage(courseId: courseId));
-                  },
-                  child: Text(
-                    l10n.viewAssignments,
-                    style: verySmallStyle12.copyWith(
-                      color: isDark ? CbsColors.brownNight : Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
+              ),
+            ),
+            if (overviewVideos.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.overviewVideosLabel,
+                        style: smallStyle18.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: titleColor,
+                        ),
+                      ),
+                      gapH12,
+                      ...overviewVideos.map(
+                        (video) => _OverviewVideoTile(
+                          video: video,
+                          l10n: l10n,
+                          isDark: isDark,
+                          borderColor: borderColor,
+                          cardColor: cardColor,
+                          titleColor: titleColor,
+                          bodyColor: bodyColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          if (overviewVideos.isNotEmpty) ...[
-            gapH16,
-            Text(
-              l10n.overviewVideosLabel,
-              style: smallStyle18.copyWith(
-                fontWeight: FontWeight.w700,
-                color: titleColor,
+              ),
+            SliverOverlapAbsorber(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+              sliver: SliverPersistentHeader(
+                pinned: true,
+                delegate: _LessonTabBarDelegate(
+                  tabBar: TabBar(
+                    controller: _tabController,
+                    labelColor: tabIndicatorColor,
+                    unselectedLabelColor: bodyColor,
+                    indicatorColor: tabIndicatorColor,
+                    labelStyle: verySmallStyle12.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: verySmallStyle12,
+                    tabs: [
+                      Tab(text: l10n.tabOverview),
+                      Tab(text: l10n.resourcesLabel),
+                      Tab(text: l10n.courseDiscussionLabel),
+                    ],
+                  ),
+                  backgroundColor:
+                      isDark ? CbsColors.darkBg : CbsColors.backgroundColor,
+                ),
               ),
             ),
-            gapH12,
-            ...overviewVideos.map(
-              (video) => _OverviewVideoTile(
-                video: video,
-                l10n: l10n,
-                isDark: isDark,
-                borderColor: borderColor,
-                cardColor: cardColor,
-                titleColor: titleColor,
-                bodyColor: bodyColor,
-              ),
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _OverviewTab(
+              learningObjectives: learningObjectives,
+              l10n: l10n,
+              titleColor: titleColor,
+              bodyColor: bodyColor,
+            ),
+            _ResourcesTab(
+              resources: resources,
+              l10n: l10n,
+              isDark: isDark,
+              borderColor: borderColor,
+              cardColor: cardColor,
+              titleColor: titleColor,
+              bodyColor: bodyColor,
+            ),
+            _DiscussionsTab(
+              group: _forumGroup,
+              loading: _forumLoading,
+              courseTitle: (_courseData?.title ?? '').trim(),
+              l10n: l10n,
+              isDark: isDark,
+              bodyColor: bodyColor,
+              onCreateRoom: _createCourseDiscussion,
+              onRoomReady: (group) {
+                if (!mounted) return;
+                setState(() => _forumGroup = group);
+              },
             ),
           ],
-          gapH16,
-          TabBar(
-            controller: _tabController,
-            labelColor: tabIndicatorColor,
-            unselectedLabelColor: bodyColor,
-            indicatorColor: tabIndicatorColor,
-            labelStyle: verySmallStyle12.copyWith(fontWeight: FontWeight.w700),
-            unselectedLabelStyle: verySmallStyle12,
-            tabs: [
-              Tab(text: l10n.tabOverview),
-              Tab(text: l10n.resourcesLabel),
-              Tab(text: l10n.courseDiscussionLabel),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _OverviewTab(
-                  learningObjectives: learningObjectives,
-                  l10n: l10n,
-                  titleColor: titleColor,
-                  bodyColor: bodyColor,
-                ),
-                _ResourcesTab(
-                  resources: resources,
-                  l10n: l10n,
-                  isDark: isDark,
-                  borderColor: borderColor,
-                  cardColor: cardColor,
-                  titleColor: titleColor,
-                  bodyColor: bodyColor,
-                ),
-                _DiscussionsTab(
-                  group: _forumGroup,
-                  loading: _forumLoading,
-                  l10n: l10n,
-                  isDark: isDark,
-                  bodyColor: bodyColor,
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -338,6 +402,40 @@ class _CourseResourceEntry {
   final LessonResourceData resource;
   final String? lessonId;
   final String lessonLabel;
+}
+
+class _LessonTabBarDelegate extends SliverPersistentHeaderDelegate {
+  _LessonTabBarDelegate({
+    required this.tabBar,
+    required this.backgroundColor,
+  });
+
+  final TabBar tabBar;
+  final Color backgroundColor;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: backgroundColor,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _LessonTabBarDelegate oldDelegate) {
+    return tabBar != oldDelegate.tabBar ||
+        backgroundColor != oldDelegate.backgroundColor;
+  }
 }
 
 class _OverviewTab extends StatelessWidget {
@@ -357,39 +455,56 @@ class _OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasObjectives = !isRichTextEmpty(learningObjectives);
 
-    if (!hasObjectives) {
-      return Center(
-        child: Text(
-          l10n.notAvailable,
-          style: verySmallStyle14.copyWith(color: bodyColor),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
-      children: [
-        Text(
-          l10n.learningObjectivesLabel,
-          style: smallStyle18.copyWith(
-            fontWeight: FontWeight.w700,
-            color: titleColor,
-          ),
-        ),
-        gapH8,
-        RichTextContent(
-          html: learningObjectives,
-          textStyle: verySmallStyle12.copyWith(
-            color: bodyColor,
-            height: 1.4,
-          ),
-        ),
-      ],
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          key: const PageStorageKey<String>('course-overview-tab'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            ),
+            if (!hasObjectives)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    l10n.notAvailable,
+                    style: verySmallStyle14.copyWith(color: bodyColor),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    Text(
+                      l10n.learningObjectivesLabel,
+                      style: smallStyle18.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: titleColor,
+                      ),
+                    ),
+                    gapH8,
+                    RichTextContent(
+                      html: learningObjectives,
+                      textStyle: verySmallStyle12.copyWith(
+                        color: bodyColor,
+                        height: 1.4,
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _ResourcesTab extends StatelessWidget {
+class _ResourcesTab extends StatefulWidget {
   const _ResourcesTab({
     required this.resources,
     required this.l10n,
@@ -409,64 +524,113 @@ class _ResourcesTab extends StatelessWidget {
   final Color? bodyColor;
 
   @override
+  State<_ResourcesTab> createState() => _ResourcesTabState();
+}
+
+class _ResourcesTabState extends State<_ResourcesTab> {
+  String? _playingUrl;
+
+  @override
   Widget build(BuildContext context) {
-    if (resources.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.folder_open_rounded,
-              size: 48,
-              color: isDark
-                  ? CbsColors.brandGold.withValues(alpha: 0.65)
-                  : CbsColors.primaryBrown.withValues(alpha: 0.4),
+    final resources = widget.resources;
+    final l10n = widget.l10n;
+    final isDark = widget.isDark;
+    final borderColor = widget.borderColor;
+    final cardColor = widget.cardColor;
+    final titleColor = widget.titleColor;
+    final bodyColor = widget.bodyColor;
+
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          key: const PageStorageKey<String>('course-resources-tab'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-            gapH12,
-            Text(
-              l10n.noResourcesYet,
-              style: verySmallStyle14.copyWith(color: bodyColor),
-            ),
+            if (resources.isEmpty)
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.folder_open_rounded,
+                        size: 48,
+                        color: isDark
+                            ? CbsColors.brandGold.withValues(alpha: 0.65)
+                            : CbsColors.primaryBrown.withValues(alpha: 0.4),
+                      ),
+                      gapH12,
+                      Text(
+                        l10n.noResourcesYet,
+                        style: verySmallStyle14.copyWith(color: bodyColor),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+                sliver: SliverList.separated(
+                  itemCount: resources.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final entry = resources[index];
+                    final url = (entry.resource.url ?? '').trim();
+                    final isVideo = isInAppVideoResource(
+                      url: url,
+                      resourceType: entry.resource.resourceType,
+                    );
+
+                    if (isVideo) {
+                      return _VideoResourceTile(
+                        resource: entry.resource,
+                        lessonLabel: entry.lessonLabel,
+                        l10n: l10n,
+                        isDark: isDark,
+                        borderColor: borderColor,
+                        cardColor: cardColor,
+                        titleColor: titleColor,
+                        bodyColor: bodyColor,
+                        playing: (PlatformCapabilities.supportsInAppWebView ||
+                                PlatformCapabilities.supportsHtmlIFrameEmbed) &&
+                            _playingUrl == url &&
+                            url.isNotEmpty,
+                        onPlay: () {
+                          if (!PlatformCapabilities.supportsInAppWebView &&
+                              !PlatformCapabilities.supportsHtmlIFrameEmbed) {
+                            openVideoInApp(url, title: entry.resource.title);
+                            return;
+                          }
+                          setState(() => _playingUrl = url);
+                        },
+                        onStop: () {
+                          if (_playingUrl == url) {
+                            setState(() => _playingUrl = null);
+                          }
+                        },
+                      );
+                    }
+
+                    return _ResourceTile(
+                      resource: entry.resource,
+                      lessonId: entry.lessonId,
+                      lessonLabel: entry.lessonLabel,
+                      l10n: l10n,
+                      isDark: isDark,
+                      borderColor: borderColor,
+                      cardColor: cardColor,
+                      titleColor: titleColor,
+                      bodyColor: bodyColor,
+                    );
+                  },
+                ),
+              ),
           ],
-        ),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
-      itemCount: resources.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final entry = resources[index];
-        final url = (entry.resource.url ?? '').trim();
-        final isVideo = isInAppVideoResource(
-          url: url,
-          resourceType: entry.resource.resourceType,
-        );
-
-        if (isVideo) {
-          return _VideoResourceTile(
-            resource: entry.resource,
-            lessonLabel: entry.lessonLabel,
-            l10n: l10n,
-            isDark: isDark,
-            borderColor: borderColor,
-            cardColor: cardColor,
-            titleColor: titleColor,
-            bodyColor: bodyColor,
-          );
-        }
-
-        return _ResourceTile(
-          resource: entry.resource,
-          lessonId: entry.lessonId,
-          lessonLabel: entry.lessonLabel,
-          l10n: l10n,
-          isDark: isDark,
-          borderColor: borderColor,
-          cardColor: cardColor,
-          titleColor: titleColor,
-          bodyColor: bodyColor,
         );
       },
     );
@@ -477,41 +641,172 @@ class _DiscussionsTab extends StatelessWidget {
   const _DiscussionsTab({
     required this.group,
     required this.loading,
+    required this.courseTitle,
     required this.l10n,
     required this.isDark,
     required this.bodyColor,
+    required this.onCreateRoom,
+    required this.onRoomReady,
   });
 
   final GroupData? group;
   final bool loading;
+  final String courseTitle;
   final AppLocalizations l10n;
   final bool isDark;
   final Color? bodyColor;
+  final Future<GroupData?> Function() onCreateRoom;
+  final void Function(GroupData group) onRoomReady;
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
-        ),
-      );
-    }
+    return Builder(
+      builder: (context) {
+        Widget body;
+        if (loading) {
+          body = Center(
+            child: CircularProgressIndicator(
+              color: isDark ? CbsColors.brandGold : CbsColors.primaryBrown,
+            ),
+          );
+        } else if (group == null) {
+          body = _CreateCourseDiscussionPanel(
+            l10n: l10n,
+            isDark: isDark,
+            bodyColor: bodyColor,
+            courseTitle: courseTitle,
+            onCreateRoom: onCreateRoom,
+            onRoomReady: onRoomReady,
+          );
+        } else {
+          body = GroupChatPage(group: group!, embedded: true);
+        }
 
-    if (group == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            l10n.courseDiscussionUnavailable,
-            textAlign: TextAlign.center,
-            style: verySmallStyle14.copyWith(color: bodyColor),
+        return CustomScrollView(
+          key: const PageStorageKey<String>('course-discussions-tab'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: group != null && !loading,
+              child: body,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CreateCourseDiscussionPanel extends StatefulWidget {
+  const _CreateCourseDiscussionPanel({
+    required this.l10n,
+    required this.isDark,
+    required this.bodyColor,
+    required this.courseTitle,
+    required this.onCreateRoom,
+    required this.onRoomReady,
+  });
+
+  final AppLocalizations l10n;
+  final bool isDark;
+  final Color? bodyColor;
+  final String courseTitle;
+  final Future<GroupData?> Function() onCreateRoom;
+  final void Function(GroupData group) onRoomReady;
+
+  @override
+  State<_CreateCourseDiscussionPanel> createState() =>
+      _CreateCourseDiscussionPanelState();
+}
+
+class _CreateCourseDiscussionPanelState
+    extends State<_CreateCourseDiscussionPanel> {
+  bool _creating = false;
+
+  Future<void> _create() async {
+    if (_creating) return;
+    setState(() => _creating = true);
+    try {
+      final group = await widget.onCreateRoom();
+      if (!mounted) return;
+      if (group != null) {
+        widget.onRoomReady(group);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.l10n.courseDiscussionCreated)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.l10n.groupCreateError),
+            backgroundColor: CbsColors.errorColor,
           ),
-        ),
-      );
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _creating = false);
     }
+  }
 
-    return GroupChatPage(group: group!, embedded: true);
+  @override
+  Widget build(BuildContext context) {
+    final accent =
+        widget.isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.forum_outlined,
+              size: 48,
+              color: accent.withValues(alpha: 0.85),
+            ),
+            gapH12,
+            Text(
+              widget.l10n.courseDiscussionUnavailable,
+              textAlign: TextAlign.center,
+              style: verySmallStyle14.copyWith(color: widget.bodyColor),
+            ),
+            gapH8,
+            Text(
+              widget.l10n.createCourseDiscussionHint,
+              textAlign: TextAlign.center,
+              style: verySmallStyle12.copyWith(
+                color: widget.bodyColor?.withValues(alpha: 0.9),
+                height: 1.35,
+              ),
+            ),
+            gapH20,
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: widget.courseTitle.isEmpty || _creating
+                    ? null
+                    : _create,
+                icon: _creating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_comment_rounded),
+                label: Text(widget.l10n.createCourseDiscussion),
+                style: FilledButton.styleFrom(
+                  backgroundColor: accent,
+                  foregroundColor:
+                      widget.isDark ? CbsColors.brownNight : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -670,6 +965,9 @@ class _VideoResourceTile extends StatelessWidget {
     required this.cardColor,
     required this.titleColor,
     required this.bodyColor,
+    required this.playing,
+    required this.onPlay,
+    required this.onStop,
   });
 
   final LessonResourceData resource;
@@ -680,6 +978,26 @@ class _VideoResourceTile extends StatelessWidget {
   final Color cardColor;
   final Color? titleColor;
   final Color? bodyColor;
+  final bool playing;
+  final VoidCallback onPlay;
+  final VoidCallback onStop;
+
+  Future<void> _openFullscreen(BuildContext context) async {
+    final url = (resource.url ?? '').trim();
+    if (url.isEmpty) return;
+    final signed = await resolveStorageViewUrl(url);
+    if (!context.mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => VideoViewerScreen(
+          url: signed,
+          originalUrl: url,
+          title: resource.title,
+          autoplay: true,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -687,115 +1005,164 @@ class _VideoResourceTile extends StatelessWidget {
     final label = (resource.title ?? '').trim().isNotEmpty
         ? resource.title!.trim()
         : l10n.watchVideo;
-    final accent =
-        isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final accent = isDark ? CbsColors.brandGold : CbsColors.primaryBrown;
+    final thumbnailUrl = videoThumbnailUrl(url);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: url.isEmpty
-            ? null
-            : () => openVideoInApp(url, title: resource.title),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor),
+    final fallbackPoster = ColoredBox(
+      color: isDark ? CbsColors.darkElevated : const Color(0xFF1A1410),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              accent.withValues(alpha: 0.18),
+              Colors.black.withValues(alpha: 0.55),
+            ],
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Container(
-                  color: isDark ? CbsColors.darkElevated : const Color(0xFF1A1410),
-                  child: Stack(
-                    alignment: Alignment.center,
+        ),
+      ),
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: playing
+                ? Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                accent.withValues(alpha: 0.18),
-                                Colors.black.withValues(alpha: 0.55),
-                              ],
+                      InlineVideoPlayer(
+                        key: ValueKey('inline-video-$url'),
+                        url: url,
+                        originalUrl: url,
+                        autoplay: true,
+                        onFullscreen: () => _openFullscreen(context),
+                      ),
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            tooltip: MaterialLocalizations.of(context)
+                                .closeButtonTooltip,
+                            onPressed: onStop,
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-                      Icon(
-                        Icons.play_circle_filled_rounded,
-                        size: 64,
-                        color: accent.withValues(alpha: 0.95),
-                      ),
-                      Positioned(
-                        left: 10,
-                        top: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.videocam_rounded,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                l10n.watchVideo,
-                                style: verySmallStyle10.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
+                  )
+                : Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: url.isEmpty ? null : onPlay,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (thumbnailUrl != null)
+                            CachedRemoteImage(
+                              url: thumbnailUrl,
+                              fit: BoxFit.cover,
+                              placeholder: fallbackPoster,
+                              error: fallbackPoster,
+                            )
+                          else
+                            fallbackPoster,
+                          const DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0x33000000),
+                                  Color(0x66000000),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Center(
+                            child: Icon(
+                              Icons.play_circle_filled_rounded,
+                              size: 64,
+                              color: Colors.white.withValues(alpha: 0.95),
+                            ),
+                          ),
+                          Positioned(
+                            left: 10,
+                            top: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.videocam_rounded,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    l10n.watchVideo,
+                                    style: verySmallStyle10.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: verySmallStyle14.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: titleColor,
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: verySmallStyle14.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: titleColor,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      lessonLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: verySmallStyle10.copyWith(color: bodyColor),
-                    ),
-                  ],
+                const SizedBox(height: 2),
+                Text(
+                  lessonLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: verySmallStyle10.copyWith(color: bodyColor),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

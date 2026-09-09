@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/services/chat_notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Auth state: uses Supabase session (no manual token storage).
@@ -10,6 +11,7 @@ class AuthService {
   }
 
   static Future<void> logout() async {
+    await ChatNotificationService.instance.stop();
     await Supabase.instance.client.auth.signOut();
   }
 

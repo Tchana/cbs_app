@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/features/courses/native_pdf_viewer_screen.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/book_file_cache_service.dart';
@@ -9,14 +10,18 @@ import 'package:center_for_biblical_studies/shared/document_web_viewer_html.dart
 import 'package:center_for_biblical_studies/shared/remote_file_kind.dart';
 import 'package:center_for_biblical_studies/shared/resolve_storage_view_url.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
+
+// Conditional: dart:io is unavailable on web.
+import 'document_viewer_io_stub.dart'
+    if (dart.library.io) 'document_viewer_io.dart' as io_helper;
 
 class DocumentViewerScreen extends StatefulWidget {
   const DocumentViewerScreen({
@@ -73,17 +78,22 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   @override
   void initState() {
     super.initState();
-    // PDFs use the native PDFium viewer — skip WebView setup.
-    if (_isPdf) return;
+    // Mobile native PDF viewer — skip WebView setup.
+    if (_isPdf && PlatformCapabilities.supportsNativePdfView) return;
     _initWebController();
     _loadPrimaryViewer();
   }
 
   void _initWebController() {
-    _webController = WebViewController()
+    _webController = WebViewController();
+    _webReady = true;
+
+    // webview_flutter_web does not implement JS mode / channels / navigation.
+    if (kIsWeb) return;
+
+    _webController
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF111111));
-    _webReady = true;
 
     final platform = _webController.platform;
     if (platform is AndroidWebViewController) {
@@ -285,7 +295,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
               failedToLoadPdfPrefix: l10n.viewerFailedLoadPdf(''),
               pdfJsFailedMessage: l10n.viewerPdfJsFailed,
             ),
-            baseUrl: 'https://cdnjs.cloudflare.com',
+            baseUrl: _safeBaseUrl('https://cdnjs.cloudflare.com'),
           );
           return;
         }
@@ -304,7 +314,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
             failedToLoadPdfPrefix: l10n.viewerFailedLoadPdf(''),
             pdfJsFailedMessage: l10n.viewerPdfJsFailed,
           ),
-          baseUrl: 'https://cdnjs.cloudflare.com',
+          baseUrl: _safeBaseUrl('https://cdnjs.cloudflare.com'),
         );
         return;
       }
@@ -328,15 +338,17 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
   }
 
   Future<Uint8List?> _fetchPdfBytes() async {
-    final cached = _cachedPdfFile();
-    if (cached != null && await cached.exists()) {
-      final bytes = await cached.readAsBytes();
-      return tryDecodePdfBytes(bytes);
+    final cachedBytes = await io_helper.readCachedPdfFileBytes(
+      pdfHtmlBaseUrl: widget.pdfHtmlBaseUrl,
+      relativeUrl: widget.url,
+    );
+    if (cachedBytes != null) {
+      return tryDecodePdfBytes(cachedBytes);
     }
 
     final bookId = widget.bookId?.trim() ?? '';
     final original = (widget.originalRemoteUrl ?? '').trim();
-    if (bookId.isNotEmpty && original.isNotEmpty) {
+    if (!kIsWeb && bookId.isNotEmpty && original.isNotEmpty) {
       try {
         final cache = BookFileCacheService();
         await cache.invalidate(bookId);
@@ -365,17 +377,6 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     return null;
   }
 
-  File? _cachedPdfFile() {
-    final base = widget.pdfHtmlBaseUrl?.trim();
-    if (base == null || base.isEmpty) return null;
-    try {
-      final dirUri = Uri.parse(base.endsWith('/') ? base : '$base/');
-      return File.fromUri(dirUri.resolve(widget.url));
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<List<int>> _downloadPdfBytes(String url) async {
     final response = await Dio().get<List<int>>(
       url,
@@ -398,16 +399,18 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     final url = await _resolveNetworkPdfUrl();
     if (!mounted) return;
     // Last-resort PDF path only — prefer PDF.js for sharp text.
-    _webController.loadHtmlString(
+    // Web WebView ignores baseUrl; still fine for Google Docs viewer.
+    await _webController.loadHtmlString(
       buildGoogleDocsViewerHtml(url),
-      baseUrl: 'https://docs.google.com',
+      baseUrl: _safeBaseUrl('https://docs.google.com'),
     );
   }
 
   Future<List<int>> _loadDocumentBytes() async {
     final trimmed = widget.url.trim();
-    if (trimmed.startsWith('file://')) {
-      return File.fromUri(Uri.parse(trimmed)).readAsBytes();
+    if (trimmed.startsWith('file://') || !trimmed.startsWith('http')) {
+      final local = await io_helper.readLocalUriBytes(trimmed);
+      if (local != null) return local;
     }
     final response = await Dio().get<List<int>>(
       trimmed,
@@ -446,7 +449,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           loadingLabel: l10n.viewerLoading,
           failedToLoadDocumentPrefix: l10n.viewerFailedLoadDocument(''),
         ),
-        baseUrl: 'https://cdnjs.cloudflare.com',
+        baseUrl: _safeBaseUrl('https://cdnjs.cloudflare.com'),
       );
     } catch (_) {
       if (!mounted) return;
@@ -475,7 +478,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
       setState(() => _viewerAttempt = 1);
       _webController.loadHtmlString(
         buildOfficeOnlineViewerHtml(docsUrl),
-        baseUrl: 'https://view.officeapps.live.com',
+        baseUrl: _safeBaseUrl('https://view.officeapps.live.com'),
       );
       return;
     }
@@ -483,7 +486,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     setState(() => _viewerAttempt = 2);
     _webController.loadHtmlString(
       buildGoogleDocsViewerHtml(docsUrl),
-      baseUrl: 'https://docs.google.com',
+      baseUrl: _safeBaseUrl('https://docs.google.com'),
     );
   }
 
@@ -500,7 +503,11 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
     }
   }
 
+  /// webview_flutter_web does not support [baseUrl].
+  String? _safeBaseUrl(String? url) => kIsWeb ? null : url;
+
   String? _baseUrlFor(String fileUrl) {
+    if (kIsWeb) return null;
     final uri = Uri.tryParse(fileUrl);
     if (uri == null || uri.host.isEmpty) return null;
     return '${uri.scheme}://${uri.host}';
@@ -535,7 +542,7 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isPdf) {
+    if (_isPdf && PlatformCapabilities.supportsNativePdfView) {
       return NativePdfViewerScreen(
         url: widget.url,
         title: widget.title,

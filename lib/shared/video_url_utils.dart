@@ -26,24 +26,32 @@ class EmbeddableVideo {
   final String? embedUrl;
 }
 
-EmbeddableVideo? parseEmbeddableVideo(String url) {
+EmbeddableVideo? parseEmbeddableVideo(
+  String url, {
+  bool autoplay = false,
+}) {
   final trimmed = url.trim();
   if (trimmed.isEmpty) return null;
 
   final youtubeId = _extractYoutubeId(trimmed);
   if (youtubeId != null) {
+    // youtube-nocookie + matching origin avoids Error 152-4 / 153 in app WebViews.
+    const origin = 'https://www.youtube-nocookie.com';
+    final autoplayParam = autoplay ? '&autoplay=1&mute=0' : '';
     return EmbeddableVideo(
       isDirectFile: false,
       embedUrl:
-          'https://www.youtube.com/embed/$youtubeId?playsinline=1&rel=0&modestbranding=1',
+          '$origin/embed/$youtubeId?playsinline=1&rel=0&modestbranding=1&origin=${Uri.encodeQueryComponent(origin)}$autoplayParam',
     );
   }
 
   final vimeoId = _extractVimeoId(trimmed);
   if (vimeoId != null) {
+    final autoplayParam = autoplay ? '&autoplay=1' : '';
     return EmbeddableVideo(
       isDirectFile: false,
-      embedUrl: 'https://player.vimeo.com/video/$vimeoId?playsinline=1',
+      embedUrl:
+          'https://player.vimeo.com/video/$vimeoId?playsinline=1$autoplayParam',
     );
   }
 
@@ -101,8 +109,27 @@ String? _extractVimeoId(String url) {
   return RegExp(r'^\d+$').hasMatch(last) ? last : null;
 }
 
-String buildDirectVideoHtml(String videoUrl) {
+/// Public thumbnail for YouTube / Vimeo links; null for direct files.
+String? videoThumbnailUrl(String url) {
+  final trimmed = url.trim();
+  if (trimmed.isEmpty) return null;
+
+  final youtubeId = _extractYoutubeId(trimmed);
+  if (youtubeId != null) {
+    return 'https://img.youtube.com/vi/$youtubeId/hqdefault.jpg';
+  }
+
+  final vimeoId = _extractVimeoId(trimmed);
+  if (vimeoId != null) {
+    return 'https://vumbnail.com/$vimeoId.jpg';
+  }
+
+  return null;
+}
+
+String buildDirectVideoHtml(String videoUrl, {bool autoplay = false}) {
   final safeUrl = _escapeHtml(videoUrl);
+  final autoplayAttr = autoplay ? ' autoplay' : '';
   return '''
 <!DOCTYPE html>
 <html>
@@ -127,10 +154,25 @@ String buildDirectVideoHtml(String videoUrl) {
   </style>
 </head>
 <body>
-  <video controls playsinline webkit-playsinline preload="metadata" src="$safeUrl"></video>
+  <video controls playsinline webkit-playsinline preload="metadata"$autoplayAttr src="$safeUrl"></video>
 </body>
 </html>
 ''';
+}
+
+/// HTTPS base URL so the WebView sends a valid Referer (required by YouTube embeds).
+String embedPlayerBaseUrl(String embedUrl) {
+  final uri = Uri.tryParse(embedUrl);
+  if (uri == null) return 'https://www.youtube-nocookie.com/';
+  final host = uri.host.toLowerCase();
+  if (host.contains('vimeo.com')) return 'https://vimeo.com/';
+  if (host.contains('youtube.com') || host.contains('youtube-nocookie.com')) {
+    return 'https://www.youtube-nocookie.com/';
+  }
+  if (uri.hasScheme && uri.host.isNotEmpty) {
+    return '${uri.scheme}://${uri.host}/';
+  }
+  return 'https://www.youtube-nocookie.com/';
 }
 
 String buildEmbedVideoHtml(String embedUrl) {
@@ -141,6 +183,7 @@ String buildEmbedVideoHtml(String embedUrl) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <style>
     html, body {
       margin: 0;
@@ -161,7 +204,8 @@ String buildEmbedVideoHtml(String embedUrl) {
 <body>
   <iframe
     src="$safeUrl"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowfullscreen
     title="video"
   ></iframe>

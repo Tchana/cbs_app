@@ -3,6 +3,7 @@ import 'package:center_for_biblical_studies/data/message/message_data.dart';
 import 'package:center_for_biblical_studies/data/message/user_data.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
+import 'package:center_for_biblical_studies/services/chat_notification_service.dart';
 import 'package:center_for_biblical_studies/services/supabase_service.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
@@ -71,11 +72,14 @@ class _GroupChatPageState extends State<GroupChatPage> {
   @override
   void initState() {
     super.initState();
+    ChatNotificationService.instance.setActiveRoom(widget.group.uuid);
+    ChatNotificationService.instance.refreshMemberships();
     fetchMessages();
   }
 
   @override
   void dispose() {
+    ChatNotificationService.instance.clearActiveRoomIf(widget.group.uuid);
     _scrollController.dispose();
     _messageController.dispose();
     _messageFocusNode.dispose();

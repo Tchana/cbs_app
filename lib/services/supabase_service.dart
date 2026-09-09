@@ -1070,16 +1070,86 @@ class SupabaseService {
           .select()
           .single();
 
-      return {
-        'success': true,
-        'data': _groupFromRow(Map<String, dynamic>.from(res as Map))
-      };
+      final group =
+          _groupFromRow(Map<String, dynamic>.from(res as Map));
+      final roomId = group.uuid;
+      if (roomId != null) {
+        await ensureRoomMembership(roomId);
+      }
+
+      return {'success': true, 'data': group};
     } on PostgrestException catch (e) {
       return {
         'error': true,
         'message': e.message,
         'status': e.code != null ? int.tryParse(e.code!) : 400
       };
+    }
+  }
+
+  /// Creates a forum room named after the course (matched by [fetchGroupForCourse]).
+  Future<Map<String, dynamic>> createCourseDiscussionRoom({
+    required String courseTitle,
+  }) async {
+    final title = courseTitle.trim();
+    if (title.isEmpty) {
+      return {'error': true, 'message': 'Missing course title', 'status': 400};
+    }
+
+    final existing = await fetchGroupForCourse(courseTitle: title);
+    if (existing != null) {
+      final roomId = existing.uuid;
+      if (roomId != null) await ensureRoomMembership(roomId);
+      return {'success': true, 'data': existing, 'alreadyExists': true};
+    }
+
+    return createGroup(
+      name: title,
+      description: 'Course discussion · $title',
+      isPrivate: false,
+    );
+  }
+
+  Future<void> ensureRoomMembership(String roomId) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null || roomId.trim().isEmpty) return;
+    try {
+      await _client.from('room_participants').upsert({
+        'room_id': roomId,
+        'user_id': userId,
+      });
+    } catch (_) {}
+  }
+
+  Future<Set<String>> fetchMyRoomIds() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return {};
+    try {
+      final res = await _client
+          .from('room_participants')
+          .select('room_id')
+          .eq('user_id', userId);
+      return {
+        for (final row in (res as List))
+          if ((row as Map)['room_id'] != null) row['room_id'].toString(),
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<String?> fetchRoomName(String roomId) async {
+    try {
+      final res = await _client
+          .from('rooms')
+          .select('name')
+          .eq('id', roomId)
+          .maybeSingle();
+      if (res == null) return null;
+      final name = (res['name'] as String?)?.trim();
+      return (name == null || name.isEmpty) ? null : name;
+    } catch (_) {
+      return null;
     }
   }
 

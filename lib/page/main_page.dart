@@ -8,6 +8,7 @@ import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_shell.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_shell_controller.dart';
+import 'package:center_for_biblical_studies/services/chat_notification_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +44,10 @@ class _MainPageState extends State<MainPage> {
       if (!mounted) return;
       setState(() => currentStep = index);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCheckUpdates());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeCheckUpdates();
+      ChatNotificationService.instance.start();
+    });
   }
 
   Future<void> _maybeCheckUpdates() async {

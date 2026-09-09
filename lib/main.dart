@@ -8,6 +8,9 @@ import 'package:center_for_biblical_studies/responsiveness/desktop_shell_control
 import 'package:center_for_biblical_studies/services/settings_service.dart';
 import 'package:center_for_biblical_studies/supabase/supabase_config.dart';
 import 'package:center_for_biblical_studies/utils/cbs_theme.dart';
+import 'package:center_for_biblical_studies/core/platform/webview_web_register_stub.dart'
+    if (dart.library.html) 'package:center_for_biblical_studies/core/platform/webview_web_register_web.dart'
+    as webview_web;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -15,6 +18,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  webview_web.registerWebViewWebPlatform();
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,

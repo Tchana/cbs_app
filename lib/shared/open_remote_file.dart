@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/features/courses/document_viewer_screen.dart';
 import 'package:center_for_biblical_studies/features/courses/native_pdf_viewer_screen.dart';
 import 'package:center_for_biblical_studies/features/courses/video_viewer_screen.dart';
@@ -6,6 +7,7 @@ import 'package:center_for_biblical_studies/services/book_file_cache_service.dar
 import 'package:center_for_biblical_studies/shared/remote_file_kind.dart';
 import 'package:center_for_biblical_studies/shared/resolve_storage_view_url.dart';
 import 'package:center_for_biblical_studies/shared/video_url_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +22,12 @@ Future<void> openVideoInApp(
   if (!isInAppVideoResource(url: trimmed)) return;
 
   final signed = await resolveStorageViewUrl(trimmed);
+
+  if (!PlatformCapabilities.supportsInAppWebView) {
+    await launchExternalUrl(signed);
+    return;
+  }
+
   final screen = VideoViewerScreen(
     url: signed,
     originalUrl: trimmed,
@@ -63,6 +71,20 @@ Future<void> openRemoteFile(
   final bookCacheId = (bookId ?? '').trim();
   final lessonCacheId = (lessonId ?? '').trim();
 
+  // Windows/Linux/web: no full in-app document WebView — open in browser.
+  if (!PlatformCapabilities.supportsInAppWebView &&
+      !PlatformCapabilities.supportsNativePdfView) {
+    final signed = await resolveStorageViewUrl(trimmed);
+    final opened = await launchExternalUrl(signed);
+    if (!opened) {
+      final uri = Uri.tryParse(signed);
+      if (uri != null) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    }
+    return;
+  }
+
   RemoteFileCacheKind? cacheKind;
   String? cacheId;
   String? offlineStatusMessage;
@@ -74,7 +96,10 @@ Future<void> openRemoteFile(
     cacheId = lessonCacheId;
   }
 
-  if (cacheKind != null) {
+  // Offline cache uses dart:io file paths — skip on web.
+  final canCacheOffline = !kIsWeb && cacheId != null && cacheKind != null;
+
+  if (canCacheOffline) {
     final ctx = Get.context;
     final l10n = ctx != null
         ? (AppLocalizations.of(ctx) ?? AppLocalizations(const Locale('fr')))
@@ -85,7 +110,7 @@ Future<void> openRemoteFile(
   }
 
   final CachedBookView view;
-  if (cacheId != null && cacheKind != null) {
+  if (canCacheOffline) {
     final cache = BookFileCacheService();
     Future<CachedBookView> downloadFile(
       void Function(int received, int total)? onReceiveProgress,
@@ -111,8 +136,10 @@ Future<void> openRemoteFile(
 
   final kindSource = trimmed;
   final isPdf = remoteFileKindFromUrl(kindSource) == RemoteFileKind.pdf;
+  final useNativePdf =
+      isPdf && PlatformCapabilities.supportsNativePdfView;
 
-  final Widget screen = isPdf
+  final Widget screen = useNativePdf
       ? NativePdfViewerScreen(
           url: view.viewerUrl,
           title: title,
@@ -143,7 +170,11 @@ Future<bool> launchExternalUrl(String url) async {
   final uri = Uri.tryParse(url.trim());
   if (uri == null) return false;
   try {
-    return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    return await launchUrl(
+      uri,
+      mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+      webOnlyWindowName: kIsWeb ? '_blank' : null,
+    );
   } catch (_) {
     return false;
   }

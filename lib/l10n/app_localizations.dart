@@ -208,6 +208,11 @@ class AppLocalizations {
       'course_discussion_label': 'Discussion',
       'course_discussion_unavailable':
           'Discussion room is not available for this course yet.',
+      'create_course_discussion': 'Create discussion room',
+      'create_course_discussion_hint':
+          'Start a discussion room for this course so participants can chat together.',
+      'course_discussion_created': 'Discussion room created',
+      'new_chat_message': 'New message',
       'resources_label': 'Resources',
       'no_resources_yet': 'No resources yet',
       'no_comments_yet': 'No comments yet',
@@ -527,6 +532,11 @@ class AppLocalizations {
       'course_discussion_label': 'Discussion',
       'course_discussion_unavailable':
           'Le salon de discussion n\'est pas encore disponible pour ce cours.',
+      'create_course_discussion': 'Créer un salon de discussion',
+      'create_course_discussion_hint':
+          'Créez un salon pour ce cours afin que les participants puissent discuter ensemble.',
+      'course_discussion_created': 'Salon de discussion créé',
+      'new_chat_message': 'Nouveau message',
       'resources_label': 'Ressources',
       'no_resources_yet': 'Aucune ressource pour le moment',
       'no_comments_yet': 'Aucun commentaire pour le moment',
@@ -899,6 +909,11 @@ class AppLocalizations {
   String get courseDiscussionLabel => translate('course_discussion_label');
   String get courseDiscussionUnavailable =>
       translate('course_discussion_unavailable');
+  String get createCourseDiscussion => translate('create_course_discussion');
+  String get createCourseDiscussionHint =>
+      translate('create_course_discussion_hint');
+  String get courseDiscussionCreated => translate('course_discussion_created');
+  String get newChatMessage => translate('new_chat_message');
   String get resourcesLabel => translate('resources_label');
   String get noResourcesYet => translate('no_resources_yet');
   String get noCommentsYet => translate('no_comments_yet');
