@@ -1,0 +1,92 @@
+name: Upload OTA to Supabase
+
+# Re-upload / rebuild OTA assets when the Release upload step failed.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to upload (e.g. v1.0.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  upload-ota:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify Supabase upload secret
+        run: |
+          if [ -z "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "::error::Missing GitHub secret SUPABASE_SERVICE_ROLE_KEY"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Checkout release tag for build
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+          path: release-src
+
+      - name: Download non-Android release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ inputs.tag }}"
+          VERSION="${TAG#v}"
+          mkdir -p dist
+          gh release download "$TAG" --dir dist --clobber \
+            --pattern "cbs_setup_*.exe" \
+            --pattern "cbs_app-*-web.zip" \
+            --pattern "version.json" || true
+          if [ ! -f dist/version.json ]; then
+            BUILD="$(grep -E '^\s*version:' release-src/pubspec.yaml | sed -E 's/.*\+([0-9]+).*/\1/')"
+            cat > dist/version.json <<EOF
+          {
+            "version": "$VERSION",
+            "build_number": ${BUILD:-1},
+            "force_update": false,
+            "min_version": "1.0.0",
+            "release_notes": "OTA republish of $TAG",
+            "assets": {
+              "android": "android.apk",
+              "windows": "windows-setup.exe",
+              "web": "web.zip"
+            }
+          }
+          EOF
+          fi
+          ls -la dist
+
+      - name: Build arm64 Android APK (fits Free Storage 50MB limit)
+        working-directory: release-src
+        run: |
+          VERSION="${{ inputs.tag }}"
+          VERSION="${VERSION#v}"
+          flutter pub get
+          flutter build apk --release --target-platform android-arm64
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "../dist/cbs_app-${VERSION}-android.apk"
+          ls -lh "../dist/cbs_app-${VERSION}-android.apk"
+
+      - name: Publish OTA artifacts to Supabase Storage
+        env:
+          SUPABASE_URL: https://owbbtxdqazdjijxetwmn.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          VERSION="${{ inputs.tag }}"
+          VERSION="${VERSION#v}"
+          chmod +x scripts/upload_release_to_supabase.sh
+          ./scripts/upload_release_to_supabase.sh dist "$VERSION"

@@ -2,12 +2,15 @@ import 'package:center_for_biblical_studies/features/authentication/login_page.d
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
+import 'package:center_for_biblical_studies/services/update_service.dart';
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_campus_ui.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_page_frame.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/app_sizes.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
+import 'package:center_for_biblical_studies/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -24,6 +27,8 @@ class _SettingsState extends State<Settings> {
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
+  String _appVersionLabel = '';
+  bool _checkingForUpdates = false;
 
   @override
   void initState() {
@@ -37,6 +42,7 @@ class _SettingsState extends State<Settings> {
     final notifications = await SettingsService.getNotificationsEnabled();
     final sound = await SettingsService.getSoundEnabled();
     final vibration = await SettingsService.getVibrationEnabled();
+    final versionLabel = await UpdateService.getCurrentVersionLabel();
 
     if (mounted) {
       setState(() {
@@ -45,7 +51,28 @@ class _SettingsState extends State<Settings> {
         _notificationsEnabled = notifications;
         _soundEnabled = sound;
         _vibrationEnabled = vibration;
+        _appVersionLabel = versionLabel;
       });
+    }
+  }
+
+  Future<void> _checkForUpdates() async {
+    if (_checkingForUpdates) return;
+    final l10n =
+        AppLocalizations.of(context) ?? AppLocalizations(const Locale('fr'));
+    setState(() => _checkingForUpdates = true);
+    try {
+      final update = await UpdateService.checkForUpdate(force: true);
+      if (!mounted) return;
+      if (update != null) {
+        await UpdateDialog.show(context, update);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.youAreOnLatestVersion)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _checkingForUpdates = false);
     }
   }
 
@@ -469,23 +496,63 @@ class _SettingsState extends State<Settings> {
               _buildCard(
                 surface: surface,
                 isDark: isDark,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.info_outline,
-                    color: accentIcon,
-                  ),
-                  title: Text(
-                    localizations.appName,
-                    style: smallStyle18.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? CbsColors.darkTextPrimary : null,
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        Icons.info_outline,
+                        color: accentIcon,
+                      ),
+                      title: Text(
+                        localizations.appName,
+                        style: smallStyle18.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? CbsColors.darkTextPrimary : null,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _appVersionLabel.isEmpty
+                            ? '${localizations.version} …'
+                            : '${localizations.version} $_appVersionLabel',
+                        style:
+                            smallStyle18.copyWith(color: muted, fontSize: 13),
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    '${localizations.version} 1.0.0',
-                    style: smallStyle18.copyWith(color: muted, fontSize: 13),
-                  ),
+                    if (PlatformCapabilities.supportsAppUpdates) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          Icons.system_update_alt,
+                          color: accentIcon,
+                        ),
+                        title: Text(
+                          localizations.checkForUpdates,
+                          style: smallStyle18.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? CbsColors.darkTextPrimary : null,
+                          ),
+                        ),
+                        subtitle: Text(
+                          localizations.downloadLatestRelease,
+                          style: smallStyle18.copyWith(
+                            fontSize: 13,
+                            color: muted,
+                          ),
+                        ),
+                        trailing: _checkingForUpdates
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(Icons.chevron_right, color: muted),
+                        onTap:
+                            _checkingForUpdates ? null : _checkForUpdates,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               gapH16,

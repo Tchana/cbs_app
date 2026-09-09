@@ -1,11 +1,16 @@
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/features/authentication/auth_choice_page.dart';
 import 'package:center_for_biblical_studies/l10n/app_localizations.dart';
+import 'package:center_for_biblical_studies/models/app_update_info.dart';
 import 'package:center_for_biblical_studies/page/main_page.dart';
 import 'package:center_for_biblical_studies/services/auth_service.dart';
 import 'package:center_for_biblical_studies/services/settings_service.dart';
+import 'package:center_for_biblical_studies/services/update_service.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
 import 'package:center_for_biblical_studies/utils/text_styles.dart';
+import 'package:center_for_biblical_studies/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,6 +28,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkAuthAndNavigate() async {
     await Future.delayed(const Duration(milliseconds: 1200));
+
+    AppUpdateInfo? pendingUpdate;
+    if (PlatformCapabilities.supportsAppUpdates) {
+      pendingUpdate = await UpdateService.checkForUpdate();
+    }
+
     final isLoggedIn = await AuthService.isLoggedIn();
 
     if (!mounted) return;
@@ -32,20 +43,28 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(builder: (_) => const MainPage()),
       );
-      return;
+    } else {
+      final hasSeenOnboarding = await SettingsService.hasSeenOnboarding();
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => hasSeenOnboarding
+              ? const AuthChoicePage()
+              : const OnboardingScreen(),
+        ),
+      );
     }
 
-    final hasSeenOnboarding = await SettingsService.hasSeenOnboarding();
-    if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => hasSeenOnboarding
-            ? const AuthChoicePage()
-            : const OnboardingScreen(),
-      ),
-    );
+    if (pendingUpdate != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = Get.key.currentContext;
+        if (ctx != null && ctx.mounted) {
+          UpdateDialog.show(ctx, pendingUpdate!);
+        }
+      });
+    }
   }
 
   @override

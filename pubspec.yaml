@@ -3,7 +3,7 @@ description: A new Flutter project.
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -15,6 +15,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_dotenv: ^6.0.0
   dio: ^5.8.0+1
+  http: ^1.2.2
+  package_info_plus: ^8.3.0
+  open_filex: ^4.7.0
   dartx: ^1.2.0
   get_storage: ^2.1.1
   recase: ^4.1.0

@@ -310,6 +310,17 @@ class AppLocalizations {
       'viewer_failed_load_pdf': 'Failed to load PDF: {details}',
       'viewer_failed_load_document': 'Failed to load document: {details}',
       'viewer_pdfjs_failed': 'PDF viewer failed to load',
+      'check_for_updates': 'Check for updates',
+      'download_latest_release': 'Download the latest release',
+      'you_are_on_latest_version': 'You are on the latest version.',
+      'update_version': 'Update {version}',
+      'later': 'Later',
+      'update': 'Update',
+      'downloading': 'Downloading...',
+      'refreshing': 'Refreshing...',
+      'downloading_update_version': 'Downloading update ({version})...',
+      'update_failed': 'Update failed',
+      'update_failed_error': 'Update failed: {error}',
       'subscription_status_active': 'Active',
       'subscription_status_expired': 'Expired',
       'subscription_status_none': 'None',
@@ -621,6 +632,18 @@ class AppLocalizations {
       'viewer_failed_load_pdf': 'Échec du chargement du PDF : {details}',
       'viewer_failed_load_document': 'Échec du chargement du document : {details}',
       'viewer_pdfjs_failed': 'Échec du chargement du lecteur PDF',
+      'check_for_updates': 'Vérifier les mises à jour',
+      'download_latest_release': 'Télécharger la dernière version',
+      'you_are_on_latest_version': 'Vous utilisez la dernière version.',
+      'update_version': 'Mise à jour {version}',
+      'later': 'Plus tard',
+      'update': 'Mettre à jour',
+      'downloading': 'Téléchargement...',
+      'refreshing': 'Actualisation...',
+      'downloading_update_version':
+          'Téléchargement de la mise à jour ({version})...',
+      'update_failed': 'Échec de la mise à jour',
+      'update_failed_error': 'Échec de la mise à jour : {error}',
       'subscription_status_active': 'Actif',
       'subscription_status_expired': 'Expiré',
       'subscription_status_none': 'Aucun',
@@ -666,6 +689,22 @@ class AppLocalizations {
   String get privacy => translate('privacy');
   String get about => translate('about');
   String get version => translate('version');
+  String get checkForUpdates => translate('check_for_updates');
+  String get downloadLatestRelease => translate('download_latest_release');
+  String get youAreOnLatestVersion => translate('you_are_on_latest_version');
+  String updateVersion(String version) =>
+      translateWithParams('update_version', {'version': version});
+  String get later => translate('later');
+  String get update => translate('update');
+  String get downloading => translate('downloading');
+  String get refreshing => translate('refreshing');
+  String downloadingUpdateVersion(String version) => translateWithParams(
+        'downloading_update_version',
+        {'version': version},
+      );
+  String get updateFailed => translate('update_failed');
+  String updateFailedError(String error) =>
+      translateWithParams('update_failed_error', {'error': error});
   String get appName => translate('app_name');
   String get notificationsEnabled => translate('notifications_enabled');
   String get soundEnabled => translate('sound_enabled');

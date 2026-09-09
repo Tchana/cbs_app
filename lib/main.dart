@@ -60,6 +60,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      navigatorKey: Get.key,
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) =>
           AppLocalizations.of(context)?.appName ??

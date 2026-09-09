@@ -1,3 +1,4 @@
+import 'package:center_for_biblical_studies/core/platform/platform_capabilities.dart';
 import 'package:center_for_biblical_studies/features/courses/courses_page.dart';
 import 'package:center_for_biblical_studies/features/dashboard/dashboard_page.dart';
 import 'package:center_for_biblical_studies/features/forum/forum_pages.dart';
@@ -8,6 +9,7 @@ import 'package:center_for_biblical_studies/responsiveness/breakpoints.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_shell.dart';
 import 'package:center_for_biblical_studies/responsiveness/desktop_shell_controller.dart';
 import 'package:center_for_biblical_studies/utils/app_colors.dart';
+import 'package:center_for_biblical_studies/widgets/update_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -29,6 +31,7 @@ class _MainPageState extends State<MainPage> {
 
   int currentStep = 0;
   Worker? _requestedTabWorker;
+  bool _didCheckUpdates = false;
 
   @override
   void initState() {
@@ -40,6 +43,14 @@ class _MainPageState extends State<MainPage> {
       if (!mounted) return;
       setState(() => currentStep = index);
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCheckUpdates());
+  }
+
+  Future<void> _maybeCheckUpdates() async {
+    if (_didCheckUpdates || !mounted) return;
+    if (!PlatformCapabilities.supportsAppUpdates) return;
+    _didCheckUpdates = true;
+    await UpdateDialog.showIfAvailable(context);
   }
 
   @override
