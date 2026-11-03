@@ -70,6 +70,20 @@ jobs:
           fi
           ls -la dist
 
+      - name: Set up Android release signing
+        working-directory: release-src
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ]; then
+            echo "::error::Missing GitHub secrets ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/cbs-release.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=cbs\nstoreFile=cbs-release.jks\n' \
+            "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEYSTORE_PASSWORD" > android/key.properties
+
       - name: Build arm64 Android APK (fits Free Storage 50MB limit)
         working-directory: release-src
         run: |
