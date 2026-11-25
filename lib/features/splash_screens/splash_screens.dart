@@ -79,9 +79,8 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              'assets/images/cbs_logo.png',
-              width: MediaQuery.sizeOf(context).width >= 800 ? 160 : 120,
-              height: MediaQuery.sizeOf(context).width >= 800 ? 160 : 120,
+              'assets/images/cbs_emblem.png',
+              width: MediaQuery.sizeOf(context).width >= 800 ? 260 : 200,
             ),
             const SizedBox(height: 18),
             Text(

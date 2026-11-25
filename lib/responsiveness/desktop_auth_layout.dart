@@ -73,7 +73,7 @@ class DesktopAuthLayout extends StatelessWidget {
                             ),
                           ),
                           child: Image.asset(
-                            'assets/images/cbs_logo.png',
+                            'assets/images/cbs_emblem.png',
                             errorBuilder: (_, __, ___) => const Icon(
                               Icons.menu_book_rounded,
                               size: 56,
