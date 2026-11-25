@@ -33,6 +33,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: '3.44.5'
 
       - name: Checkout release tag for build
         uses: actions/checkout@v5
