@@ -87,10 +87,15 @@ class _DashboardPageState extends State<DashboardPage> {
       final books = await apiService.fetchBooks();
       dataController.setBooks(books);
     } catch (_) {}
-    try {
-      final teachers = await apiService.fetchTeachers();
-      dataController.setTeachers(teachers);
-    } catch (_) {}
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final teachers = await apiService.fetchTeachers();
+        dataController.setTeachers(teachers);
+        break;
+      } catch (_) {
+        if (attempt == 0) await Future<void>.delayed(const Duration(seconds: 1));
+      }
+    }
     try {
       final announcements =
           await apiService.fetchVisibleAnnouncements(limit: 20);
@@ -223,8 +228,8 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    if (dataController.courses.isEmpty &&
-        dataController.books.isEmpty &&
+    if (dataController.courses.isEmpty ||
+        dataController.books.isEmpty ||
         dataController.teachers.isEmpty) {
       fetchData();
     }
