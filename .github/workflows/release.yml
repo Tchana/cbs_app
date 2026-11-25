@@ -123,6 +123,7 @@ jobs:
           mkdir -p dist
           find artifacts -type f -name 'cbs_app-*-android.apk' -exec cp {} dist/ \;
           find artifacts -type f -name 'cbs_setup_*.exe' -exec cp {} dist/ \;
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}" >/dev/null 2>&1 || true
           NOTES="$(git tag -l --format='%(contents)' "$GITHUB_REF_NAME" 2>/dev/null || true)"
           NOTES="${NOTES:-Release $VERSION}"
           NOTES_ESC="$(printf '%s' "$NOTES" | jq -Rs .)"
